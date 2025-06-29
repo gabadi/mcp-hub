@@ -1,0 +1,340 @@
+# MCP Manager CLI - Development Taskfile
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  APP_NAME: mcp-manager
+  BUILD_DIR: bin
+  BINARY_PATH: "{{.BUILD_DIR}}/{{.APP_NAME}}"
+  CMD_PATH: ./cmd/{{.APP_NAME}}
+  COVERAGE_FILE: coverage.out
+  COVERAGE_HTML: coverage.html
+
+env:
+  CGO_ENABLED: 0
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  # Build Tasks
+  build:
+    desc: Build the application binary
+    deps: [ensure-build-dir]
+    sources:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+    generates:
+      - "{{.BINARY_PATH}}"
+    cmds:
+      - go build -o {{.BINARY_PATH}} {{.CMD_PATH}}
+    silent: true
+
+  build-race:
+    desc: Build the application with race detection
+    deps: [ensure-build-dir]
+    cmds:
+      - go build -race -o {{.BINARY_PATH}}-race {{.CMD_PATH}}
+
+  build-debug:
+    desc: Build the application with debug symbols
+    deps: [ensure-build-dir]
+    cmds:
+      - go build -gcflags="all=-N -l" -o {{.BINARY_PATH}}-debug {{.CMD_PATH}}
+
+  ensure-build-dir:
+    desc: Ensure build directory exists
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+    silent: true
+
+  # Run Tasks
+  run:
+    desc: Build and run the application
+    deps: [build]
+    cmds:
+      - "{{.BINARY_PATH}}"
+
+  run-args:
+    desc: Build and run the application with arguments
+    deps: [build]
+    cmds:
+      - "{{.BINARY_PATH}} {{.CLI_ARGS}}"
+
+  dev:
+    desc: Development mode with auto-rebuild (requires entr)
+    cmds:
+      - echo "Starting development mode..."
+      - echo "Press Ctrl+C to stop"
+      - find . -name "*.go" | entr -r task run
+
+  # Test Tasks
+  test:
+    desc: Run all tests
+    cmds:
+      - go test -v ./...
+
+  test-short:
+    desc: Run tests with short flag
+    cmds:
+      - go test -short -v ./...
+
+  test-race:
+    desc: Run tests with race detection
+    cmds:
+      - go test -race -v ./...
+
+  test-coverage:
+    desc: Run tests with coverage report
+    cmds:
+      - go test -v -coverprofile={{.COVERAGE_FILE}} ./...
+      - go tool cover -html={{.COVERAGE_FILE}} -o {{.COVERAGE_HTML}}
+      - echo "Coverage report generated at {{.COVERAGE_HTML}}"
+
+  test-coverage-show:
+    desc: Show test coverage in terminal
+    cmds:
+      - go test -v -coverprofile={{.COVERAGE_FILE}} ./...
+      - go tool cover -func={{.COVERAGE_FILE}}
+
+  test-bench:
+    desc: Run benchmark tests
+    cmds:
+      - go test -bench=. -benchmem ./...
+
+  test-integration:
+    desc: Run integration tests only
+    cmds:
+      - go test -v -tags=integration ./...
+
+  test-unit:
+    desc: Run unit tests only (exclude integration)
+    cmds:
+      - go test -v -short ./...
+
+  # Dependency Management
+  deps:
+    desc: Install and tidy dependencies
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  deps-update:
+    desc: Update all dependencies
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
+  deps-vendor:
+    desc: Vendor dependencies
+    cmds:
+      - go mod vendor
+
+  deps-verify:
+    desc: Verify dependencies
+    cmds:
+      - go mod verify
+
+  # Code Quality
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  fmt-check:
+    desc: Check if code is formatted
+    cmds:
+      - test -z $(go fmt ./...)
+
+  lint:
+    desc: Lint Go code (requires golangci-lint)
+    cmds:
+      - sh -c 'if ! which golangci-lint > /dev/null; then echo "golangci-lint not installed. Run go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; exit 1; fi'
+      - golangci-lint run
+
+  lint-fix:
+    desc: Lint and fix Go code automatically
+    cmds:
+      - golangci-lint run --fix
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  sec:
+    desc: Run security checks (requires gosec)
+    cmds:
+      - sh -c 'if ! which gosec > /dev/null; then echo "gosec not installed. Run go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest"; exit 1; fi'
+      - gosec ./...
+
+  # Quality Gates
+  check:
+    desc: Run all quality checks
+    deps: [fmt-check, vet, lint, test]
+
+  check-ci:
+    desc: Run CI quality checks
+    deps: [fmt-check, vet, lint, test-race, test-coverage]
+
+  # Installation
+  install:
+    desc: Install binary to GOPATH/bin
+    deps: [build]
+    cmds:
+      - go install {{.CMD_PATH}}
+
+  install-local:
+    desc: Install binary to local bin directory
+    deps: [build]
+    cmds:
+      - cp {{.BINARY_PATH}} /usr/local/bin/{{.APP_NAME}}
+
+  # Cleanup
+  clean:
+    desc: Clean build artifacts and temporary files
+    cmds:
+      - rm -rf {{.BUILD_DIR}}/
+      - rm -f {{.COVERAGE_FILE}} {{.COVERAGE_HTML}}
+      - rm -f {{.APP_NAME}}-*
+      - go clean -cache
+      - go clean -testcache
+
+  clean-all:
+    desc: Clean everything including vendor and modules cache
+    deps: [clean]
+    cmds:
+      - rm -rf vendor/
+      - go clean -modcache
+
+  # Development Tools
+  term-test:
+    desc: Test terminal compatibility
+    deps: [build]
+    cmds:
+      - echo "Testing terminal compatibility..."
+      - echo "Terminal $TERM"
+      - echo "Columns $(tput cols)"
+      - echo "Lines $(tput lines)"
+      - echo "Colors $(tput colors)"
+      - "{{.BINARY_PATH}} --version 2>/dev/null || echo 'Version command not available'"
+
+  generate:
+    desc: Run go generate
+    cmds:
+      - go generate ./...
+
+  mod-graph:
+    desc: Show module dependency graph
+    cmds:
+      - go mod graph
+
+  # Documentation
+  docs:
+    desc: Generate and serve documentation
+    cmds:
+      - echo "Starting documentation server..."
+      - echo "Visit http://localhost:6060"
+      - godoc -http=:6060
+
+  docs-build:
+    desc: Build documentation
+    cmds:
+      - go doc -all ./...
+
+  # Docker Support (if needed)
+  docker-build:
+    desc: Build Docker image
+    cmds:
+      - docker build -t {{.APP_NAME}}:latest .
+
+  docker-run:
+    desc: Run Docker container
+    deps: [docker-build]
+    cmds:
+      - docker run --rm -it {{.APP_NAME}}:latest
+
+  # Release Tasks
+  release-prepare:
+    desc: Prepare for release (run all checks)
+    deps: [clean, deps, check-ci]
+    cmds:
+      - echo "Release preparation complete"
+
+  build-all:
+    desc: Build for all platforms
+    deps: [ensure-build-dir]
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.APP_NAME}}-linux-amd64 {{.CMD_PATH}}
+      - GOOS=darwin GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-amd64 {{.CMD_PATH}}
+      - GOOS=darwin GOARCH=arm64 go build -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-arm64 {{.CMD_PATH}}
+      - GOOS=windows GOARCH=amd64 go build -o {{.BUILD_DIR}}/{{.APP_NAME}}-windows-amd64.exe {{.CMD_PATH}}
+      - echo "Built binaries for all platforms in {{.BUILD_DIR}}/"
+
+  # Help
+  help:
+    desc: Show detailed help information
+    cmds:
+      - echo "MCP Manager CLI - Development Commands"
+      - echo ""
+      - echo "Build Tasks:"
+      - echo "  build         Build the application binary"
+      - echo "  build-race    Build with race detection"
+      - echo "  build-debug   Build with debug symbols"
+      - echo "  build-all     Build for all platforms"
+      - echo ""
+      - echo "Run Tasks:"
+      - echo "  run           Build and run the application"
+      - echo "  run-args      Build and run with arguments (use -- arg1 arg2)"
+      - echo "  dev           Development mode with auto-rebuild"
+      - echo ""
+      - echo "Test Tasks:"
+      - echo "  test              Run all tests"
+      - echo "  test-short        Run tests with short flag"
+      - echo "  test-race         Run tests with race detection"
+      - echo "  test-coverage     Run tests with coverage report"
+      - echo "  test-coverage-show Show coverage in terminal"
+      - echo "  test-bench        Run benchmark tests"
+      - echo "  test-integration  Run integration tests only"
+      - echo "  test-unit         Run unit tests only"
+      - echo ""
+      - echo "Dependencies:"
+      - echo "  deps          Install and tidy dependencies"
+      - echo "  deps-update   Update all dependencies"
+      - echo "  deps-vendor   Vendor dependencies"
+      - echo "  deps-verify   Verify dependencies"
+      - echo ""
+      - echo "Code Quality:"
+      - echo "  fmt           Format Go code"
+      - echo "  fmt-check     Check if code is formatted"
+      - echo "  lint          Lint Go code"
+      - echo "  lint-fix      Lint and fix automatically"
+      - echo "  vet           Run go vet"
+      - echo "  sec           Run security checks"
+      - echo "  check         Run all quality checks"
+      - echo "  check-ci      Run CI quality checks"
+      - echo ""
+      - echo "Installation:"
+      - echo "  install       Install binary to GOPATH/bin"
+      - echo "  install-local Install binary to /usr/local/bin"
+      - echo ""
+      - echo "Cleanup:"
+      - echo "  clean         Clean build artifacts"
+      - echo "  clean-all     Clean everything including caches"
+      - echo ""
+      - echo "Development Tools:"
+      - echo "  term-test     Test terminal compatibility"
+      - echo "  generate      Run go generate"
+      - echo "  mod-graph     Show module dependency graph"
+      - echo ""
+      - echo "Documentation:"
+      - echo "  docs          Generate and serve documentation"
+      - echo "  docs-build    Build documentation"
+      - echo ""
+      - echo "Use 'task --list' to see all available tasks"
+    silent: true
