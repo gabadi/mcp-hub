@@ -48,15 +48,15 @@ func (m Model) renderHeader() string {
 			activeCount++
 		}
 	}
-	
-	contextInfo := fmt.Sprintf("MCPs: %d/%d Active • Layout: %s", 
+
+	contextInfo := fmt.Sprintf("MCPs: %d/%d Active • Layout: %s",
 		activeCount, len(m.mcpItems), m.getLayoutName())
 
 	title := "MCP Manager v1.0"
-	
+
 	// Create header content with proper spacing
 	headerContent := fmt.Sprintf("%s\n%s\n%s", title, shortcuts, contextInfo)
-	
+
 	return headerStyle.Render(headerContent)
 }
 
@@ -84,7 +84,7 @@ func (m Model) renderSingleColumn() string {
 	}
 
 	content := m.renderMCPList()
-	
+
 	return columnStyle.Render(fmt.Sprintf("MCP Manager\n\n%s", content))
 }
 
@@ -135,7 +135,7 @@ func (m Model) renderThreeColumns() string {
 
 	// Create three columns with conditional highlighting
 	columns := make([]string, 3)
-	
+
 	for i := 0; i < 3; i++ {
 		style := columnStyle.Copy()
 		if i == m.activeColumn {
@@ -167,7 +167,7 @@ func (m Model) renderMCPList() string {
 	var items []string
 	for i, item := range m.mcpItems {
 		style := lipgloss.NewStyle().Padding(0, 1)
-		
+
 		// Highlight selected item
 		if i == m.selectedItem {
 			style = style.Background(lipgloss.Color("#7C3AED")).
@@ -195,7 +195,7 @@ func (m Model) renderStatusColumn() string {
 	}
 
 	item := m.mcpItems[m.selectedItem]
-	
+
 	status := "Inactive"
 	statusColor := "#FF6B6B"
 	if item.Active {
@@ -221,7 +221,7 @@ func (m Model) renderDetailsColumn() string {
 	}
 
 	item := m.mcpItems[m.selectedItem]
-	
+
 	// Placeholder details - will be expanded in future stories
 	details := []string{
 		fmt.Sprintf("MCP: %s", item.Name),
@@ -246,7 +246,7 @@ func (m Model) renderDetailsColumn() string {
 func (m Model) renderStatusAndDetails() string {
 	status := m.renderStatusColumn()
 	details := m.renderDetailsColumn()
-	
+
 	return fmt.Sprintf("%s\n\n%s", status, details)
 }
 
@@ -263,7 +263,7 @@ func (m Model) renderFooter() string {
 			Background(lipgloss.Color("#7C3AED")).
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Padding(0, 1)
-		
+
 		footerText = fmt.Sprintf("Search: %s", searchStyle.Render(m.searchQuery+"_"))
 	} else {
 		footerText = fmt.Sprintf("Terminal: %dx%d • Use arrow keys to navigate, Tab for search",

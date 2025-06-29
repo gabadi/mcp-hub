@@ -3,8 +3,8 @@ package internal
 import (
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"cc-mcp-manager/internal/ui"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // TestResponsiveBreakpoints validates the responsive layout logic
@@ -43,9 +43,9 @@ func TestModelLayoutAdaptation(t *testing.T) {
 	model := ui.NewModel()
 
 	tests := []struct {
-		name        string
-		width       int
-		height      int
+		name         string
+		width        int
+		height       int
 		expectedCols int
 	}{
 		{"Wide layout", 150, 50, 3},
@@ -61,9 +61,9 @@ func TestModelLayoutAdaptation(t *testing.T) {
 			// Simulate window size change
 			newModel, _ := model.Update(tea.WindowSizeMsg{Width: tt.width, Height: tt.height})
 			model = newModel.(ui.Model)
-			
+
 			if model.GetColumnCount() != tt.expectedCols {
-				t.Errorf("Width %d: expected %d columns, got %d", 
+				t.Errorf("Width %d: expected %d columns, got %d",
 					tt.width, tt.expectedCols, model.GetColumnCount())
 			}
 		})
@@ -179,11 +179,11 @@ func TestStateTransitions(t *testing.T) {
 // TestSearchFunctionality tests the search mode functionality
 func TestSearchFunctionality(t *testing.T) {
 	model := ui.NewModel()
-	
+
 	// Enter search mode
 	newModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyTab})
 	model = newModel.(ui.Model)
-	
+
 	// Type search query
 	newModel, _ = model.Update(tea.KeyMsg{Runes: []rune{'t'}, Type: tea.KeyRunes})
 	model = newModel.(ui.Model)
@@ -193,18 +193,18 @@ func TestSearchFunctionality(t *testing.T) {
 	model = newModel.(ui.Model)
 	newModel, _ = model.Update(tea.KeyMsg{Runes: []rune{'t'}, Type: tea.KeyRunes})
 	model = newModel.(ui.Model)
-	
+
 	if model.GetSearchQuery() != "test" {
 		t.Errorf("Expected search query 'test', got '%s'", model.GetSearchQuery())
 	}
-	
+
 	// Test backspace
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyBackspace})
 	model = newModel.(ui.Model)
 	if model.GetSearchQuery() != "tes" {
 		t.Errorf("Expected search query 'tes' after backspace, got '%s'", model.GetSearchQuery())
 	}
-	
+
 	// Test Enter to apply search
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	model = newModel.(ui.Model)

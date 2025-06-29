@@ -41,10 +41,10 @@ type Model struct {
 
 // MCPItem represents an MCP in the inventory
 type MCPItem struct {
-	Name     string
-	Type     string
-	Active   bool
-	Command  string
+	Name    string
+	Type    string
+	Active  bool
+	Command string
 }
 
 // Column represents a UI column
