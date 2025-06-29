@@ -11,6 +11,14 @@
 # Test binary, built with `go test -c`
 *.test
 
+# Build artifacts
+bin/
+mcp-manager
+mcp-manager-test
+
+# Task cache
+.task/
+
 # Code coverage profiles and other test artifacts
 *.out
 coverage.*
