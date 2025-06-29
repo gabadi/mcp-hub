@@ -206,19 +206,9 @@ func (m Model) renderFourColumns() string {
 				itemText := fmt.Sprintf("%s %s", status, item.Name)
 				
 				if isSelected {
-					// Apply selection highlighting with multiple visual cues
-					itemStyle := lipgloss.NewStyle().
-						Background(lipgloss.Color("5")). // Bright magenta/purple
-						Foreground(lipgloss.Color("15")). // Bright white
-						Bold(true).
-						Padding(0, 1).
-						Border(lipgloss.RoundedBorder()).
-						BorderForeground(lipgloss.Color("13")) // Bright magenta
-					itemText = itemStyle.Render("→ " + itemText + " ←")
-				} else {
-					// Normal item styling with padding
-					itemStyle := lipgloss.NewStyle().Padding(0, 1)
-					itemText = itemStyle.Render("  " + itemText + "  ")
+					// Simple, clean selection highlighting - just bold text
+					itemStyle := lipgloss.NewStyle().Bold(true)
+					itemText = itemStyle.Render(itemText)
 				}
 				
 				// Fixed width for consistent spacing (about 28 chars per column)
