@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+# Project-specific binaries
+mcp-manager
+
 # Test binary, built with `go test -c`
 *.test
 
