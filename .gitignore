@@ -30,3 +30,17 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Claude Code
+.bmad-core/
+.claude/commands/analyst.md
+.claude/commands/architect.md
+.claude/commands/bmad-master.md
+.claude/commands/bmad-orchestrator.md
+.claude/commands/dev.md
+.claude/commands/pm.md
+.claude/commands/po.md
+.claude/commands/qa.md
+.claude/commands/sm.md
+.claude/commands/ux-expert.md
+expansion-packs
