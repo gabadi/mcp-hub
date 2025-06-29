@@ -66,6 +66,8 @@ func (m Model) renderBody() string {
 		return m.renderSingleColumn()
 	} else if m.columnCount == 2 {
 		return m.renderTwoColumns()
+	} else if m.columnCount == 4 {
+		return m.renderFourColumns()
 	}
 	return m.renderThreeColumns()
 }
@@ -158,6 +160,91 @@ func (m Model) renderThreeColumns() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns[0], columns[1], columns[2])
 }
 
+// renderFourColumns renders the clean 4x10 MCP grid layout without column separators
+func (m Model) renderFourColumns() string {
+	// Get filtered MCPs for search functionality
+	filteredMCPs := m.GetFilteredMCPs()
+	
+	if len(filteredMCPs) == 0 {
+		// Show "No results" message when search returns no results
+		noResultsStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#888888")).
+			Align(lipgloss.Center).
+			Width(m.width).
+			Height(m.height - 8)
+		return noResultsStyle.Render("No MCPs found matching your search")
+	}
+
+	// Calculate grid dimensions - aim for ~10 rows with 4 columns
+	gridRows := (len(filteredMCPs) + 3) / 4 // Round up division
+	if gridRows < 10 {
+		gridRows = 10 // Minimum 10 rows for consistent layout
+	}
+
+	// Build the grid as a simple string without column separators
+	var gridLines []string
+	
+	for row := 0; row < gridRows; row++ {
+		var line []string
+		
+		for col := 0; col < 4; col++ {
+			mcpIndex := row*4 + col
+			
+			if mcpIndex < len(filteredMCPs) {
+				item := filteredMCPs[mcpIndex]
+				
+				// Status indicator
+				status := "○"
+				if item.Active {
+					status = "●"
+				}
+				
+				// Highlight selected item by comparing index directly
+				isSelected := (mcpIndex == m.selectedItem)
+				
+				// Create base item text
+				itemText := fmt.Sprintf("%s %s", status, item.Name)
+				
+				if isSelected {
+					// Apply selection highlighting with multiple visual cues
+					itemStyle := lipgloss.NewStyle().
+						Background(lipgloss.Color("5")). // Bright magenta/purple
+						Foreground(lipgloss.Color("15")). // Bright white
+						Bold(true).
+						Padding(0, 1).
+						Border(lipgloss.RoundedBorder()).
+						BorderForeground(lipgloss.Color("13")) // Bright magenta
+					itemText = itemStyle.Render("→ " + itemText + " ←")
+				} else {
+					// Normal item styling with padding
+					itemStyle := lipgloss.NewStyle().Padding(0, 1)
+					itemText = itemStyle.Render("  " + itemText + "  ")
+				}
+				
+				// Fixed width for consistent spacing (about 28 chars per column)
+				line = append(line, fmt.Sprintf("%-28s", itemText))
+			} else {
+				// Empty cell with proper spacing
+				line = append(line, fmt.Sprintf("%-28s", ""))
+			}
+		}
+		
+		// Join columns without separators, just spaces
+		gridLines = append(gridLines, strings.Join(line, ""))
+	}
+	
+	// Join all rows with newlines
+	gridContent := strings.Join(gridLines, "\n")
+	
+	// Apply overall styling to the grid
+	gridStyle := lipgloss.NewStyle().
+		Padding(2).
+		Width(m.width).
+		Height(m.height - 8)
+	
+	return gridStyle.Render(gridContent)
+}
+
 // renderMCPList renders the list of MCPs with selection highlighting
 func (m Model) renderMCPList() string {
 	if len(m.mcpItems) == 0 {
@@ -181,7 +268,38 @@ func (m Model) renderMCPList() string {
 			status = "●"
 		}
 
-		itemText := fmt.Sprintf("%s %s [%s]", status, item.Name, item.Type)
+		itemText := fmt.Sprintf("%s %s", status, item.Name)
+		items = append(items, style.Render(itemText))
+	}
+
+	return strings.Join(items, "\n")
+}
+
+// renderMCPColumnList renders a list of MCPs for a specific column with selection highlighting
+func (m Model) renderMCPColumnList(columnMCPs []MCPItem, startIdx int) string {
+	if len(columnMCPs) == 0 {
+		return ""
+	}
+
+	var items []string
+	for i, item := range columnMCPs {
+		actualIdx := startIdx + i
+		style := lipgloss.NewStyle().Padding(0, 1)
+
+		// Highlight selected item
+		if actualIdx == m.selectedItem {
+			style = style.Background(lipgloss.Color("#7C3AED")).
+				Foreground(lipgloss.Color("#FFFFFF")).
+				Bold(true)
+		}
+
+		// Status indicator
+		status := "○"
+		if item.Active {
+			status = "●"
+		}
+
+		itemText := fmt.Sprintf("%s %s", status, item.Name)
 		items = append(items, style.Render(itemText))
 	}
 
@@ -264,10 +382,16 @@ func (m Model) renderFooter() string {
 			Foreground(lipgloss.Color("#FFFFFF")).
 			Padding(0, 1)
 
-		footerText = fmt.Sprintf("Search: %s", searchStyle.Render(m.searchQuery+"_"))
+		cursor := "_"
+		footerText = fmt.Sprintf("Search: %s", searchStyle.Render(m.searchQuery+cursor))
+	} else if m.searchQuery != "" {
+		// Show search results info when not actively searching but have a query
+		filteredMCPs := m.GetFilteredMCPs()
+		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
+			len(filteredMCPs), m.searchQuery, m.width, m.height)
 	} else {
-		footerText = fmt.Sprintf("Terminal: %dx%d • Use arrow keys to navigate, Tab for search",
-			m.width, m.height)
+		footerText = fmt.Sprintf("Terminal: %dx%d • Search: '%s' • Use arrow keys to navigate, Tab or / for search",
+			m.width, m.height, m.searchQuery)
 	}
 
 	return footerStyle.Render(footerText)
@@ -281,7 +405,9 @@ func (m Model) getLayoutName() string {
 	case 2:
 		return "Medium"
 	case 3:
-		return "Wide"
+		return "Wide (3-panel)"
+	case 4:
+		return "Grid (4-column MCP)"
 	default:
 		return "Unknown"
 	}
