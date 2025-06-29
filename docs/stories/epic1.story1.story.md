@@ -1,6 +1,6 @@
 # Story 1.1: TUI Foundation & Navigation
 
-## Status: Learning Extracted
+## Status: Changes Committed
 
 ## Story Approved for Development
 
@@ -113,3 +113,11 @@ No debug logging was required during the implementation. All functionality was i
 ## QA Results
 
 [[LLM: QA Agent Results]]
+
+## Commit Information
+
+**Commit Hash:** 04628ee  
+**Commit Message:** Implement TUI Foundation & Navigation for MCP Manager (Epic 1, Story 1)  
+**Files Committed:** 6 files, 1536 insertions  
+**Commit Date:** 2025-06-29  
+**Status:** Ready for PR Creation
