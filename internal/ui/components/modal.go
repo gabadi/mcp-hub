@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -164,7 +165,7 @@ func OverlayModal(model types.Model, modalType ModalType, width, height int, bac
 		lipgloss.Center,
 		modal,
 	)
-	
+
 	return centeredModal
 }
 

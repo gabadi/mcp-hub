@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 

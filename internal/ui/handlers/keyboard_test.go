@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"cc-mcp-manager/internal/ui/types"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 

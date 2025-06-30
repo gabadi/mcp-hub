@@ -2,9 +2,10 @@ package main
 
 import (
 	"cc-mcp-manager/internal/ui"
-	tea "github.com/charmbracelet/bubbletea"
 	"log"
 	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {

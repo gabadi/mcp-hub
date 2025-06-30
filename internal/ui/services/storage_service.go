@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+
 	// "log"
 	"os"
 	"path/filepath"
@@ -13,15 +14,15 @@ import (
 
 // InventoryData wraps MCPItems with metadata for JSON serialization
 type InventoryData struct {
-	Version   string           `json:"version"`
-	Timestamp string           `json:"timestamp"`
-	Inventory []types.MCPItem  `json:"inventory"`
+	Version   string          `json:"version"`
+	Timestamp string          `json:"timestamp"`
+	Inventory []types.MCPItem `json:"inventory"`
 }
 
 const (
 	configFileName = "inventory.json"
-	appName       = "cc-mcp-manager"
-	configVersion = "1.0"
+	appName        = "cc-mcp-manager"
+	configVersion  = "1.0"
 )
 
 // GetConfigPath returns the full path to the config file
@@ -32,7 +33,7 @@ func GetConfigPath() (string, error) {
 // getConfigPathWithBase allows overriding the base directory for testing
 func getConfigPathWithBase(baseDir string) (string, error) {
 	var appConfigDir string
-	
+
 	if baseDir != "" {
 		// Use provided base directory (for testing)
 		appConfigDir = filepath.Join(baseDir, appName)
@@ -44,7 +45,7 @@ func getConfigPathWithBase(baseDir string) (string, error) {
 		}
 		appConfigDir = filepath.Join(userConfigDir, appName)
 	}
-	
+
 	configPath := filepath.Join(appConfigDir, configFileName)
 	// log.Printf("Config file path: %s", configPath)
 	return configPath, nil
@@ -58,7 +59,7 @@ func EnsureConfigDir() error {
 // ensureConfigDirWithBase allows overriding the base directory for testing
 func ensureConfigDirWithBase(baseDir string) error {
 	var appConfigDir string
-	
+
 	if baseDir != "" {
 		// Use provided base directory (for testing)
 		appConfigDir = filepath.Join(baseDir, appName)
@@ -70,13 +71,13 @@ func ensureConfigDirWithBase(baseDir string) error {
 		}
 		appConfigDir = filepath.Join(userConfigDir, appName)
 	}
-	
+
 	// Create directory with user read/write/execute permissions only
 	err := os.MkdirAll(appConfigDir, 0700)
 	if err != nil {
 		return fmt.Errorf("failed to create config directory %s: %w", appConfigDir, err)
 	}
-	
+
 	// log.Printf("Config directory ensured: %s", appConfigDir)
 	return nil
 }
@@ -92,32 +93,32 @@ func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get config path: %w", err)
 	}
-	
+
 	// Ensure config directory exists
 	if err := ensureConfigDirWithBase(baseDir); err != nil {
 		return fmt.Errorf("failed to ensure config directory: %w", err)
 	}
-	
+
 	// Create inventory data with metadata
 	inventoryData := InventoryData{
 		Version:   configVersion,
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 		Inventory: mcpItems,
 	}
-	
+
 	// Marshal to JSON with indentation for readability
 	jsonData, err := json.MarshalIndent(inventoryData, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal inventory data: %w", err)
 	}
-	
+
 	// Write to temporary file first for atomic operation
 	tempPath := configPath + ".tmp"
 	err = os.WriteFile(tempPath, jsonData, 0600) // User read/write only
 	if err != nil {
 		return fmt.Errorf("failed to write temporary config file %s: %w", tempPath, err)
 	}
-	
+
 	// Atomic rename
 	err = os.Rename(tempPath, configPath)
 	if err != nil {
@@ -125,7 +126,7 @@ func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
 		os.Remove(tempPath)
 		return fmt.Errorf("failed to rename temporary config file: %w", err)
 	}
-	
+
 	// log.Printf("Inventory saved successfully to: %s", configPath)
 	return nil
 }
@@ -141,20 +142,20 @@ func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config path: %w", err)
 	}
-	
+
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// log.Printf("Config file does not exist: %s, will start with empty inventory", configPath)
 		return []types.MCPItem{}, nil
 	}
-	
+
 	// Read config file
 	jsonData, err := os.ReadFile(configPath)
 	if err != nil {
 		// log.Printf("Failed to read config file %s: %v, falling back to empty inventory", configPath, err)
 		return []types.MCPItem{}, nil
 	}
-	
+
 	// Try to unmarshal inventory data
 	var inventoryData InventoryData
 	err = json.Unmarshal(jsonData, &inventoryData)
@@ -166,14 +167,14 @@ func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
 		} else {
 			// log.Printf("Corrupted config file backed up to: %s", backupPath)
 		}
-		
+
 		// log.Printf("Failed to parse config file %s: %v, falling back to empty inventory", configPath, err)
 		return []types.MCPItem{}, nil
 	}
-	
-	// log.Printf("Inventory loaded successfully from: %s (version: %s, %d items)", 
+
+	// log.Printf("Inventory loaded successfully from: %s (version: %s, %d items)",
 	//	configPath, inventoryData.Version, len(inventoryData.Inventory))
-	
+
 	return inventoryData.Inventory, nil
 }
 

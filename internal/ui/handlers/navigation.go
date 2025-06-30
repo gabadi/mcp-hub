@@ -3,6 +3,7 @@ package handlers
 import (
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -113,7 +114,7 @@ func NavigateUp(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move up one row (subtract 4 from index)
 		filteredMCPs := services.GetFilteredMCPs(model)
-		
+
 		// Use appropriate index based on search state
 		if model.SearchQuery != "" {
 			if model.FilteredSelectedIndex >= 4 {
@@ -153,7 +154,7 @@ func NavigateDown(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move down one row (add 4 to index)
 		filteredMCPs := services.GetFilteredMCPs(model)
-		
+
 		// Use appropriate index based on search state
 		if model.SearchQuery != "" {
 			newIndex := model.FilteredSelectedIndex + 4
@@ -212,7 +213,7 @@ func NavigateRight(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move right within current row
 		filteredMCPs := services.GetFilteredMCPs(model)
-		
+
 		if model.SearchQuery != "" {
 			if model.FilteredSelectedIndex%4 < 3 && model.FilteredSelectedIndex+1 < len(filteredMCPs) {
 				model.FilteredSelectedIndex++

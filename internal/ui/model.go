@@ -4,6 +4,7 @@ import (
 	"cc-mcp-manager/internal/ui/handlers"
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -22,7 +23,7 @@ func NewModel() Model {
 			Model: types.NewModel(),
 		}
 	}
-	
+
 	// If no items loaded (empty inventory), start with defaults for first-time users
 	if len(mcpItems) == 0 {
 		// First-time setup: save defaults to storage
@@ -35,7 +36,7 @@ func NewModel() Model {
 			Model: defaultModel,
 		}
 	}
-	
+
 	// Use loaded inventory
 	return Model{
 		Model: types.NewModelWithMCPs(mcpItems),

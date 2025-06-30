@@ -6,6 +6,7 @@ import (
 
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -109,7 +110,7 @@ func RenderMCPList(model types.Model) string {
 	if len(model.MCPItems) == 0 {
 		return fmt.Sprintf("No MCPs loaded from inventory (total: %d)", len(model.MCPItems))
 	}
-	
+
 	if len(filteredMCPs) == 0 {
 		return fmt.Sprintf("No MCPs matching filter (total: %d, filtered: %d)", len(model.MCPItems), len(filteredMCPs))
 	}

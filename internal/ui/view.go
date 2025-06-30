@@ -6,6 +6,7 @@ import (
 
 	"cc-mcp-manager/internal/ui/components"
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -22,7 +23,7 @@ func (m Model) View() string {
 
 	// Join components vertically without extra container
 	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
-	
+
 	// If a modal is active, render it on top
 	if m.Model.State == types.ModalActive {
 		// Convert types.ModalType to components.ModalType
@@ -35,12 +36,12 @@ func (m Model) View() string {
 		case types.DeleteModal:
 			modalType = components.DeleteModal
 		}
-		
+
 		// Render the modal overlay on top of the main content
 		modalOverlay := components.OverlayModal(m.Model, modalType, m.Model.Width, m.Model.Height, content)
 		return modalOverlay
 	}
-	
+
 	return content
 }
 
@@ -115,7 +116,7 @@ func (m Model) renderSingleColumn() string {
 	}
 
 	content := components.RenderMCPList(m.Model)
-	
+
 	// Debug: Add MCP count and search query
 	debugInfo := fmt.Sprintf("Debug: MCPs: %d, Search: '%s'\n%s", len(m.Model.MCPItems), m.Model.SearchQuery, content)
 

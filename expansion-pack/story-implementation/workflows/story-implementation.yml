@@ -1,0 +1,406 @@
+workflow:
+  id: story-implementation
+  name: Story Implementation - Epic to PR Ready
+  description: >-
+    Complete story implementation workflow from epic context to PR delivery with learning extraction and MANDATORY epic retrospectives.
+    Phase 1: Story Preparation (Epic + Story Number → Story Ready for Development)
+    Phase 2: Implementation (Story Development with Validation)
+    Phase 3: Quality Review (Consolidated feedback to actionable items)
+    Phase 4: Learning Extraction (Actionable technical debt only)
+    Phase 5: Commit and PR Preparation (Simple PR creation)
+    Phase 6: Cleanup and Delivery (Remove temp files, deliver PR)
+    Phase 7: Epic Retrospective (MANDATORY when epic reaches 100% completion)
+  type: story-implementation
+
+  temp_folder_configuration:
+    working_directory: ".story-implementation/"
+    cleanup_before_pr: true
+    final_story_pattern: "epic{epic_number}.story{story_number}.story.md"
+
+  documentation_limits:
+    max_lines_per_temp_file: 50
+    actionable_items_only: true
+    no_process_documentation: true
+
+  variables:
+    temp_folder: ".story-implementation/"
+    issues_file: "{temp_folder}issues-found.md"
+    decisions_file: "{temp_folder}decisions-needed.md"
+    implementation_file: "{temp_folder}implementation-summary.md"
+    learning_items_file: "{temp_folder}learning-items.md"
+    learning_final_file: "{temp_folder}learning-final.md"
+    fixes_summary_file: "{temp_folder}fixes-summary.md"
+    validation_results_file: "{temp_folder}validation-results.md"
+    approval_notes_file: "{temp_folder}approval-notes.md"
+
+  inputs:
+    epic_number:
+      type: string
+      description: The epic number (e.g., "1", "2", "3")
+      required: true
+    story_number:
+      type: string
+      description: The story number within the epic (e.g., "1", "2", "3")
+      required: true
+
+  outputs:
+    story_file:
+      type: string
+      description: Path to the created and approved story file
+      format: "docs/stories/epic{epic_number}.story{story_number}.story.md"
+    story_status:
+      type: string
+      description: Final story status
+      expected: "Done"
+    implementation_status:
+      type: string
+      description: Implementation completion status
+      expected: "Complete"
+
+  steps:
+    - step: validate_epic
+      agent: po
+      action: execute-checklist
+      inputs:
+        - epic_number
+      outputs:
+        - epic_validation_status
+      checklist: po-master-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Validate epic business readiness and dependencies before story creation"
+
+    - step: create_story
+      agent: sm
+      action: create-next-story
+      requires: validate_epic
+      inputs:
+        - epic_number
+        - story_number
+      outputs:
+        - story_file
+      notes: "REQUIRED: Use Task tool for execution - Create comprehensive story from epic context using existing bmad-core task"
+      story_status_update: "Draft"
+
+    - step: validate_story_draft
+      agent: sm
+      action: execute-checklist
+      requires: create_story
+      inputs:
+        - story_file
+      outputs:
+        - draft_validation_status
+      checklist: story-draft-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Validate story draft quality and completeness using bmad-core checklist"
+
+    - step: po_approval
+      agent: po
+      action: approve-story-for-development
+      requires: validate_story_draft
+      inputs:
+        - story_file
+        - epic_number
+        - approval_threshold: 90
+      outputs:
+        - approval_status
+        - approval_notes (if needed)
+      success_criteria: "CRITICAL: Story must achieve minimum 90% approval threshold (4.5/5 validation criteria) to proceed to development"
+      notes: "REQUIRED: Use Task tool for execution - Product Owner validates business value and approves for development with 90% threshold requirement"
+      story_status_update: "Approved"
+
+    - step: environment_setup
+      agent: infra-devops-platform
+      action: setup-development-environment
+      requires: po_approval
+      inputs:
+        - story_file
+      outputs:
+        - environment_status
+      notes: "REQUIRED: Use Task tool for execution - Ensure development environment ready for story implementation"
+
+    - step: setup_temp_workspace
+      action: internal
+      requires: environment_setup
+      create_directory: "{temp_folder}"
+      notes: "Create temporary workspace for workflow coordination before reviews"
+
+    - step: implement_story
+      agent: dev
+      action: implement-story-development
+      requires: setup_temp_workspace
+      inputs:
+        - story_file
+        - epic_number
+        - story_number
+      outputs:
+        - implementation_summary
+        - implementation_status
+        - quality_gates_status
+      notes: "REQUIRED: Use Task tool for execution - Complete story implementation with validation (includes project quality gates)"
+      story_status_update: "In Progress"
+
+    - step: pre_review_validation
+      agent: dev
+      action: execute-checklist
+      requires: implement_story
+      inputs:
+        - story_file
+        - quality_gates_status
+      outputs:
+        - pre_review_status
+      checklist: story-dod-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Final validation before reviews - ensures project quality gates pass"
+      story_status_update: "Review"
+
+    - step: round1_architecture_review
+      agent: architect
+      action: execute-checklist
+      requires: pre_review_validation
+      inputs:
+        - story_file
+        - implementation_summary
+      outputs:
+        - arch_review_results
+      checklist: architect-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Round 1 - Architect validates technical design and architecture"
+
+    - step: round1_business_review
+      agent: po
+      action: execute-checklist
+      requires: pre_review_validation
+      inputs:
+        - story_file
+      outputs:
+        - biz_review_results
+      checklist: po-master-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Round 1 - Product Owner validates business alignment and value"
+
+    - step: round1_process_review
+      agent: sm
+      action: execute-checklist
+      requires: pre_review_validation
+      inputs:
+        - story_file
+      outputs:
+        - proc_review_results
+      checklist: story-dod-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Round 1 - Scrum Master validates process compliance and DoD"
+
+    - step: round1_qa_review
+      agent: qa
+      action: review-story
+      requires: pre_review_validation
+      inputs:
+        - story_file
+        - implementation_summary
+      outputs:
+        - qa_review_results
+      notes: "REQUIRED: Use Task tool for execution - Round 1 - Senior developer code review with refactoring capability"
+
+    - step: round1_ux_review
+      agent: ux-expert
+      action: execute-checklist
+      requires: pre_review_validation
+      inputs:
+        - story_file
+      outputs:
+        - ux_review_results
+      checklist: ux-checklist.md
+      notes: "REQUIRED: Use Task tool for execution - Round 1 - UX expert validates user experience and accessibility"
+
+    - step: consolidate_feedback
+      agent: sm
+      action: consolidate-review-feedback
+      requires: [round1_architecture_review, round1_business_review, round1_process_review, round1_qa_review, round1_ux_review]
+      inputs:
+        - story_file
+        - arch_review_results
+        - biz_review_results
+        - proc_review_results
+        - qa_review_results
+        - ux_review_results
+      outputs:
+        - blocking_issues
+        - technical_decisions
+        - constraints_discovered
+      file_outputs:
+        - file: "{issues_file}"
+          content: "blocking_issues"
+        - file: "{decisions_file}"
+          content: "technical_decisions"
+      notes: "REQUIRED: Use Task tool for execution - Extract actionable items from review feedback. Workflow handles file creation."
+
+    - step: implement_fixes
+      agent: dev
+      action: implement-consolidated-fixes
+      requires: consolidate_feedback
+      inputs:
+        - story_file
+        - blocking_issues
+        - technical_decisions
+      outputs:
+        - fixes_implementation_summary
+        - fixes_status
+        - updated_quality_gates_status
+      file_outputs:
+        - file: "{fixes_summary_file}"
+          content: "fixes_implementation_summary"
+      notes: "REQUIRED: Use Task tool for execution - Implement fixes and decisions from consolidation. Workflow handles file creation."
+
+    - step: validate_fixes
+      agent: sm
+      action: validate-consolidated-fixes
+      requires: implement_fixes
+      inputs:
+        - story_file
+        - blocking_issues
+        - fixes_implementation_summary
+        - updated_quality_gates_status
+      outputs:
+        - validation_status
+        - remaining_issues (if any)
+      file_outputs:
+        - file: "{validation_results_file}"
+          content: "remaining_issues"
+          condition: "validation_status == NEEDS_FIXES"
+      notes: "REQUIRED: Use Task tool for execution - Validate that fixes address consolidated feedback priorities"
+
+    - step: learning_triage
+      agent: architect
+      action: capture-learning-triage
+      requires: validate_fixes
+      inputs:
+        - story_file
+        - fixes_implementation_summary
+        - updated_quality_gates_status
+      outputs:
+        - technical_debt
+        - architecture_improvements
+        - future_work
+      file_outputs:
+        - file: "{learning_items_file}"
+          content: "technical_debt, architecture_improvements, future_work"
+      notes: "REQUIRED: Use Task tool for execution - Extract actionable technical debt and improvement items"
+
+    - step: party_mode_review
+      agent: architect
+      action: party-mode-learning-review
+      requires: learning_triage
+      inputs:
+        - technical_debt
+        - architecture_improvements
+        - future_work
+      outputs:
+        - final_learning_items
+      file_outputs:
+        - file: "{learning_final_file}"
+          content: "final_learning_items"
+      notes: "REQUIRED: Use Task tool for execution - Validate and prioritize learning items with ownership"
+      story_status_update: "Learning Reviewed"
+
+    - step: commit_and_prepare_pr
+      agent: dev
+      action: commit-and-prepare-pr
+      requires: party_mode_review
+      inputs:
+        - story_file
+        - fixes_implementation_summary
+        - final_learning_items
+      outputs:
+        - commit_status
+        - story_technical_decisions
+      notes: "REQUIRED: Use Task tool for execution - Commit implementation and extract technical decisions for story file"
+      story_status_update: "Changes Committed"
+
+    - step: create_comprehensive_pr
+      agent: po
+      action: create-comprehensive-pr
+      requires: commit_and_prepare_pr
+      inputs:
+        - story_file
+        - fixes_implementation_summary
+        - final_learning_items
+      outputs:
+        - pr_title
+        - pr_description
+        - story_update
+      file_outputs:
+        - action: update_story_file
+          file: "docs/stories/epic{epic_number}.story{story_number}.story.md"
+          content: "story_update"
+        - action: create_github_pr
+          title: "pr_title"
+          description: "pr_description"
+      notes: "REQUIRED: Use Task tool for execution - Create simple PR with essential context. Workflow handles PR creation and story updates."
+      story_status_update: "Done - Delivered"
+
+    - step: cleanup_temp_workspace
+      action: internal
+      requires: create_comprehensive_pr
+      remove_directory: "{temp_folder}"
+      notes: "Clean up temporary workspace after PR creation"
+
+    - step: epic_retrospective
+      agent: sm
+      action: epic-party-mode-retrospective
+      requires: cleanup_temp_workspace
+      inputs:
+        - epic_number
+        - story_file
+        - final_learning_items
+      outputs:
+        - epic_retrospective_summary
+      condition: "epic_completion_auto_calculated == 100%"
+      collaborators: [architect, po, dev, ux-expert]
+      notes: "REQUIRED: Use Task tool for execution - MANDATORY: Epic retrospective triggered automatically when epic reaches 100% completion"
+      story_status_update: "Done - Delivered (Epic Complete - Retrospective Done if epic 100%)"
+
+  success_criteria:
+    - Epic readiness validated and approved for story creation
+    - Story created and validated following template standards
+    - Business value validated and approved by Product Owner
+    - Technical environment ready for development
+    - Story implementation completed with all validations passing
+    - Pre-review validation confirms project quality gates pass
+    - Round 1 comprehensive reviews completed with structured data outputs
+    - Review feedback consolidated into actionable items only
+    - Consolidated fixes implemented and validated
+    - Learning extraction completed with structured triage and prioritization
+    - Implementation committed with technical decisions documented
+    - Simple PR created with essential context only
+    - Temporary workspace cleaned up automatically
+    - MANDATORY: Epic retrospective executed when epic reaches 100% completion
+    - Story status updated to "Done - Delivered"
+
+  failure_handling:
+    - halt_on_failure: true
+    - Each step must complete successfully before proceeding
+    - Failed steps should be retried after addressing issues
+
+  complexity_validation:
+    story_implementation_indicators:
+      - "New features WITH business logic or data processing"
+      - "Database schema changes OR new API endpoints"
+      - "Complex state management OR new data flows"
+      - "Cross-system integration WITH new functionality"
+      - "Authentication/authorization changes"
+      - "Performance optimization requiring architecture changes"
+      - "Multi-service or backend-frontend integration"
+      - "New business workflows or processes"
+      - "External system integration WITH new APIs"
+      - "Security feature implementation"
+
+    story_simple_indicators:
+      - "UI/UX improvements (styling, layout, visual optimization)"
+      - "CSS-based performance optimizations"
+      - "Cross-component styling changes WITHOUT new business logic"
+      - "Content updates without functional changes"
+      - "Simple configuration changes (environment, build settings)"
+      - "Bug fixes without architectural impact"
+      - "Responsive design adjustments"
+      - "Visual/accessibility improvements"
+      - "Multi-file CSS changes"
+      - "Component consolidation (UI refactoring)"
+
+    validation_warning: |
+      ⚠️ WARNING: Story complexity may not match selected workflow.
+      Complex workflow selected but story may be simpler than expected.
+      Consider using story-simple workflow for better efficiency.
