@@ -3,7 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	// "log"
 	"os"
 	"path/filepath"
 	"time"
@@ -46,7 +46,7 @@ func getConfigPathWithBase(baseDir string) (string, error) {
 	}
 	
 	configPath := filepath.Join(appConfigDir, configFileName)
-	log.Printf("Config file path: %s", configPath)
+	// log.Printf("Config file path: %s", configPath)
 	return configPath, nil
 }
 
@@ -77,7 +77,7 @@ func ensureConfigDirWithBase(baseDir string) error {
 		return fmt.Errorf("failed to create config directory %s: %w", appConfigDir, err)
 	}
 	
-	log.Printf("Config directory ensured: %s", appConfigDir)
+	// log.Printf("Config directory ensured: %s", appConfigDir)
 	return nil
 }
 
@@ -126,7 +126,7 @@ func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
 		return fmt.Errorf("failed to rename temporary config file: %w", err)
 	}
 	
-	log.Printf("Inventory saved successfully to: %s", configPath)
+	// log.Printf("Inventory saved successfully to: %s", configPath)
 	return nil
 }
 
@@ -144,14 +144,14 @@ func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
 	
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Printf("Config file does not exist: %s, will start with empty inventory", configPath)
+		// log.Printf("Config file does not exist: %s, will start with empty inventory", configPath)
 		return []types.MCPItem{}, nil
 	}
 	
 	// Read config file
 	jsonData, err := os.ReadFile(configPath)
 	if err != nil {
-		log.Printf("Failed to read config file %s: %v, falling back to empty inventory", configPath, err)
+		// log.Printf("Failed to read config file %s: %v, falling back to empty inventory", configPath, err)
 		return []types.MCPItem{}, nil
 	}
 	
@@ -162,17 +162,17 @@ func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
 		// Handle corrupted file - backup and start fresh
 		backupPath := configPath + ".corrupted." + time.Now().Format("20060102-150405")
 		if backupErr := os.Rename(configPath, backupPath); backupErr != nil {
-			log.Printf("Failed to backup corrupted config file: %v", backupErr)
+			// log.Printf("Failed to backup corrupted config file: %v", backupErr)
 		} else {
-			log.Printf("Corrupted config file backed up to: %s", backupPath)
+			// log.Printf("Corrupted config file backed up to: %s", backupPath)
 		}
 		
-		log.Printf("Failed to parse config file %s: %v, falling back to empty inventory", configPath, err)
+		// log.Printf("Failed to parse config file %s: %v, falling back to empty inventory", configPath, err)
 		return []types.MCPItem{}, nil
 	}
 	
-	log.Printf("Inventory loaded successfully from: %s (version: %s, %d items)", 
-		configPath, inventoryData.Version, len(inventoryData.Inventory))
+	// log.Printf("Inventory loaded successfully from: %s (version: %s, %d items)", 
+	//	configPath, inventoryData.Version, len(inventoryData.Inventory))
 	
 	return inventoryData.Inventory, nil
 }

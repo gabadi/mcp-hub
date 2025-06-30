@@ -23,22 +23,27 @@ func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.C
 		model.SearchActive = true
 		model.SearchInputActive = true
 		model.SelectedItem = 0 // Reset selection to first item
+		model.FilteredSelectedIndex = 0
 	case "/":
 		// Activate search mode with navigation enabled
 		model.State = types.SearchActiveNavigation
 		model.SearchActive = true
 		model.SearchInputActive = true
 		model.SelectedItem = 0 // Reset selection to first item
+		model.FilteredSelectedIndex = 0
 		// Don't add the "/" character to the search query
 	case "a":
 		// Add MCP (future functionality)
 		model.State = types.ModalActive
+		model.ActiveModal = types.AddModal
 	case "e":
 		// Edit MCP (future functionality)
 		model.State = types.ModalActive
+		model.ActiveModal = types.EditModal
 	case "d":
 		// Delete MCP (future functionality)
 		model.State = types.ModalActive
+		model.ActiveModal = types.DeleteModal
 	case " ", "space":
 		// Toggle MCP active status
 		model = services.ToggleMCPStatus(model)
@@ -108,15 +113,30 @@ func NavigateUp(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move up one row (subtract 4 from index)
 		filteredMCPs := services.GetFilteredMCPs(model)
-		if model.SelectedItem >= 4 {
-			model.SelectedItem -= 4
-		}
-		// Ensure we don't go below 0 and stay within filtered results
-		if model.SelectedItem < 0 {
-			model.SelectedItem = 0
-		}
-		if model.SelectedItem >= len(filteredMCPs) && len(filteredMCPs) > 0 {
-			model.SelectedItem = len(filteredMCPs) - 1
+		
+		// Use appropriate index based on search state
+		if model.SearchQuery != "" {
+			if model.FilteredSelectedIndex >= 4 {
+				model.FilteredSelectedIndex -= 4
+			}
+			// Ensure we don't go below 0 and stay within filtered results
+			if model.FilteredSelectedIndex < 0 {
+				model.FilteredSelectedIndex = 0
+			}
+			if model.FilteredSelectedIndex >= len(filteredMCPs) && len(filteredMCPs) > 0 {
+				model.FilteredSelectedIndex = len(filteredMCPs) - 1
+			}
+		} else {
+			if model.SelectedItem >= 4 {
+				model.SelectedItem -= 4
+			}
+			// Ensure we don't go below 0
+			if model.SelectedItem < 0 {
+				model.SelectedItem = 0
+			}
+			if model.SelectedItem >= len(filteredMCPs) && len(filteredMCPs) > 0 {
+				model.SelectedItem = len(filteredMCPs) - 1
+			}
 		}
 	} else if model.ActiveColumn == 0 {
 		// In MCP list column for other layouts
@@ -133,13 +153,26 @@ func NavigateDown(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move down one row (add 4 to index)
 		filteredMCPs := services.GetFilteredMCPs(model)
-		newIndex := model.SelectedItem + 4
-		if newIndex < len(filteredMCPs) {
-			model.SelectedItem = newIndex
-		}
-		// Stay within filtered results bounds
-		if model.SelectedItem >= len(filteredMCPs) && len(filteredMCPs) > 0 {
-			model.SelectedItem = len(filteredMCPs) - 1
+		
+		// Use appropriate index based on search state
+		if model.SearchQuery != "" {
+			newIndex := model.FilteredSelectedIndex + 4
+			if newIndex < len(filteredMCPs) {
+				model.FilteredSelectedIndex = newIndex
+			}
+			// Stay within filtered results bounds
+			if model.FilteredSelectedIndex >= len(filteredMCPs) && len(filteredMCPs) > 0 {
+				model.FilteredSelectedIndex = len(filteredMCPs) - 1
+			}
+		} else {
+			newIndex := model.SelectedItem + 4
+			if newIndex < len(filteredMCPs) {
+				model.SelectedItem = newIndex
+			}
+			// Stay within filtered results bounds
+			if model.SelectedItem >= len(filteredMCPs) && len(filteredMCPs) > 0 {
+				model.SelectedItem = len(filteredMCPs) - 1
+			}
 		}
 	} else if model.ActiveColumn == 0 {
 		// In MCP list column for other layouts
@@ -156,8 +189,14 @@ func NavigateDown(model types.Model) types.Model {
 func NavigateLeft(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move left within current row
-		if model.SelectedItem%4 > 0 {
-			model.SelectedItem--
+		if model.SearchQuery != "" {
+			if model.FilteredSelectedIndex%4 > 0 {
+				model.FilteredSelectedIndex--
+			}
+		} else {
+			if model.SelectedItem%4 > 0 {
+				model.SelectedItem--
+			}
 		}
 	} else {
 		// For other layouts, move between columns
@@ -173,8 +212,15 @@ func NavigateRight(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move right within current row
 		filteredMCPs := services.GetFilteredMCPs(model)
-		if model.SelectedItem%4 < 3 && model.SelectedItem+1 < len(filteredMCPs) {
-			model.SelectedItem++
+		
+		if model.SearchQuery != "" {
+			if model.FilteredSelectedIndex%4 < 3 && model.FilteredSelectedIndex+1 < len(filteredMCPs) {
+				model.FilteredSelectedIndex++
+			}
+		} else {
+			if model.SelectedItem%4 < 3 && model.SelectedItem+1 < len(filteredMCPs) {
+				model.SelectedItem++
+			}
 		}
 	} else {
 		// For other layouts, move between columns

@@ -20,7 +20,28 @@ func (m Model) View() string {
 	body := m.renderBody()
 	footer := components.RenderFooter(m.Model)
 
-	return lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
+	// Join components vertically without extra container
+	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
+	
+	// If a modal is active, render it on top
+	if m.State == types.ModalActive {
+		// Convert types.ModalType to components.ModalType
+		var modalType components.ModalType
+		switch m.ActiveModal {
+		case types.AddModal:
+			modalType = components.AddModal
+		case types.EditModal:
+			modalType = components.EditModal
+		case types.DeleteModal:
+			modalType = components.DeleteModal
+		}
+		
+		// Render the modal overlay on top of the main content
+		modalOverlay := components.OverlayModal(m.Model, modalType, m.Width, m.Height, content)
+		return modalOverlay
+	}
+	
+	return content
 }
 
 // renderHeader creates the application header with shortcuts and context
@@ -94,8 +115,11 @@ func (m Model) renderSingleColumn() string {
 	}
 
 	content := components.RenderMCPList(m.Model)
+	
+	// Debug: Add MCP count and search query
+	debugInfo := fmt.Sprintf("Debug: MCPs: %d, Search: '%s'\n%s", len(m.MCPItems), m.SearchQuery, content)
 
-	return columnStyle.Render(fmt.Sprintf("MCP Manager\n\n%s", content))
+	return columnStyle.Render(fmt.Sprintf("MCP Manager\n\n%s", debugInfo))
 }
 
 // renderTwoColumns renders the medium layout with 2 columns

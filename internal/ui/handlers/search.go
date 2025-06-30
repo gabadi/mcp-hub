@@ -12,6 +12,7 @@ func HandleEscKey(model types.Model) (types.Model, tea.Cmd) {
 		// Clear search and return to main navigation
 		model.SearchActive = false
 		model.SearchQuery = ""
+		model.FilteredSelectedIndex = 0
 		model.State = types.MainNavigation
 		return model, nil
 	case types.SearchActiveNavigation:
@@ -19,11 +20,13 @@ func HandleEscKey(model types.Model) (types.Model, tea.Cmd) {
 		model.SearchActive = false
 		model.SearchInputActive = false
 		model.SearchQuery = ""
+		model.FilteredSelectedIndex = 0
 		model.State = types.MainNavigation
 		return model, nil
 	case types.ModalActive:
 		// Close modal and return to main navigation
 		model.State = types.MainNavigation
+		model.ActiveModal = types.NoModal
 		return model, nil
 	case types.MainNavigation:
 		// Clear search if active, otherwise exit application
@@ -31,6 +34,7 @@ func HandleEscKey(model types.Model) (types.Model, tea.Cmd) {
 			model.SearchQuery = ""
 			model.SearchResults = nil
 			model.SelectedItem = 0 // Reset selection
+			model.FilteredSelectedIndex = 0
 			return model, nil
 		}
 		// Exit application

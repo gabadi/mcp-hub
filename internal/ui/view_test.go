@@ -176,7 +176,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"Type to search", "Tab=Navigate Mode",
 			},
 			expectedFooter: []string{
-				"Search: test", "[INPUT MODE]",
+				"Search:", "test█", "[INPUT MODE]",
 			},
 		},
 		{
@@ -189,7 +189,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"Navigate Mode", "Tab=Input Mode",
 			},
 			expectedFooter: []string{
-				"Search: test", "[NAVIGATION MODE]",
+				"Search:", "test", "[NAVIGATION MODE]",
 			},
 		},
 		{

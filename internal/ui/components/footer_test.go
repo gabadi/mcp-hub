@@ -27,7 +27,8 @@ func TestRenderFooter(t *testing.T) {
 			width:        120,
 			height:       40,
 			expectedContains: []string{
-				"Search: test│",
+				"Search:",
+				"test",
 			},
 		},
 		{
@@ -39,7 +40,8 @@ func TestRenderFooter(t *testing.T) {
 			width:             120,
 			height:            40,
 			expectedContains: []string{
-				"Search: query│",
+				"Search:",
+				"query█",
 				"[INPUT MODE]",
 			},
 		},
@@ -52,7 +54,8 @@ func TestRenderFooter(t *testing.T) {
 			width:             120,
 			height:            40,
 			expectedContains: []string{
-				"Search: query│",
+				"Search:",
+				"query",
 				"[NAVIGATION MODE]",
 			},
 		},

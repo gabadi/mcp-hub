@@ -24,8 +24,9 @@ type Model struct {
 	State AppState
 
 	// Navigation
-	ActiveColumn int
-	SelectedItem int
+	ActiveColumn          int
+	SelectedItem          int
+	FilteredSelectedIndex int // Track selection position in filtered results
 
 	// Search
 	SearchQuery       string
@@ -39,7 +40,20 @@ type Model struct {
 
 	// MCP inventory (placeholder for future stories)
 	MCPItems []MCPItem
+
+	// Modal state
+	ActiveModal ModalType
 }
+
+// ModalType represents the type of modal being displayed
+type ModalType int
+
+const (
+	NoModal ModalType = iota
+	AddModal
+	EditModal
+	DeleteModal
+)
 
 // MCPItem represents an MCP in the inventory
 type MCPItem struct {
@@ -106,8 +120,8 @@ func NewModel() Model {
 		SearchQuery:       "",
 		SearchActive:      false,
 		SearchInputActive: false,
-		Columns:           make([]Column, 4),
-		ColumnCount:       4,
+		Columns:           make([]Column, 1),
+		ColumnCount:       1,
 		MCPItems:          getDefaultMCPs(), // This will be replaced by storage loading
 	}
 }

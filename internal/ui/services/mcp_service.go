@@ -27,9 +27,16 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 // ToggleMCPStatus toggles the active status of the currently selected MCP and saves to storage
 func ToggleMCPStatus(model types.Model) types.Model {
 	filteredMCPs := GetFilteredMCPs(model)
-	if model.SelectedItem < len(filteredMCPs) {
+	
+	// Use appropriate index based on search state
+	selectedIndex := model.SelectedItem
+	if model.SearchQuery != "" {
+		selectedIndex = model.FilteredSelectedIndex
+	}
+	
+	if selectedIndex < len(filteredMCPs) {
 		// Find the original item and toggle it
-		selectedItem := filteredMCPs[model.SelectedItem]
+		selectedItem := filteredMCPs[selectedIndex]
 		for i := range model.MCPItems {
 			if model.MCPItems[i].Name == selectedItem.Name {
 				model.MCPItems[i].Active = !model.MCPItems[i].Active

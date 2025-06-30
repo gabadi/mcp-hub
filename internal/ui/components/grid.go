@@ -48,7 +48,13 @@ func RenderFourColumnGrid(model types.Model) string {
 				}
 
 				// Highlight selected item by comparing index directly
-				isSelected := (mcpIndex == model.SelectedItem)
+				// Use FilteredSelectedIndex when search is active
+				isSelected := false
+				if model.SearchQuery != "" {
+					isSelected = (mcpIndex == model.FilteredSelectedIndex)
+				} else {
+					isSelected = (mcpIndex == model.SelectedItem)
+				}
 
 				// Create base item text (without styling)
 				baseText := fmt.Sprintf("%s %s", status, item.Name)
@@ -99,8 +105,13 @@ func RenderFourColumnGrid(model types.Model) string {
 func RenderMCPList(model types.Model) string {
 	filteredMCPs := services.GetFilteredMCPs(model)
 
+	// Debug: Show count of MCPs
+	if len(model.MCPItems) == 0 {
+		return fmt.Sprintf("No MCPs loaded from inventory (total: %d)", len(model.MCPItems))
+	}
+	
 	if len(filteredMCPs) == 0 {
-		return "No MCPs available"
+		return fmt.Sprintf("No MCPs matching filter (total: %d, filtered: %d)", len(model.MCPItems), len(filteredMCPs))
 	}
 
 	var items []string
