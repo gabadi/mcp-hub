@@ -65,37 +65,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // GetColumnCount returns the current number of columns
 func (m Model) GetColumnCount() int {
-	return m.ColumnCount
+	return m.Model.ColumnCount
 }
 
 // GetActiveColumn returns the currently active column index
 func (m Model) GetActiveColumn() int {
-	return m.ActiveColumn
+	return m.Model.ActiveColumn
 }
 
 // GetSelectedItem returns the currently selected item index
 func (m Model) GetSelectedItem() int {
-	return m.SelectedItem
+	return m.Model.SelectedItem
 }
 
 // GetState returns the current application state
 func (m Model) GetState() types.AppState {
-	return m.State
+	return m.Model.State
 }
 
 // GetSearchQuery returns the current search query
 func (m Model) GetSearchQuery() string {
-	return m.SearchQuery
+	return m.Model.SearchQuery
 }
 
 // GetSearchActive returns whether search is currently active
 func (m Model) GetSearchActive() bool {
-	return m.SearchActive
+	return m.Model.SearchActive
 }
 
 // GetSearchInputActive returns whether search input is currently active
 func (m Model) GetSearchInputActive() bool {
-	return m.SearchInputActive
+	return m.Model.SearchInputActive
 }
 
 // GetFilteredMCPs returns MCPs filtered by search query
