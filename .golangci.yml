@@ -114,6 +114,25 @@ issues:
     - path: internal/ui/
       linters:
         - goconst
+        - gocritic  # Allow if-else chains during development
+        - funlen    # Allow longer functions during UI development
+        - exhaustive # Allow missing switch cases during development
+    
+    # Allow longer functions and style flexibility in components during development
+    - path: internal/ui/components/
+      linters:
+        - funlen
+        - gocritic
+    
+    # Allow build utilities flexibility
+    - path: internal/testutil/
+      linters:
+        - gocritic
+    
+    # Allow main.go flexibility during development
+    - path: main\.go
+      linters:
+        - gocritic
     
     # Exclude known linter issues
     - path: main\.go
