@@ -7,8 +7,8 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  test:
-    name: Test
+  ci:
+    name: Test, Build & Lint
     runs-on: ubuntu-latest
     
     steps:
@@ -37,35 +37,14 @@ jobs:
       run: go mod verify
 
     - name: Run tests
-      run: go test -v -race ./... || echo "Tests have known failures - see GitHub issue for tracking"
+      run: go test -v -race ./... || echo "Tests have known failures - continuing..."
       continue-on-error: true
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: test
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Run linting
+      uses: golangci/golangci-lint-action@v6
       with:
-        go-version: '1.23.x'
-
-    - name: Cache Go modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-1.23.x-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-1.23.x-
-
-    - name: Download dependencies
-      run: go mod download
+        version: latest
+        args: --timeout=5m
 
     - name: Build binary
       run: |
@@ -77,45 +56,3 @@ jobs:
       with:
         name: cc-mcp-manager
         path: dist/cc-mcp-manager
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    needs: test  # Run after test completes successfully
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.23.x'
-
-    - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
-
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    needs: [test, build, lint]  # All jobs must complete successfully
-    if: always()
-    
-    steps:
-    - name: Check job results
-      run: |
-        echo "Test: ${{ needs.test.result }}"
-        echo "Build: ${{ needs.build.result }}"
-        echo "Lint: ${{ needs.lint.result }}"
-        
-        # Accept test job with continue-on-error (success or failure with continue-on-error both show as 'success')
-        # But require build and lint to succeed
-        if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.lint.result }}" != "success" ]; then
-          echo "Quality gate failed: Build or lint failed"
-          exit 1
-        fi
-        
-        echo "Quality gate passed: Build and lint succeeded (tests may have warnings)"
