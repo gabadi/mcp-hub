@@ -53,7 +53,7 @@ func GetActiveMCPCount(model types.Model) int {
 
 // GetSelectedMCP returns the currently selected MCP item, or nil if none selected
 func GetSelectedMCP(model types.Model) *types.MCPItem {
-	if model.SelectedItem >= len(model.MCPItems) {
+	if model.SelectedItem < 0 || model.SelectedItem >= len(model.MCPItems) {
 		return nil
 	}
 	return &model.MCPItems[model.SelectedItem]
