@@ -9,7 +9,7 @@ import (
 // Test helpers for MCP service tests
 func createTestModel() types.Model {
 	return types.Model{
-		SearchQuery: "",
+		SearchQuery:  "",
 		SelectedItem: 0,
 		MCPItems: []types.MCPItem{
 			{Name: "context7", Type: "SSE", Active: true, Command: "npx @context7/mcp-server"},
@@ -23,10 +23,10 @@ func createTestModel() types.Model {
 
 func TestGetFilteredMCPs(t *testing.T) {
 	tests := []struct {
-		name           string
-		searchQuery    string
-		expectedCount  int
-		expectedFirst  string
+		name          string
+		searchQuery   string
+		expectedCount int
+		expectedFirst string
 	}{
 		{
 			name:          "Empty query returns all MCPs",
@@ -70,13 +70,13 @@ func TestGetFilteredMCPs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model := createTestModel()
 			model.SearchQuery = tt.searchQuery
-			
+
 			filtered := GetFilteredMCPs(model)
-			
+
 			if len(filtered) != tt.expectedCount {
 				t.Errorf("GetFilteredMCPs() returned %d items, expected %d", len(filtered), tt.expectedCount)
 			}
-			
+
 			if tt.expectedCount > 0 && filtered[0].Name != tt.expectedFirst {
 				t.Errorf("GetFilteredMCPs() first item = %s, expected %s", filtered[0].Name, tt.expectedFirst)
 			}
@@ -127,15 +127,15 @@ func TestToggleMCPStatus(t *testing.T) {
 			model := createTestModel()
 			model.SelectedItem = tt.selectedItem
 			model.SearchQuery = tt.searchQuery
-			
+
 			// Store original state for comparison
 			originalStates := make(map[string]bool)
 			for _, item := range model.MCPItems {
 				originalStates[item.Name] = item.Active
 			}
-			
+
 			updatedModel := ToggleMCPStatus(model)
-			
+
 			// Find the expected changed item
 			var changedItem *types.MCPItem
 			for i := range updatedModel.MCPItems {
@@ -144,11 +144,11 @@ func TestToggleMCPStatus(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if changedItem == nil {
 				t.Fatalf("Could not find expected changed item: %s", tt.expectedChanged)
 			}
-			
+
 			// For out of bounds test, verify no change occurred
 			if tt.selectedItem >= len(GetFilteredMCPs(model)) {
 				if changedItem.Active != originalStates[tt.expectedChanged] {
@@ -156,7 +156,7 @@ func TestToggleMCPStatus(t *testing.T) {
 				}
 			} else {
 				if changedItem.Active != tt.expectedActive {
-					t.Errorf("ToggleMCPStatus() changed %s to %v, expected %v", 
+					t.Errorf("ToggleMCPStatus() changed %s to %v, expected %v",
 						tt.expectedChanged, changedItem.Active, tt.expectedActive)
 				}
 			}
@@ -207,7 +207,7 @@ func TestGetActiveMCPCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model := types.Model{MCPItems: tt.mcpItems}
 			count := GetActiveMCPCount(model)
-			
+
 			if count != tt.expectedCount {
 				t.Errorf("GetActiveMCPCount() = %d, expected %d", count, tt.expectedCount)
 			}
@@ -250,9 +250,9 @@ func TestGetSelectedMCP(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model := createTestModel()
 			model.SelectedItem = tt.selectedItem
-			
+
 			selected := GetSelectedMCP(model)
-			
+
 			if tt.expectNil {
 				if selected != nil {
 					t.Errorf("GetSelectedMCP() expected nil, got %v", selected)
@@ -275,34 +275,34 @@ func TestMCPServiceEdgeCases(t *testing.T) {
 			MCPItems:     []types.MCPItem{},
 			SelectedItem: 0,
 		}
-		
+
 		result := ToggleMCPStatus(model)
-		
+
 		// Should not panic and return unchanged model
 		if len(result.MCPItems) != 0 {
 			t.Errorf("ToggleMCPStatus() with empty list should return empty list")
 		}
 	})
-	
+
 	t.Run("GetFilteredMCPs with special characters in search", func(t *testing.T) {
 		model := createTestModel()
 		model.SearchQuery = "!@#$%"
-		
+
 		filtered := GetFilteredMCPs(model)
-		
+
 		if len(filtered) != 0 {
 			t.Errorf("GetFilteredMCPs() with special characters should return no results")
 		}
 	})
-	
+
 	t.Run("GetSelectedMCP with empty MCPs list", func(t *testing.T) {
 		model := types.Model{
 			MCPItems:     []types.MCPItem{},
 			SelectedItem: 0,
 		}
-		
+
 		selected := GetSelectedMCP(model)
-		
+
 		if selected != nil {
 			t.Errorf("GetSelectedMCP() with empty list should return nil")
 		}
@@ -314,21 +314,21 @@ func TestMCPServiceBoundaryConditions(t *testing.T) {
 	t.Run("ToggleMCPStatus at exact boundary", func(t *testing.T) {
 		model := createTestModel()
 		model.SelectedItem = len(model.MCPItems) - 1 // exactly at last valid index
-		
+
 		originalActive := model.MCPItems[model.SelectedItem].Active
 		result := ToggleMCPStatus(model)
-		
+
 		if result.MCPItems[model.SelectedItem].Active == originalActive {
 			t.Errorf("ToggleMCPStatus() should toggle status at boundary")
 		}
 	})
-	
+
 	t.Run("GetSelectedMCP at exact boundary", func(t *testing.T) {
 		model := createTestModel()
 		model.SelectedItem = len(model.MCPItems) - 1
-		
+
 		selected := GetSelectedMCP(model)
-		
+
 		if selected == nil {
 			t.Errorf("GetSelectedMCP() should return valid item at boundary")
 		}

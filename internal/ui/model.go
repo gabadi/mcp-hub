@@ -12,10 +12,33 @@ type Model struct {
 	types.Model
 }
 
-// NewModel creates a new application model
+// NewModel creates a new application model with inventory loaded from storage
 func NewModel() Model {
+	// Try to load inventory from storage
+	mcpItems, err := services.LoadInventory()
+	if err != nil {
+		// Fall back to default model if loading fails
+		return Model{
+			Model: types.NewModel(),
+		}
+	}
+	
+	// If no items loaded (empty inventory), start with defaults for first-time users
+	if len(mcpItems) == 0 {
+		// First-time setup: save defaults to storage
+		defaultModel := types.NewModel()
+		if saveErr := services.SaveInventory(defaultModel.MCPItems); saveErr != nil {
+			// Log error but continue - the app should still work
+			// Error is already logged in SaveInventory
+		}
+		return Model{
+			Model: defaultModel,
+		}
+	}
+	
+	// Use loaded inventory
 	return Model{
-		Model: types.NewModel(),
+		Model: types.NewModelWithMCPs(mcpItems),
 	}
 }
 

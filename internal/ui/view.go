@@ -172,7 +172,7 @@ func (m Model) renderThreeColumns() string {
 func (m Model) renderFourColumns() string {
 	// Get filtered MCPs for search functionality
 	filteredMCPs := m.GetFilteredMCPs()
-	
+
 	if len(filteredMCPs) == 0 {
 		// Show "No results" message when search returns no results
 		noResultsStyle := lipgloss.NewStyle().
@@ -191,38 +191,38 @@ func (m Model) renderFourColumns() string {
 
 	// Build the grid as a simple string without column separators
 	var gridLines []string
-	
+
 	for row := 0; row < gridRows; row++ {
 		var line []string
-		
+
 		for col := 0; col < 4; col++ {
 			mcpIndex := row*4 + col
-			
+
 			if mcpIndex < len(filteredMCPs) {
 				item := filteredMCPs[mcpIndex]
-				
+
 				// Status indicator
 				status := "○"
 				if item.Active {
 					status = "●"
 				}
-				
+
 				// Highlight selected item by comparing index directly
 				isSelected := (mcpIndex == m.SelectedItem)
-				
+
 				// Create base item text (without styling)
 				baseText := fmt.Sprintf("%s %s", status, item.Name)
-				
+
 				// Calculate padding needed BEFORE styling
 				currentWidth := lipgloss.Width(baseText)
 				paddingNeeded := types.COLUMN_WIDTH - currentWidth
 				if paddingNeeded < 0 {
 					paddingNeeded = 0
 				}
-				
+
 				// Apply padding first
 				paddedText := baseText + strings.Repeat(" ", paddingNeeded)
-				
+
 				// Then apply styling to padded text
 				if isSelected {
 					itemStyle := lipgloss.NewStyle().
@@ -231,27 +231,27 @@ func (m Model) renderFourColumns() string {
 						Foreground(lipgloss.Color("#FFFFFF"))
 					paddedText = itemStyle.Render(paddedText)
 				}
-				
+
 				line = append(line, paddedText)
 			} else {
 				// Empty cell with proper spacing
 				line = append(line, strings.Repeat(" ", types.COLUMN_WIDTH))
 			}
 		}
-		
+
 		// Join columns without separators, just spaces
 		gridLines = append(gridLines, strings.Join(line, ""))
 	}
-	
+
 	// Join all rows with newlines
 	gridContent := strings.Join(gridLines, "\n")
-	
+
 	// Apply overall styling to the grid
 	gridStyle := lipgloss.NewStyle().
 		Padding(2).
 		Width(m.Width).
 		Height(m.Height - 8)
-	
+
 	return gridStyle.Render(gridContent)
 }
 
@@ -394,7 +394,7 @@ func (m Model) renderFooter() string {
 
 		cursor := "_"
 		modeIndicator := ""
-		
+
 		// Show dual-mode indicator for SearchActiveNavigation
 		if m.State == types.SearchActiveNavigation {
 			if m.SearchInputActive {
@@ -403,7 +403,7 @@ func (m Model) renderFooter() string {
 				modeIndicator = " [NAVIGATION MODE]"
 			}
 		}
-		
+
 		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(m.SearchQuery+cursor), modeIndicator)
 	} else if m.SearchQuery != "" {
 		// Show search results info when not actively searching but have a query

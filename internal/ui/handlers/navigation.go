@@ -22,13 +22,13 @@ func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.C
 		model.State = types.SearchActiveNavigation
 		model.SearchActive = true
 		model.SearchInputActive = true
-		model.SelectedItem = 0  // Reset selection to first item
+		model.SelectedItem = 0 // Reset selection to first item
 	case "/":
 		// Activate search mode with navigation enabled
 		model.State = types.SearchActiveNavigation
 		model.SearchActive = true
 		model.SearchInputActive = true
-		model.SelectedItem = 0  // Reset selection to first item
+		model.SelectedItem = 0 // Reset selection to first item
 		// Don't add the "/" character to the search query
 	case "a":
 		// Add MCP (future functionality)
@@ -156,7 +156,7 @@ func NavigateDown(model types.Model) types.Model {
 func NavigateLeft(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move left within current row
-		if model.SelectedItem % 4 > 0 {
+		if model.SelectedItem%4 > 0 {
 			model.SelectedItem--
 		}
 	} else {
@@ -173,7 +173,7 @@ func NavigateRight(model types.Model) types.Model {
 	if model.ColumnCount == 4 {
 		// In 4-column grid - move right within current row
 		filteredMCPs := services.GetFilteredMCPs(model)
-		if model.SelectedItem % 4 < 3 && model.SelectedItem + 1 < len(filteredMCPs) {
+		if model.SelectedItem%4 < 3 && model.SelectedItem+1 < len(filteredMCPs) {
 			model.SelectedItem++
 		}
 	} else {

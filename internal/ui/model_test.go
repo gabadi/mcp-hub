@@ -182,10 +182,10 @@ func TestModel_GetterMethods(t *testing.T) {
 
 func TestModel_GetFilteredMCPs(t *testing.T) {
 	tests := []struct {
-		name        string
-		mcpItems    []types.MCPItem
-		searchQuery string
-		expected    int
+		name          string
+		mcpItems      []types.MCPItem
+		searchQuery   string
+		expected      int
 		expectedNames []string
 	}{
 		{
@@ -298,7 +298,7 @@ func TestModel_NewModel(t *testing.T) {
 func TestModel_Update(t *testing.T) {
 	t.Run("WindowSizeMsg updates dimensions", func(t *testing.T) {
 		model := NewModel()
-		
+
 		msg := tea.WindowSizeMsg{
 			Width:  120,
 			Height: 40,
@@ -324,10 +324,10 @@ func TestModel_Update(t *testing.T) {
 		model := NewModel()
 		model.Width = 120
 		model.Height = 40
-		
+
 		// Test a key that should change state
 		msg := tea.KeyMsg{
-			Type: tea.KeyRunes,
+			Type:  tea.KeyRunes,
 			Runes: []rune("/"),
 		}
 
@@ -342,7 +342,7 @@ func TestModel_Update(t *testing.T) {
 
 	t.Run("Unknown message type", func(t *testing.T) {
 		model := NewModel()
-		
+
 		// Send an unknown message type
 		msg := struct{}{}
 
@@ -428,11 +428,14 @@ func TestModel_Integration(t *testing.T) {
 	})
 
 	t.Run("Model with realistic MCP data", func(t *testing.T) {
-		model := NewModel()
-		
-		// Model should start with real MCP data
+		// Use default model (not loading from storage) to ensure consistent test data
+		// This avoids dependency on production inventory which may vary
+		defaultModel := types.NewModel()
+		model := Model{Model: defaultModel}
+
+		// Default model should have substantial MCP data (>= 10 items from getDefaultMCPs)
 		if len(model.MCPItems) < 10 {
-			t.Errorf("NewModel() should have substantial MCP data")
+			t.Errorf("Default model should have substantial MCP data, got %d items", len(model.MCPItems))
 		}
 
 		// Should have some active MCPs by default
@@ -444,7 +447,7 @@ func TestModel_Integration(t *testing.T) {
 		}
 
 		if activeCount == 0 {
-			t.Errorf("NewModel() should have some active MCPs")
+			t.Errorf("Default model should have some active MCPs")
 		}
 
 		// Test filtering with realistic data

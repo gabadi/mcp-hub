@@ -22,7 +22,7 @@ func RenderFooter(model types.Model) string {
 		// Show search input with cursor and mode indicator
 		searchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#7C3AED"))
 		cursor := "│"
-		
+
 		var modeIndicator string
 		if model.State == types.SearchActiveNavigation {
 			if model.SearchInputActive {
@@ -31,7 +31,7 @@ func RenderFooter(model types.Model) string {
 				modeIndicator = " [NAVIGATION MODE]"
 			}
 		}
-		
+
 		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(model.SearchQuery+cursor), modeIndicator)
 	} else if model.SearchQuery != "" {
 		// Show search results info when not actively searching but have a query
@@ -52,7 +52,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	if model.SearchQuery == "" {
 		return model.MCPItems
 	}
-	
+
 	// Filter MCPs by search query directly
 	var filtered []types.MCPItem
 	query := strings.ToLower(model.SearchQuery)

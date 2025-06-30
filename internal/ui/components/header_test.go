@@ -10,9 +10,9 @@ import (
 
 func TestRenderHeader(t *testing.T) {
 	tests := []struct {
-		name           string
-		state          types.AppState
-		searchActive   bool
+		name              string
+		state             types.AppState
+		searchActive      bool
 		searchInputActive bool
 		expectedShortcuts string
 	}{
@@ -59,7 +59,7 @@ func TestRenderHeader(t *testing.T) {
 			result := RenderHeader(model)
 
 			if !strings.Contains(result, tt.expectedShortcuts) {
-				t.Errorf("RenderHeader() shortcuts mismatch\nExpected to contain: %s\nActual result: %s", 
+				t.Errorf("RenderHeader() shortcuts mismatch\nExpected to contain: %s\nActual result: %s",
 					tt.expectedShortcuts, result)
 			}
 
@@ -111,7 +111,7 @@ func TestRenderHeader_ContextInfo(t *testing.T) {
 				WithWindowSize(120, 40).
 				WithState(types.MainNavigation).
 				Build()
-			
+
 			// Override MCPItems and ColumnCount
 			model.MCPItems = tt.mcpItems
 			model.ColumnCount = tt.columnCount
@@ -119,7 +119,7 @@ func TestRenderHeader_ContextInfo(t *testing.T) {
 			result := RenderHeader(model)
 
 			if !strings.Contains(result, tt.expectedText) {
-				t.Errorf("RenderHeader() context info mismatch\nExpected to contain: %s\nActual result: %s", 
+				t.Errorf("RenderHeader() context info mismatch\nExpected to contain: %s\nActual result: %s",
 					tt.expectedText, result)
 			}
 		})
@@ -164,7 +164,7 @@ func TestGetLayoutName(t *testing.T) {
 			model := testutil.NewTestModel().
 				WithWindowSize(120, 40).
 				Build()
-			
+
 			model.ColumnCount = tt.columnCount
 
 			result := GetLayoutName(model)
@@ -188,7 +188,7 @@ func TestRenderHeader_ResponsiveWidth(t *testing.T) {
 			height: 20,
 		},
 		{
-			name:   "Medium screen", 
+			name:   "Medium screen",
 			width:  100,
 			height: 30,
 		},
@@ -243,7 +243,7 @@ func TestRenderHeader_StateTransitions(t *testing.T) {
 	}
 
 	results := make(map[types.AppState]string)
-	
+
 	for _, state := range states {
 		model.State = state
 		if state == types.SearchActiveNavigation {

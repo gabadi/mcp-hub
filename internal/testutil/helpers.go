@@ -31,7 +31,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	if model.SearchQuery == "" {
 		return model.MCPItems
 	}
-	
+
 	// Filter MCPs by search query directly
 	var filtered []types.MCPItem
 	query := strings.ToLower(model.SearchQuery)

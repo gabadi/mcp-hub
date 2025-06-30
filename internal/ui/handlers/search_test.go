@@ -9,16 +9,16 @@ import (
 
 func TestHandleEscKey(t *testing.T) {
 	tests := []struct {
-		name                  string
-		initialState          types.AppState
-		initialSearchActive   bool
-		initialSearchInput    bool
-		initialSearchQuery    string
-		expectedState         types.AppState
-		expectedSearchActive  bool
-		expectedSearchInput   bool
-		expectedSearchQuery   string
-		expectQuit            bool
+		name                 string
+		initialState         types.AppState
+		initialSearchActive  bool
+		initialSearchInput   bool
+		initialSearchQuery   string
+		expectedState        types.AppState
+		expectedSearchActive bool
+		expectedSearchInput  bool
+		expectedSearchQuery  string
+		expectQuit           bool
 	}{
 		{
 			name:                 "ESC from SearchMode clears search",
@@ -45,10 +45,10 @@ func TestHandleEscKey(t *testing.T) {
 			expectQuit:           false,
 		},
 		{
-			name:         "ESC from ModalActive returns to main",
-			initialState: types.ModalActive,
+			name:          "ESC from ModalActive returns to main",
+			initialState:  types.ModalActive,
 			expectedState: types.MainNavigation,
-			expectQuit:   false,
+			expectQuit:    false,
 		},
 		{
 			name:                "ESC from MainNavigation with search query clears search",
@@ -75,32 +75,32 @@ func TestHandleEscKey(t *testing.T) {
 				SearchQuery:       tt.initialSearchQuery,
 				SelectedItem:      5, // Test that selection resets
 			}
-			
+
 			result, cmd := HandleEscKey(model)
-			
+
 			// Check state
 			if result.State != tt.expectedState {
-				t.Errorf("HandleEscKey() State = %v, expected %v", 
+				t.Errorf("HandleEscKey() State = %v, expected %v",
 					result.State, tt.expectedState)
 			}
-			
+
 			// Check search flags
 			if result.SearchActive != tt.expectedSearchActive {
-				t.Errorf("HandleEscKey() SearchActive = %v, expected %v", 
+				t.Errorf("HandleEscKey() SearchActive = %v, expected %v",
 					result.SearchActive, tt.expectedSearchActive)
 			}
-			
+
 			if result.SearchInputActive != tt.expectedSearchInput {
-				t.Errorf("HandleEscKey() SearchInputActive = %v, expected %v", 
+				t.Errorf("HandleEscKey() SearchInputActive = %v, expected %v",
 					result.SearchInputActive, tt.expectedSearchInput)
 			}
-			
+
 			// Check search query
 			if result.SearchQuery != tt.expectedSearchQuery {
-				t.Errorf("HandleEscKey() SearchQuery = %s, expected %s", 
+				t.Errorf("HandleEscKey() SearchQuery = %s, expected %s",
 					result.SearchQuery, tt.expectedSearchQuery)
 			}
-			
+
 			// Check command
 			if tt.expectQuit {
 				if cmd == nil {
@@ -111,7 +111,7 @@ func TestHandleEscKey(t *testing.T) {
 					t.Errorf("HandleEscKey() should return nil cmd for non-quit scenarios")
 				}
 			}
-			
+
 			// Check that selection resets when clearing search
 			if tt.initialSearchQuery != "" && tt.expectedSearchQuery == "" && tt.initialState == types.MainNavigation {
 				if result.SelectedItem != 0 {
@@ -124,12 +124,12 @@ func TestHandleEscKey(t *testing.T) {
 
 func TestHandleSearchModeKeys(t *testing.T) {
 	tests := []struct {
-		name            string
-		key             string
-		initialQuery    string
-		expectedQuery   string
-		expectedState   types.AppState
-		expectedActive  bool
+		name           string
+		key            string
+		initialQuery   string
+		expectedQuery  string
+		expectedState  types.AppState
+		expectedActive bool
 	}{
 		{
 			name:           "enter returns to main navigation",
@@ -197,24 +197,24 @@ func TestHandleSearchModeKeys(t *testing.T) {
 				SearchQuery:  tt.initialQuery,
 				SearchActive: true,
 			}
-			
+
 			result, cmd := HandleSearchModeKeys(model, tt.key)
-			
+
 			if result.SearchQuery != tt.expectedQuery {
-				t.Errorf("HandleSearchModeKeys() SearchQuery = %s, expected %s", 
+				t.Errorf("HandleSearchModeKeys() SearchQuery = %s, expected %s",
 					result.SearchQuery, tt.expectedQuery)
 			}
-			
+
 			if result.State != tt.expectedState {
-				t.Errorf("HandleSearchModeKeys() State = %v, expected %v", 
+				t.Errorf("HandleSearchModeKeys() State = %v, expected %v",
 					result.State, tt.expectedState)
 			}
-			
+
 			if tt.key == "enter" && result.SearchActive != tt.expectedActive {
-				t.Errorf("HandleSearchModeKeys() SearchActive = %v, expected %v", 
+				t.Errorf("HandleSearchModeKeys() SearchActive = %v, expected %v",
 					result.SearchActive, tt.expectedActive)
 			}
-			
+
 			if cmd != nil {
 				t.Errorf("HandleSearchModeKeys() should return nil cmd")
 			}
@@ -230,18 +230,18 @@ func TestHandleEscKeyEdgeCases(t *testing.T) {
 			SearchResults: []string{"result1", "result2"},
 			SelectedItem:  3,
 		}
-		
+
 		result, _ := HandleEscKey(model)
-		
+
 		if result.SearchResults != nil {
 			t.Errorf("HandleEscKey() should clear SearchResults")
 		}
-		
+
 		if result.SelectedItem != 0 {
 			t.Errorf("HandleEscKey() should reset SelectedItem to 0")
 		}
 	})
-	
+
 	t.Run("ESC preserves other model fields", func(t *testing.T) {
 		model := types.Model{
 			State:        types.SearchMode,
@@ -251,9 +251,9 @@ func TestHandleEscKeyEdgeCases(t *testing.T) {
 			ColumnCount:  4,
 			ActiveColumn: 2,
 		}
-		
+
 		result, _ := HandleEscKey(model)
-		
+
 		// Non-search fields should be preserved
 		if result.Width != model.Width {
 			t.Errorf("HandleEscKey() should preserve Width")
@@ -277,53 +277,53 @@ func TestHandleSearchModeKeysEdgeCases(t *testing.T) {
 			State:       types.SearchMode,
 			SearchQuery: longQuery,
 		}
-		
+
 		result, _ := HandleSearchModeKeys(model, "!")
-		
+
 		expectedQuery := longQuery + "!"
 		if result.SearchQuery != expectedQuery {
 			t.Errorf("HandleSearchModeKeys() should handle long queries")
 		}
 	})
-	
+
 	t.Run("Unicode characters", func(t *testing.T) {
 		model := types.Model{
 			State:       types.SearchMode,
 			SearchQuery: "test",
 		}
-		
+
 		result, _ := HandleSearchModeKeys(model, "n") // Use ASCII instead of unicode
-		
+
 		if result.SearchQuery != "testn" {
 			t.Errorf("HandleSearchModeKeys() should handle characters")
 		}
 	})
-	
+
 	t.Run("Empty string key", func(t *testing.T) {
 		model := types.Model{
 			State:       types.SearchMode,
 			SearchQuery: "test",
 		}
-		
+
 		result, _ := HandleSearchModeKeys(model, "")
-		
+
 		if result.SearchQuery != "test" {
 			t.Errorf("HandleSearchModeKeys() should ignore empty string key")
 		}
 	})
-	
+
 	t.Run("Preserves other model fields", func(t *testing.T) {
 		model := types.Model{
-			State:         types.SearchMode,
-			SearchQuery:   "test",
-			Width:         100,
-			Height:        50,
-			SelectedItem:  5,
-			ActiveColumn:  2,
+			State:        types.SearchMode,
+			SearchQuery:  "test",
+			Width:        100,
+			Height:       50,
+			SelectedItem: 5,
+			ActiveColumn: 2,
 		}
-		
+
 		result, _ := HandleSearchModeKeys(model, "a")
-		
+
 		// Non-search fields should be preserved
 		if result.Width != model.Width {
 			t.Errorf("HandleSearchModeKeys() should preserve Width")
@@ -380,27 +380,27 @@ func TestSearchStateTransitions(t *testing.T) {
 				SearchActive: true,
 				SearchQuery:  "test",
 			}
-			
+
 			var result types.Model
 			var cmd tea.Cmd
-			
+
 			switch tt.action {
 			case "enter":
 				result, cmd = HandleSearchModeKeys(model, "enter")
 			case "esc":
 				result, cmd = HandleEscKey(model)
 			}
-			
+
 			if result.State != tt.expectedState {
-				t.Errorf("State transition from %v via %s = %v, expected %v", 
+				t.Errorf("State transition from %v via %s = %v, expected %v",
 					tt.initialState, tt.action, result.State, tt.expectedState)
 			}
-			
+
 			// For ESC transitions, search should be cleared (except for modal)
 			if tt.action == "esc" && tt.initialState != types.ModalActive && result.SearchQuery != "" {
 				t.Errorf("ESC should clear search query")
 			}
-			
+
 			if cmd != nil && tt.action != "esc" {
 				t.Errorf("Non-quit transitions should return nil cmd")
 			}
@@ -414,43 +414,43 @@ func TestSearchQueryBoundaryConditions(t *testing.T) {
 			State:       types.SearchMode,
 			SearchQuery: "a",
 		}
-		
+
 		result, _ := HandleSearchModeKeys(model, "backspace")
-		
+
 		if result.SearchQuery != "" {
 			t.Errorf("Backspace on single character should result in empty query")
 		}
 	})
-	
+
 	t.Run("Multiple backspaces", func(t *testing.T) {
 		model := types.Model{
 			State:       types.SearchMode,
 			SearchQuery: "abc",
 		}
-		
+
 		// Apply backspace three times
 		result, _ := HandleSearchModeKeys(model, "backspace")
 		result, _ = HandleSearchModeKeys(result, "backspace")
 		result, _ = HandleSearchModeKeys(result, "backspace")
-		
+
 		if result.SearchQuery != "" {
 			t.Errorf("Multiple backspaces should result in empty query")
 		}
 	})
-	
+
 	t.Run("Build up query character by character", func(t *testing.T) {
 		model := types.Model{
 			State:       types.SearchMode,
 			SearchQuery: "",
 		}
-		
+
 		chars := []string{"t", "e", "s", "t"}
 		expected := ""
-		
+
 		for _, char := range chars {
 			model, _ = HandleSearchModeKeys(model, char)
 			expected += char
-			
+
 			if model.SearchQuery != expected {
 				t.Errorf("Building query: expected %s, got %s", expected, model.SearchQuery)
 			}

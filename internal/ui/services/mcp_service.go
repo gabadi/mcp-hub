@@ -12,7 +12,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	if model.SearchQuery == "" {
 		return model.MCPItems
 	}
-	
+
 	// Filter MCPs by search query directly
 	var filtered []types.MCPItem
 	query := strings.ToLower(model.SearchQuery)
@@ -24,7 +24,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	return filtered
 }
 
-// ToggleMCPStatus toggles the active status of the currently selected MCP
+// ToggleMCPStatus toggles the active status of the currently selected MCP and saves to storage
 func ToggleMCPStatus(model types.Model) types.Model {
 	filteredMCPs := GetFilteredMCPs(model)
 	if model.SelectedItem < len(filteredMCPs) {
@@ -33,6 +33,12 @@ func ToggleMCPStatus(model types.Model) types.Model {
 		for i := range model.MCPItems {
 			if model.MCPItems[i].Name == selectedItem.Name {
 				model.MCPItems[i].Active = !model.MCPItems[i].Active
+				
+				// Save to storage immediately after change
+				if err := SaveInventory(model.MCPItems); err != nil {
+					// Log error but don't fail the operation
+					// Error is already logged in SaveInventory
+				}
 				break
 			}
 		}
