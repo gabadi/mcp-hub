@@ -1,9 +1,10 @@
 package main
 
 import (
-	"cc-mcp-manager/internal/ui"
 	"log"
 	"os"
+
+	"cc-mcp-manager/internal/ui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

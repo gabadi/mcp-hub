@@ -1,8 +1,9 @@
 package testutil
 
 import (
-	"cc-mcp-manager/internal/ui/types"
 	"strings"
+
+	"cc-mcp-manager/internal/ui/types"
 )
 
 // GetLayoutType determines layout based on terminal width
