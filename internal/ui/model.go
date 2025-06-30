@@ -1,0 +1,83 @@
+package ui
+
+import (
+	"cc-mcp-manager/internal/ui/handlers"
+	"cc-mcp-manager/internal/ui/services"
+	"cc-mcp-manager/internal/ui/types"
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+// Model is a wrapper around the types.Model to provide UI-specific methods
+type Model struct {
+	types.Model
+}
+
+// NewModel creates a new application model
+func NewModel() Model {
+	return Model{
+		Model: types.NewModel(),
+	}
+}
+
+// Update handles messages and updates the model
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Width = msg.Width
+		m.Height = msg.Height
+		m.Model = services.UpdateLayout(m.Model)
+
+	case tea.KeyMsg:
+		var cmd tea.Cmd
+		m.Model, cmd = handlers.HandleKeyPress(m.Model, msg)
+		return m, cmd
+	}
+
+	return m, nil
+}
+
+// All key handling has been moved to handlers package
+
+// Getter methods for testing
+
+// GetColumnCount returns the current number of columns
+func (m Model) GetColumnCount() int {
+	return m.ColumnCount
+}
+
+// GetActiveColumn returns the currently active column index
+func (m Model) GetActiveColumn() int {
+	return m.ActiveColumn
+}
+
+// GetSelectedItem returns the currently selected item index
+func (m Model) GetSelectedItem() int {
+	return m.SelectedItem
+}
+
+// GetState returns the current application state
+func (m Model) GetState() types.AppState {
+	return m.State
+}
+
+// GetSearchQuery returns the current search query
+func (m Model) GetSearchQuery() string {
+	return m.SearchQuery
+}
+
+// GetSearchActive returns whether search is currently active
+func (m Model) GetSearchActive() bool {
+	return m.SearchActive
+}
+
+// GetSearchInputActive returns whether search input is currently active
+func (m Model) GetSearchInputActive() bool {
+	return m.SearchInputActive
+}
+
+// GetFilteredMCPs returns MCPs filtered by search query
+func (m Model) GetFilteredMCPs() []types.MCPItem {
+	return services.GetFilteredMCPs(m.Model)
+}
+
+// All layout and navigation logic has been moved to services and handlers packages
