@@ -7,6 +7,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	COLUMN_WIDTH = 28 // Fixed width for grid columns to maintain alignment
+)
+
 // View renders the application interface
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
@@ -37,6 +41,12 @@ func (m Model) renderHeader() string {
 		shortcuts = "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • ESC=Exit • ↑↓←→=Navigate"
 	case SearchMode:
 		shortcuts = "Type to search • Enter=Apply • ESC=Cancel"
+	case SearchActiveNavigation:
+		if m.searchInputActive {
+			shortcuts = "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
+		} else {
+			shortcuts = "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
+		}
 	case ModalActive:
 		shortcuts = "Enter=Confirm • ESC=Cancel"
 	}
@@ -202,20 +212,32 @@ func (m Model) renderFourColumns() string {
 				// Highlight selected item by comparing index directly
 				isSelected := (mcpIndex == m.selectedItem)
 				
-				// Create base item text
-				itemText := fmt.Sprintf("%s %s", status, item.Name)
+				// Create base item text (without styling)
+				baseText := fmt.Sprintf("%s %s", status, item.Name)
 				
-				if isSelected {
-					// Simple, clean selection highlighting - just bold text
-					itemStyle := lipgloss.NewStyle().Bold(true)
-					itemText = itemStyle.Render(itemText)
+				// Calculate padding needed BEFORE styling
+				currentWidth := lipgloss.Width(baseText)
+				paddingNeeded := COLUMN_WIDTH - currentWidth
+				if paddingNeeded < 0 {
+					paddingNeeded = 0
 				}
 				
-				// Fixed width for consistent spacing (about 28 chars per column)
-				line = append(line, fmt.Sprintf("%-28s", itemText))
+				// Apply padding first
+				paddedText := baseText + strings.Repeat(" ", paddingNeeded)
+				
+				// Then apply styling to padded text
+				if isSelected {
+					itemStyle := lipgloss.NewStyle().
+						Bold(true).
+						Background(lipgloss.Color("#7C3AED")).
+						Foreground(lipgloss.Color("#FFFFFF"))
+					paddedText = itemStyle.Render(paddedText)
+				}
+				
+				line = append(line, paddedText)
 			} else {
 				// Empty cell with proper spacing
-				line = append(line, fmt.Sprintf("%-28s", ""))
+				line = append(line, strings.Repeat(" ", COLUMN_WIDTH))
 			}
 		}
 		
@@ -373,7 +395,18 @@ func (m Model) renderFooter() string {
 			Padding(0, 1)
 
 		cursor := "_"
-		footerText = fmt.Sprintf("Search: %s", searchStyle.Render(m.searchQuery+cursor))
+		modeIndicator := ""
+		
+		// Show dual-mode indicator for SearchActiveNavigation
+		if m.state == SearchActiveNavigation {
+			if m.searchInputActive {
+				modeIndicator = " [INPUT MODE]"
+			} else {
+				modeIndicator = " [NAVIGATION MODE]"
+			}
+		}
+		
+		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(m.searchQuery+cursor), modeIndicator)
 	} else if m.searchQuery != "" {
 		// Show search results info when not actively searching but have a query
 		filteredMCPs := m.GetFilteredMCPs()

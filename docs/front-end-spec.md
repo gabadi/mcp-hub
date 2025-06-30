@@ -170,15 +170,15 @@ graph TD
 ┌─── MCP Manager ───────────────────────────────────────────────────────────────────────────────────┐
 │ [A]dd [E]dit [D]elete [Space]Toggle [R]efresh [Q]uit │ Search: [github     ] │ 3/30 active         │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ● context7     [SSE]    │ ● github-mcp  [CMD]    │ ○ docker-mcp  [CMD]    │ ○ redis-mcp   [CMD]    │
-│ ● ht-mcp       [CMD]    │ ○ jira-mcp    [CMD]    │ ○ aws-mcp     [JSON]   │ ○ k8s-mcp     [CMD]    │
-│ ○ filesystem   [CMD]    │ ○ confluence  [SSE]    │ ○ mongodb     [CMD]    │ ○ terraform   [CMD]    │
-│ ○ gitlab-mcp   [CMD]    │ ○ linear-mcp  [CMD]    │ ○ postgres    [CMD]    │ ○ elastic     [JSON]   │
-│ ○ bitbucket    [CMD]    │ ○ asana-mcp   [CMD]    │ ○ notion-mcp  [CMD]    │ ○ anthropic   [HTTP]   │
-│ ○ sourcegraph  [CMD]    │ ○ todoist     [CMD]    │ ○ slack-mcp   [CMD]    │ ○ openai-mcp  [HTTP]   │
-│ ○ codeberg     [CMD]    │ ○ calendar    [CMD]    │ ○ discord     [CMD]    │ ○ gemini-mcp  [HTTP]   │
-│ ○ gitness      [CMD]    │ ○ email-mcp   [CMD]    │ ○ teams-mcp   [CMD]    │ ○ claude-mcp  [HTTP]   │
-│ ○ fossil-mcp   [CMD]    │ ○ browser     [CMD]    │ ○ zoom-mcp    [CMD]    │                        │
+│ ● context7        ● github-mcp      ○ docker-mcp       ○ redis-mcp                                │
+│ ● ht-mcp          ○ jira-mcp        ○ aws-mcp          ○ k8s-mcp                                  │
+│ ○ filesystem      ○ confluence      ○ mongodb          ○ terraform                                │
+│ ○ gitlab-mcp      ○ linear-mcp      ○ postgres         ○ elastic                                  │
+│ ○ bitbucket       ○ asana-mcp       ○ notion-mcp       ○ anthropic                                │
+│ ○ sourcegraph     ○ todoist         ○ slack-mcp        ○ openai-mcp                               │
+│ ○ codeberg        ○ calendar        ○ discord          ○ gemini-mcp                               │
+│ ○ gitness         ○ email-mcp       ○ teams-mcp        ○ claude-mcp                               │
+│ ○ fossil-mcp      ○ browser         ○ zoom-mcp                                                    │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Project: /web-app • Claude sync: 2m ago • ● Active in Claude Code  ○ Available in inventory       │
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -260,10 +260,9 @@ graph TD
 ┌─── MCP Manager ───────────────────────────────────────────────────────────────────────────────────┐
 │ [A]dd [E]dit [D]elete [Space]Toggle [R]efresh [Q]uit │ Search: [github     ] │ 2 matches found     │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ● **github**-mcp [CMD]  │                           │                        │                      │
-│ ○ **github**-api [HTTP] │                           │                        │                      │
-│                         │                           │                        │                      │
-│ [ESC] to clear search   │                           │                        │                      │
+│ ● **github**-mcp      ○ **github**-api                                                              │
+│                                                                                                       │
+│ [ESC] to clear search                                                                                 │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Project: /web-app • Claude sync: 2m ago • Search: "github" • 2 of 30 MCPs shown                   │
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -289,12 +288,12 @@ graph TD
 ┌─── MCP Manager ───────────────────────────────────────────────┐
 │ [A]dd [D]el [Space]Toggle [Q]uit │ Search: [    ] │ 3/30 active │
 ├───────────────────────────────────────────────────────────────┤
-│ ● context7     [SSE]    │ ○ docker-mcp  [CMD]    │              │
-│ ● ht-mcp       [CMD]    │ ○ aws-mcp     [JSON]   │              │
-│ ● github-mcp   [CMD]    │ ○ mongodb     [CMD]    │              │
-│ ○ filesystem   [CMD]    │ ○ terraform   [CMD]    │              │
-│ ○ gitlab-mcp   [CMD]    │ ○ postgres    [CMD]    │              │
-│ ○ jira-mcp     [CMD]    │ ○ elastic     [JSON]   │              │
+│ ● context7        ○ docker-mcp                                   │
+│ ● ht-mcp          ○ aws-mcp                                     │
+│ ● github-mcp      ○ mongodb                                    │
+│ ○ filesystem      ○ terraform                                  │
+│ ○ gitlab-mcp      ○ postgres                                   │
+│ ○ jira-mcp        ○ elastic                                    │
 ├───────────────────────────────────────────────────────────────┤
 │ Project: /web-app • 3/30 active • Sync: 2m ago                 │
 └───────────────────────────────────────────────────────────────┘

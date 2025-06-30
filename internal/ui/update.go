@@ -39,6 +39,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleMainNavigationKeys(key)
 	case SearchMode:
 		return m.handleSearchModeKeys(key)
+	case SearchActiveNavigation:
+		return m.handleSearchNavigationKeys(key)
 	case ModalActive:
 		return m.handleModalKeys(key)
 	}
@@ -52,6 +54,13 @@ func (m Model) handleEscKey() (tea.Model, tea.Cmd) {
 	case SearchMode:
 		// Clear search and return to main navigation
 		m.searchActive = false
+		m.searchQuery = ""
+		m.state = MainNavigation
+		return m, nil
+	case SearchActiveNavigation:
+		// Clear search and return to main navigation
+		m.searchActive = false
+		m.searchInputActive = false
 		m.searchQuery = ""
 		m.state = MainNavigation
 		return m, nil
@@ -85,13 +94,18 @@ func (m Model) handleMainNavigationKeys(key string) (tea.Model, tea.Cmd) {
 	case "right", "l":
 		m = m.navigateRight()
 	case "tab":
-		// Jump to search field
-		m.state = SearchMode
+		// Jump to search field with navigation enabled
+		m.state = SearchActiveNavigation
 		m.searchActive = true
+		m.searchInputActive = true
+		m.selectedItem = 0  // Reset selection to first item
 	case "/":
-		// Activate search mode
-		m.state = SearchMode
+		// Activate search mode with navigation enabled
+		m.state = SearchActiveNavigation
 		m.searchActive = true
+		m.searchInputActive = true
+		m.selectedItem = 0  // Reset selection to first item
+		// Don't add the "/" character to the search query
 	case "a":
 		// Add MCP (future functionality)
 		m.state = ModalActive
@@ -134,6 +148,70 @@ func (m Model) handleSearchModeKeys(key string) (tea.Model, tea.Cmd) {
 		// Add character to search query
 		if len(key) == 1 {
 			m.searchQuery += key
+		}
+	}
+
+	return m, nil
+}
+
+// handleSearchNavigationKeys handles keyboard input in search + navigation mode
+func (m Model) handleSearchNavigationKeys(key string) (tea.Model, tea.Cmd) {
+	// Priority 1: Navigation keys (always work)
+	switch key {
+	case "up", "k":
+		m = m.navigateUp()
+		return m, nil
+	case "down", "j":
+		m = m.navigateDown()
+		return m, nil
+	case "left", "h":
+		m = m.navigateLeft()
+		return m, nil
+	case "right", "l":
+		m = m.navigateRight()
+		return m, nil
+	case " ", "space":
+		// Toggle MCP active status - work with filtered results
+		filteredMCPs := m.GetFilteredMCPs()
+		if m.selectedItem < len(filteredMCPs) {
+			// Find the original item and toggle it
+			selectedItem := filteredMCPs[m.selectedItem]
+			for i := range m.mcpItems {
+				if m.mcpItems[i].Name == selectedItem.Name {
+					m.mcpItems[i].Active = !m.mcpItems[i].Active
+					break
+				}
+			}
+		}
+		return m, nil
+	}
+
+	// Priority 2: Search control keys (mode switching)
+	switch key {
+	case "enter":
+		// Return to main navigation with search query preserved
+		m.state = MainNavigation
+		m.searchActive = false
+		m.searchInputActive = false
+		return m, nil
+	case "tab":
+		// Toggle between input and navigation modes
+		m.searchInputActive = !m.searchInputActive
+		return m, nil
+	}
+
+	// Priority 3: Text input (only when searchInputActive = true)
+	if m.searchInputActive {
+		switch key {
+		case "backspace":
+			if len(m.searchQuery) > 0 {
+				m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+			}
+		default:
+			// Add character to search query
+			if len(key) == 1 {
+				m.searchQuery += key
+			}
 		}
 	}
 

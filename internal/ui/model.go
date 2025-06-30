@@ -12,6 +12,7 @@ type AppState int
 const (
 	MainNavigation AppState = iota
 	SearchMode
+	SearchActiveNavigation  // Combined search + navigation
 	ModalActive
 )
 
@@ -29,9 +30,10 @@ type Model struct {
 	selectedItem int
 
 	// Search
-	searchQuery   string
-	searchActive  bool
-	searchResults []string
+	searchQuery       string
+	searchActive      bool
+	searchInputActive bool  // Toggle text input vs navigation
+	searchResults     []string
 
 	// Layout
 	columns     []Column
@@ -62,8 +64,9 @@ func NewModel() Model {
 		state:        MainNavigation,
 		activeColumn: 0,
 		selectedItem: 0,
-		searchQuery:  "",
-		searchActive: false,
+		searchQuery:       "",
+		searchActive:      false,
+		searchInputActive: false,
 		columns:      make([]Column, 4),
 		columnCount:  4,
 mcpItems: []MCPItem{
@@ -140,6 +143,11 @@ func (m Model) GetSearchQuery() string {
 // GetSearchActive returns whether search is currently active
 func (m Model) GetSearchActive() bool {
 	return m.searchActive
+}
+
+// GetSearchInputActive returns whether search input is currently active
+func (m Model) GetSearchInputActive() bool {
+	return m.searchInputActive
 }
 
 // GetFilteredMCPs returns MCPs filtered by search query
