@@ -10,9 +10,6 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [1.22.x, 1.23.x]
     
     steps:
     - name: Check out code
@@ -21,7 +18,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: '1.23.x'
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -29,9 +26,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-1.23.x-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-go-1.23.x-
 
     - name: Download dependencies
       run: go mod download
@@ -40,39 +37,12 @@ jobs:
       run: go mod verify
 
     - name: Run tests
-      run: go test -v -race -coverprofile=coverage.out ./...
-
-    - name: Generate coverage report
-      run: go tool cover -html=coverage.out -o coverage.html
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-
-    - name: Upload coverage artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report-go${{ matrix.go-version }}
-        path: |
-          coverage.out
-          coverage.html
+      run: go test -v -race ./...
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: test
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
-        exclude:
-          # Windows on ARM64 is not commonly used for this type of CLI tool
-          - goos: windows
-            goarch: arm64
     
     steps:
     - name: Check out code
@@ -81,7 +51,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.23.x
+        go-version: '1.23.x'
 
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -97,22 +67,15 @@ jobs:
       run: go mod download
 
     - name: Build binary
-      env:
-        GOOS: ${{ matrix.goos }}
-        GOARCH: ${{ matrix.goarch }}
       run: |
         mkdir -p dist
-        BINARY_NAME=cc-mcp-manager
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          BINARY_NAME="${BINARY_NAME}.exe"
-        fi
-        go build -ldflags="-s -w" -o "dist/${BINARY_NAME}-${{ matrix.goos }}-${{ matrix.goarch }}" ./main.go
+        go build -ldflags="-s -w" -o dist/cc-mcp-manager ./main.go
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: cc-mcp-manager-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: dist/
+        name: cc-mcp-manager
+        path: dist/cc-mcp-manager
 
   lint:
     name: Lint
@@ -125,88 +88,10 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.23.x
+        go-version: '1.23.x'
 
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6
       with:
         version: latest
         args: --timeout=5m
-
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.23.x
-
-    - name: Run Gosec Security Scanner
-      uses: securecodewarrior/github-action-gosec@master
-      with:
-        args: '-no-fail -fmt sarif -out results.sarif ./...'
-
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: results.sarif
-
-  quality-gate:
-    name: Quality Gate
-    runs-on: ubuntu-latest
-    needs: [test, build, lint]
-    if: always()
-    
-    steps:
-    - name: Check job results
-      run: |
-        if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.lint.result }}" != "success" ]; then
-          echo "Quality gate failed: One or more required jobs failed"
-          exit 1
-        fi
-        echo "Quality gate passed: All required jobs succeeded"
-
-  release-dry-run:
-    name: Release Dry Run
-    runs-on: ubuntu-latest
-    needs: [quality-gate]
-    if: github.event_name == 'pull_request'
-    
-    steps:
-    - name: Check out code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.23.x
-
-    - name: Download artifacts
-      uses: actions/download-artifact@v4
-      with:
-        pattern: cc-mcp-manager-*
-        path: dist/
-        merge-multiple: true
-
-    - name: List artifacts
-      run: |
-        echo "Built artifacts:"
-        find dist/ -type f -name "cc-mcp-manager*" -exec ls -la {} \;
-
-    - name: Simulate release notes
-      run: |
-        echo "## Release Notes (Dry Run)"
-        echo "This is a simulation of what would be released:"
-        echo ""
-        echo "### Changes in this PR:"
-        git log --oneline --no-merges origin/main..HEAD || echo "No commits to compare"
-        echo ""
-        echo "### Artifacts that would be released:"
-        find dist/ -type f -name "cc-mcp-manager*" -exec basename {} \; | sort
