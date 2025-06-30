@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"cc-mcp-manager/internal/ui/types"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -15,6 +16,9 @@ func HandleKeyPress(model types.Model, msg tea.KeyMsg) (types.Model, tea.Cmd) {
 		return HandleEscKey(model)
 	case "ctrl+c":
 		return model, tea.Quit
+	case "ctrl+l":
+		// Clear screen and redraw - just return nil cmd as the screen will auto-refresh
+		return model, nil
 	}
 
 	// State-specific key handling

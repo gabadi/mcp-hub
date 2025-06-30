@@ -5,14 +5,15 @@ import (
 	"strings"
 
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
 // RenderFooter creates the application footer with status information
 func RenderFooter(model types.Model) string {
 	footerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#888888")).
-		Background(lipgloss.Color("#1E1E2E")).
+		Foreground(lipgloss.Color("#CCCCCC")).
+		Background(lipgloss.Color("#2D2D3D")).
 		Padding(0, 2).
 		Width(model.Width)
 
@@ -20,9 +21,12 @@ func RenderFooter(model types.Model) string {
 
 	if model.SearchActive {
 		// Show search input with cursor and mode indicator
-		searchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#7C3AED"))
-		cursor := "│"
-		
+		searchStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#000000")).
+			Background(lipgloss.Color("#FFFFFF")).
+			Padding(0, 1)
+		cursor := "_"
+
 		var modeIndicator string
 		if model.State == types.SearchActiveNavigation {
 			if model.SearchInputActive {
@@ -31,8 +35,15 @@ func RenderFooter(model types.Model) string {
 				modeIndicator = " [NAVIGATION MODE]"
 			}
 		}
-		
-		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(model.SearchQuery+cursor), modeIndicator)
+
+		// Show the search query with cursor in styled box
+		searchDisplay := model.SearchQuery
+		if model.SearchInputActive {
+			searchDisplay = model.SearchQuery + cursor
+		} else {
+			searchDisplay = model.SearchQuery
+		}
+		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(searchDisplay), modeIndicator)
 	} else if model.SearchQuery != "" {
 		// Show search results info when not actively searching but have a query
 		filteredMCPs := GetFilteredMCPs(model)
@@ -52,7 +63,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	if model.SearchQuery == "" {
 		return model.MCPItems
 	}
-	
+
 	// Filter MCPs by search query directly
 	var filtered []types.MCPItem
 	query := strings.ToLower(model.SearchQuery)

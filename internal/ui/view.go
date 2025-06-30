@@ -6,12 +6,13 @@ import (
 
 	"cc-mcp-manager/internal/ui/components"
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
 // View renders the application interface
 func (m Model) View() string {
-	if m.Width == 0 || m.Height == 0 {
+	if m.Model.Width == 0 || m.Model.Height == 0 {
 		return "Loading..."
 	}
 
@@ -20,7 +21,28 @@ func (m Model) View() string {
 	body := m.renderBody()
 	footer := components.RenderFooter(m.Model)
 
-	return lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
+	// Join components vertically without extra container
+	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
+
+	// If a modal is active, render it on top
+	if m.Model.State == types.ModalActive {
+		// Convert types.ModalType to components.ModalType
+		var modalType components.ModalType
+		switch m.Model.ActiveModal {
+		case types.AddModal:
+			modalType = components.AddModal
+		case types.EditModal:
+			modalType = components.EditModal
+		case types.DeleteModal:
+			modalType = components.DeleteModal
+		}
+
+		// Render the modal overlay on top of the main content
+		modalOverlay := components.OverlayModal(m.Model, modalType, m.Model.Width, m.Model.Height, content)
+		return modalOverlay
+	}
+
+	return content
 }
 
 // renderHeader creates the application header with shortcuts and context
@@ -30,17 +52,17 @@ func (m Model) renderHeader() string {
 		Foreground(lipgloss.Color("#7C3AED")).
 		Background(lipgloss.Color("#1E1E2E")).
 		Padding(0, 2).
-		Width(m.Width)
+		Width(m.Model.Width)
 
 	// Build shortcuts display based on current state
 	var shortcuts string
-	switch m.State {
+	switch m.Model.State {
 	case types.MainNavigation:
 		shortcuts = "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • ESC=Exit • ↑↓←→=Navigate"
 	case types.SearchMode:
 		shortcuts = "Type to search • Enter=Apply • ESC=Cancel"
 	case types.SearchActiveNavigation:
-		if m.SearchInputActive {
+		if m.Model.SearchInputActive {
 			shortcuts = "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
 		} else {
 			shortcuts = "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
@@ -51,14 +73,14 @@ func (m Model) renderHeader() string {
 
 	// Context information
 	activeCount := 0
-	for _, item := range m.MCPItems {
+	for _, item := range m.Model.MCPItems {
 		if item.Active {
 			activeCount++
 		}
 	}
 
 	contextInfo := fmt.Sprintf("MCPs: %d/%d Active • Layout: %s",
-		activeCount, len(m.MCPItems), m.getLayoutName())
+		activeCount, len(m.Model.MCPItems), m.getLayoutName())
 
 	title := "MCP Manager v1.0"
 
@@ -70,11 +92,11 @@ func (m Model) renderHeader() string {
 
 // renderBody creates the main application body with columns
 func (m Model) renderBody() string {
-	if m.ColumnCount == 1 {
+	if m.Model.ColumnCount == 1 {
 		return m.renderSingleColumn()
-	} else if m.ColumnCount == 2 {
+	} else if m.Model.ColumnCount == 2 {
 		return m.renderTwoColumns()
-	} else if m.ColumnCount == 4 {
+	} else if m.Model.ColumnCount == 4 {
 		return components.RenderFourColumnGrid(m.Model)
 	}
 	return m.renderThreeColumns()
@@ -86,22 +108,25 @@ func (m Model) renderSingleColumn() string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#444444")).
 		Padding(1).
-		Width(m.Width - 4).
-		Height(m.Height - 8) // Account for header and footer
+		Width(m.Model.Width - 4).
+		Height(m.Model.Height - 8) // Account for header and footer
 
-	if m.ActiveColumn == 0 {
+	if m.Model.ActiveColumn == 0 {
 		columnStyle = columnStyle.BorderForeground(lipgloss.Color("#7C3AED"))
 	}
 
 	content := components.RenderMCPList(m.Model)
 
-	return columnStyle.Render(fmt.Sprintf("MCP Manager\n\n%s", content))
+	// Debug: Add MCP count and search query
+	debugInfo := fmt.Sprintf("Debug: MCPs: %d, Search: '%s'\n%s", len(m.Model.MCPItems), m.Model.SearchQuery, content)
+
+	return columnStyle.Render(fmt.Sprintf("MCP Manager\n\n%s", debugInfo))
 }
 
 // renderTwoColumns renders the medium layout with 2 columns
 func (m Model) renderTwoColumns() string {
-	columnWidth := (m.Width - 6) / 2
-	columnHeight := m.Height - 8
+	columnWidth := (m.Model.Width - 6) / 2
+	columnHeight := m.Model.Height - 8
 
 	// Column styles
 	leftStyle := lipgloss.NewStyle().
@@ -114,7 +139,7 @@ func (m Model) renderTwoColumns() string {
 	rightStyle := leftStyle.Copy()
 
 	// Highlight active column
-	if m.ActiveColumn == 0 {
+	if m.Model.ActiveColumn == 0 {
 		leftStyle = leftStyle.BorderForeground(lipgloss.Color("#7C3AED"))
 	} else {
 		rightStyle = rightStyle.BorderForeground(lipgloss.Color("#7C3AED"))
@@ -132,8 +157,8 @@ func (m Model) renderTwoColumns() string {
 
 // renderThreeColumns renders the wide layout with 3 columns
 func (m Model) renderThreeColumns() string {
-	columnWidth := (m.Width - 8) / 3
-	columnHeight := m.Height - 8
+	columnWidth := (m.Model.Width - 8) / 3
+	columnHeight := m.Model.Height - 8
 
 	// Base column style
 	columnStyle := lipgloss.NewStyle().
@@ -148,7 +173,7 @@ func (m Model) renderThreeColumns() string {
 
 	for i := 0; i < 3; i++ {
 		style := columnStyle.Copy()
-		if i == m.ActiveColumn {
+		if i == m.Model.ActiveColumn {
 			style = style.BorderForeground(lipgloss.Color("#7C3AED"))
 		}
 
@@ -172,14 +197,14 @@ func (m Model) renderThreeColumns() string {
 func (m Model) renderFourColumns() string {
 	// Get filtered MCPs for search functionality
 	filteredMCPs := m.GetFilteredMCPs()
-	
+
 	if len(filteredMCPs) == 0 {
 		// Show "No results" message when search returns no results
 		noResultsStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#888888")).
 			Align(lipgloss.Center).
-			Width(m.Width).
-			Height(m.Height - 8)
+			Width(m.Model.Width).
+			Height(m.Model.Height - 8)
 		return noResultsStyle.Render("No MCPs found matching your search")
 	}
 
@@ -191,38 +216,38 @@ func (m Model) renderFourColumns() string {
 
 	// Build the grid as a simple string without column separators
 	var gridLines []string
-	
+
 	for row := 0; row < gridRows; row++ {
 		var line []string
-		
+
 		for col := 0; col < 4; col++ {
 			mcpIndex := row*4 + col
-			
+
 			if mcpIndex < len(filteredMCPs) {
 				item := filteredMCPs[mcpIndex]
-				
+
 				// Status indicator
 				status := "○"
 				if item.Active {
 					status = "●"
 				}
-				
+
 				// Highlight selected item by comparing index directly
-				isSelected := (mcpIndex == m.SelectedItem)
-				
+				isSelected := (mcpIndex == m.Model.SelectedItem)
+
 				// Create base item text (without styling)
 				baseText := fmt.Sprintf("%s %s", status, item.Name)
-				
+
 				// Calculate padding needed BEFORE styling
 				currentWidth := lipgloss.Width(baseText)
 				paddingNeeded := types.COLUMN_WIDTH - currentWidth
 				if paddingNeeded < 0 {
 					paddingNeeded = 0
 				}
-				
+
 				// Apply padding first
 				paddedText := baseText + strings.Repeat(" ", paddingNeeded)
-				
+
 				// Then apply styling to padded text
 				if isSelected {
 					itemStyle := lipgloss.NewStyle().
@@ -231,42 +256,42 @@ func (m Model) renderFourColumns() string {
 						Foreground(lipgloss.Color("#FFFFFF"))
 					paddedText = itemStyle.Render(paddedText)
 				}
-				
+
 				line = append(line, paddedText)
 			} else {
 				// Empty cell with proper spacing
 				line = append(line, strings.Repeat(" ", types.COLUMN_WIDTH))
 			}
 		}
-		
+
 		// Join columns without separators, just spaces
 		gridLines = append(gridLines, strings.Join(line, ""))
 	}
-	
+
 	// Join all rows with newlines
 	gridContent := strings.Join(gridLines, "\n")
-	
+
 	// Apply overall styling to the grid
 	gridStyle := lipgloss.NewStyle().
 		Padding(2).
-		Width(m.Width).
-		Height(m.Height - 8)
-	
+		Width(m.Model.Width).
+		Height(m.Model.Height - 8)
+
 	return gridStyle.Render(gridContent)
 }
 
 // renderMCPList renders the list of MCPs with selection highlighting
 func (m Model) renderMCPList() string {
-	if len(m.MCPItems) == 0 {
+	if len(m.Model.MCPItems) == 0 {
 		return "No MCPs configured"
 	}
 
 	var items []string
-	for i, item := range m.MCPItems {
+	for i, item := range m.Model.MCPItems {
 		style := lipgloss.NewStyle().Padding(0, 1)
 
 		// Highlight selected item
-		if i == m.SelectedItem {
+		if i == m.Model.SelectedItem {
 			style = style.Background(lipgloss.Color("#7C3AED")).
 				Foreground(lipgloss.Color("#FFFFFF")).
 				Bold(true)
@@ -297,7 +322,7 @@ func (m Model) renderMCPColumnList(columnMCPs []types.MCPItem, startIdx int) str
 		style := lipgloss.NewStyle().Padding(0, 1)
 
 		// Highlight selected item
-		if actualIdx == m.SelectedItem {
+		if actualIdx == m.Model.SelectedItem {
 			style = style.Background(lipgloss.Color("#7C3AED")).
 				Foreground(lipgloss.Color("#FFFFFF")).
 				Bold(true)
@@ -318,11 +343,11 @@ func (m Model) renderMCPColumnList(columnMCPs []types.MCPItem, startIdx int) str
 
 // renderStatusColumn renders the status information for the selected MCP
 func (m Model) renderStatusColumn() string {
-	if m.SelectedItem >= len(m.MCPItems) {
+	if m.Model.SelectedItem >= len(m.Model.MCPItems) {
 		return "No MCP selected"
 	}
 
-	item := m.MCPItems[m.SelectedItem]
+	item := m.Model.MCPItems[m.Model.SelectedItem]
 
 	status := "Inactive"
 	statusColor := "#FF6B6B"
@@ -344,11 +369,11 @@ func (m Model) renderStatusColumn() string {
 
 // renderDetailsColumn renders detailed information for the selected MCP
 func (m Model) renderDetailsColumn() string {
-	if m.SelectedItem >= len(m.MCPItems) {
+	if m.Model.SelectedItem >= len(m.Model.MCPItems) {
 		return "No MCP selected"
 	}
 
-	item := m.MCPItems[m.SelectedItem]
+	item := m.Model.MCPItems[m.Model.SelectedItem]
 
 	// Placeholder details - will be expanded in future stories
 	details := []string{
@@ -383,10 +408,10 @@ func (m Model) renderFooter() string {
 	footerStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#888888")).
 		Padding(0, 2).
-		Width(m.Width)
+		Width(m.Model.Width)
 
 	var footerText string
-	if m.SearchActive {
+	if m.Model.SearchActive {
 		searchStyle := lipgloss.NewStyle().
 			Background(lipgloss.Color("#7C3AED")).
 			Foreground(lipgloss.Color("#FFFFFF")).
@@ -394,25 +419,25 @@ func (m Model) renderFooter() string {
 
 		cursor := "_"
 		modeIndicator := ""
-		
+
 		// Show dual-mode indicator for SearchActiveNavigation
-		if m.State == types.SearchActiveNavigation {
-			if m.SearchInputActive {
+		if m.Model.State == types.SearchActiveNavigation {
+			if m.Model.SearchInputActive {
 				modeIndicator = " [INPUT MODE]"
 			} else {
 				modeIndicator = " [NAVIGATION MODE]"
 			}
 		}
-		
-		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(m.SearchQuery+cursor), modeIndicator)
-	} else if m.SearchQuery != "" {
+
+		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(m.Model.SearchQuery+cursor), modeIndicator)
+	} else if m.Model.SearchQuery != "" {
 		// Show search results info when not actively searching but have a query
 		filteredMCPs := m.GetFilteredMCPs()
 		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
-			len(filteredMCPs), m.SearchQuery, m.Width, m.Height)
+			len(filteredMCPs), m.Model.SearchQuery, m.Model.Width, m.Model.Height)
 	} else {
 		footerText = fmt.Sprintf("Terminal: %dx%d • Search: '%s' • Use arrow keys to navigate, Tab or / for search",
-			m.Width, m.Height, m.SearchQuery)
+			m.Model.Width, m.Model.Height, m.Model.SearchQuery)
 	}
 
 	return footerStyle.Render(footerText)
@@ -420,7 +445,7 @@ func (m Model) renderFooter() string {
 
 // getLayoutName returns the current layout name for display
 func (m Model) getLayoutName() string {
-	switch m.ColumnCount {
+	switch m.Model.ColumnCount {
 	case 1:
 		return "Narrow"
 	case 2:

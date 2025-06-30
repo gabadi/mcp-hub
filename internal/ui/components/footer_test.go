@@ -10,14 +10,14 @@ import (
 
 func TestRenderFooter(t *testing.T) {
 	tests := []struct {
-		name              string
-		searchActive      bool
-		searchQuery       string
-		searchInputActive bool
-		state             types.AppState
-		width             int
-		height            int
-		expectedContains  []string
+		name                string
+		searchActive        bool
+		searchQuery         string
+		searchInputActive   bool
+		state               types.AppState
+		width               int
+		height              int
+		expectedContains    []string
 		expectedNotContains []string
 	}{
 		{
@@ -27,7 +27,8 @@ func TestRenderFooter(t *testing.T) {
 			width:        120,
 			height:       40,
 			expectedContains: []string{
-				"Search: test│",
+				"Search:",
+				"test",
 			},
 		},
 		{
@@ -39,7 +40,8 @@ func TestRenderFooter(t *testing.T) {
 			width:             120,
 			height:            40,
 			expectedContains: []string{
-				"Search: query│",
+				"Search:",
+				"query█",
 				"[INPUT MODE]",
 			},
 		},
@@ -52,7 +54,8 @@ func TestRenderFooter(t *testing.T) {
 			width:             120,
 			height:            40,
 			expectedContains: []string{
-				"Search: query│",
+				"Search:",
+				"query",
 				"[NAVIGATION MODE]",
 			},
 		},
@@ -122,45 +125,45 @@ func TestGetFilteredMCPs(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		searchQuery string
-		expected    int
+		name          string
+		searchQuery   string
+		expected      int
 		expectedNames []string
 	}{
 		{
-			name:        "Empty query returns all MCPs",
-			searchQuery: "",
-			expected:    4,
+			name:          "Empty query returns all MCPs",
+			searchQuery:   "",
+			expected:      4,
 			expectedNames: []string{"github-mcp", "docker-mcp", "context7", "filesystem"},
 		},
 		{
-			name:        "Case insensitive search for 'mcp' from custom test data",
-			searchQuery: "mcp",
-			expected:    2,
+			name:          "Case insensitive search for 'mcp' from custom test data",
+			searchQuery:   "mcp",
+			expected:      2,
 			expectedNames: []string{"github-mcp", "docker-mcp"},
 		},
 		{
-			name:        "Search for 'git' matches github",
-			searchQuery: "git",
-			expected:    1,
+			name:          "Search for 'git' matches github",
+			searchQuery:   "git",
+			expected:      1,
 			expectedNames: []string{"github-mcp"},
 		},
 		{
-			name:        "Search for 'context' matches context7",
-			searchQuery: "context",
-			expected:    1,
+			name:          "Search for 'context' matches context7",
+			searchQuery:   "context",
+			expected:      1,
 			expectedNames: []string{"context7"},
 		},
 		{
-			name:        "Search for nonexistent returns empty",
-			searchQuery: "nonexistent",
-			expected:    0,
+			name:          "Search for nonexistent returns empty",
+			searchQuery:   "nonexistent",
+			expected:      0,
 			expectedNames: []string{},
 		},
 		{
-			name:        "Case insensitive search",
-			searchQuery: "DOCKER",
-			expected:    1,
+			name:          "Case insensitive search",
+			searchQuery:   "DOCKER",
+			expected:      1,
 			expectedNames: []string{"docker-mcp"},
 		},
 	}
@@ -170,7 +173,7 @@ func TestGetFilteredMCPs(t *testing.T) {
 			model := testutil.NewTestModel().
 				WithSearchQuery(tt.searchQuery).
 				Build()
-			
+
 			model.MCPItems = mcpItems
 
 			result := GetFilteredMCPs(model)
@@ -196,9 +199,9 @@ func TestGetFilteredMCPs(t *testing.T) {
 
 func TestRenderFooter_SearchResultsCount(t *testing.T) {
 	tests := []struct {
-		name        string
-		mcpItems    []types.MCPItem
-		searchQuery string
+		name          string
+		mcpItems      []types.MCPItem
+		searchQuery   string
 		expectedCount string
 	}{
 		{
@@ -238,7 +241,7 @@ func TestRenderFooter_SearchResultsCount(t *testing.T) {
 				WithSearchQuery(tt.searchQuery).
 				WithSearchActive(false). // Not actively searching, just has query
 				Build()
-			
+
 			model.MCPItems = tt.mcpItems
 
 			result := RenderFooter(model)
@@ -292,7 +295,7 @@ func TestRenderFooter_ResponsiveTerminalInfo(t *testing.T) {
 			}
 
 			if !strings.Contains(result, expectedTerminalInfo) {
-				t.Errorf("RenderFooter() should contain terminal info for %dx%d\nActual: %s", 
+				t.Errorf("RenderFooter() should contain terminal info for %dx%d\nActual: %s",
 					tt.width, tt.height, result)
 			}
 		})
@@ -306,7 +309,7 @@ func TestRenderFooter_EdgeCases(t *testing.T) {
 			WithSearchQuery("test").
 			WithSearchActive(false).
 			Build()
-		
+
 		model.MCPItems = []types.MCPItem{} // Empty list
 
 		result := RenderFooter(model)

@@ -1,8 +1,9 @@
 package testutil
 
 import (
-	"cc-mcp-manager/internal/ui/types"
 	"strings"
+
+	"cc-mcp-manager/internal/ui/types"
 )
 
 // GetLayoutType determines layout based on terminal width
@@ -31,7 +32,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 	if model.SearchQuery == "" {
 		return model.MCPItems
 	}
-	
+
 	// Filter MCPs by search query directly
 	var filtered []types.MCPItem
 	query := strings.ToLower(model.SearchQuery)

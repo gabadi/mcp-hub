@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
 // RenderFourColumnGrid renders the 4-column MCP grid layout
 func RenderFourColumnGrid(model types.Model) string {
-	filteredMCPs := GetFilteredMCPs(model)
-	
+	filteredMCPs := services.GetFilteredMCPs(model)
+
 	if len(filteredMCPs) == 0 {
 		// Show "No results" message when search returns no results
 		noResultsStyle := lipgloss.NewStyle().
@@ -30,38 +32,44 @@ func RenderFourColumnGrid(model types.Model) string {
 
 	// Build the grid as a simple string without column separators
 	var gridLines []string
-	
+
 	for row := 0; row < gridRows; row++ {
 		var line []string
-		
+
 		for col := 0; col < 4; col++ {
 			mcpIndex := row*4 + col
-			
+
 			if mcpIndex < len(filteredMCPs) {
 				item := filteredMCPs[mcpIndex]
-				
+
 				// Status indicator
 				status := "○"
 				if item.Active {
 					status = "●"
 				}
-				
+
 				// Highlight selected item by comparing index directly
-				isSelected := (mcpIndex == model.SelectedItem)
-				
+				// Use FilteredSelectedIndex when search is active
+				isSelected := false
+				if model.SearchQuery != "" {
+					isSelected = (mcpIndex == model.FilteredSelectedIndex)
+				} else {
+					isSelected = (mcpIndex == model.SelectedItem)
+				}
+
 				// Create base item text (without styling)
 				baseText := fmt.Sprintf("%s %s", status, item.Name)
-				
+
 				// Calculate padding needed BEFORE styling
 				currentWidth := lipgloss.Width(baseText)
 				paddingNeeded := types.COLUMN_WIDTH - currentWidth
 				if paddingNeeded < 0 {
 					paddingNeeded = 0
 				}
-				
+
 				// Apply padding first
 				paddedText := baseText + strings.Repeat(" ", paddingNeeded)
-				
+
 				// Then apply styling based on selection
 				if isSelected {
 					styledText := lipgloss.NewStyle().
@@ -78,11 +86,11 @@ func RenderFourColumnGrid(model types.Model) string {
 				line = append(line, strings.Repeat(" ", types.COLUMN_WIDTH))
 			}
 		}
-		
+
 		// Join columns without separators, just spaces
 		gridLines = append(gridLines, strings.Join(line, ""))
 	}
-	
+
 	// Create container style that fills available space
 	gridStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -90,16 +98,21 @@ func RenderFourColumnGrid(model types.Model) string {
 		Padding(1).
 		Width(model.Width).
 		Height(model.Height - 8)
-	
+
 	return gridStyle.Render(fmt.Sprintf("MCP Inventory\n\n%s", strings.Join(gridLines, "\n")))
 }
 
 // RenderMCPList renders a simple list of MCPs for other layouts
 func RenderMCPList(model types.Model) string {
-	filteredMCPs := GetFilteredMCPs(model)
-	
+	filteredMCPs := services.GetFilteredMCPs(model)
+
+	// Debug: Show count of MCPs
+	if len(model.MCPItems) == 0 {
+		return fmt.Sprintf("No MCPs loaded from inventory (total: %d)", len(model.MCPItems))
+	}
+
 	if len(filteredMCPs) == 0 {
-		return "No MCPs available"
+		return fmt.Sprintf("No MCPs matching filter (total: %d, filtered: %d)", len(model.MCPItems), len(filteredMCPs))
 	}
 
 	var items []string

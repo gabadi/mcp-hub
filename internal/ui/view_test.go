@@ -9,10 +9,10 @@ import (
 
 func TestView_MainComposition(t *testing.T) {
 	tests := []struct {
-		name            string
-		width           int
-		height          int
-		state           types.AppState
+		name               string
+		width              int
+		height             int
+		state              types.AppState
 		expectedComponents []string
 	}{
 		{
@@ -21,9 +21,9 @@ func TestView_MainComposition(t *testing.T) {
 			height: 40,
 			state:  types.MainNavigation,
 			expectedComponents: []string{
-				"MCP Manager v1.0",  // Header
-				"MCP Inventory",     // Body
-				"Terminal:",         // Footer
+				"MCP Manager v1.0", // Header
+				"MCP Inventory",    // Body
+				"Terminal:",        // Footer
 			},
 		},
 		{
@@ -71,35 +71,35 @@ func TestView_MainComposition(t *testing.T) {
 
 func TestView_LayoutSwitching(t *testing.T) {
 	tests := []struct {
-		name         string
-		width        int
-		height       int
-		expectedLayout string
+		name               string
+		width              int
+		height             int
+		expectedLayout     string
 		expectedComponents []string
 	}{
 		{
-			name:         "Narrow layout (1 column)",
-			width:        60,
-			height:       30,
+			name:           "Narrow layout (1 column)",
+			width:          60,
+			height:         30,
 			expectedLayout: "Narrow",
 			expectedComponents: []string{
 				"MCP Manager", // Single column title
 			},
 		},
 		{
-			name:         "Medium layout (2 columns)",
-			width:        100,
-			height:       30,
+			name:           "Medium layout (2 columns)",
+			width:          100,
+			height:         30,
 			expectedLayout: "Medium",
 			expectedComponents: []string{
-				"MCPs",              // Left column
-				"Status & Details",  // Right column
+				"MCPs",             // Left column
+				"Status & Details", // Right column
 			},
 		},
 		{
-			name:         "Wide layout (4 columns/grid)",
-			width:        150,
-			height:       40,
+			name:           "Wide layout (4 columns/grid)",
+			width:          150,
+			height:         40,
 			expectedLayout: "Grid (4-column MCP)",
 			expectedComponents: []string{
 				"MCP Inventory", // Grid header
@@ -112,7 +112,7 @@ func TestView_LayoutSwitching(t *testing.T) {
 			model := NewModel()
 			model.Width = tt.width
 			model.Height = tt.height
-			
+
 			// Update layout based on width (simulating layout service)
 			if tt.width >= types.WIDE_LAYOUT_MIN {
 				model.ColumnCount = 4
@@ -141,11 +141,11 @@ func TestView_LayoutSwitching(t *testing.T) {
 
 func TestView_StateTransitions(t *testing.T) {
 	tests := []struct {
-		name         string
-		state        types.AppState
-		searchActive bool
+		name              string
+		state             types.AppState
+		searchActive      bool
 		searchInputActive bool
-		searchQuery  string
+		searchQuery       string
 		expectedShortcuts []string
 		expectedFooter    []string
 	}{
@@ -176,7 +176,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"Type to search", "Tab=Navigate Mode",
 			},
 			expectedFooter: []string{
-				"Search: test", "[INPUT MODE]",
+				"Search:", "test█", "[INPUT MODE]",
 			},
 		},
 		{
@@ -189,7 +189,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"Navigate Mode", "Tab=Input Mode",
 			},
 			expectedFooter: []string{
-				"Search: test", "[NAVIGATION MODE]",
+				"Search:", "test", "[NAVIGATION MODE]",
 			},
 		},
 		{
@@ -235,7 +235,7 @@ func TestView_ComponentIntegration(t *testing.T) {
 		model := NewModel()
 		model.Width = 120
 		model.Height = 40
-		
+
 		// Set specific MCPs with known active states
 		model.MCPItems = []types.MCPItem{
 			{Name: "active1", Active: true},
@@ -256,7 +256,7 @@ func TestView_ComponentIntegration(t *testing.T) {
 		model.Height = 40
 		model.SearchQuery = "active"
 		model.SearchActive = false // Not actively searching, but has query
-		
+
 		model.MCPItems = []types.MCPItem{
 			{Name: "active1", Active: true},
 			{Name: "inactive1", Active: false},
@@ -276,7 +276,7 @@ func TestView_ComponentIntegration(t *testing.T) {
 		model.Height = 40
 		model.ColumnCount = 4 // Grid layout
 		model.SearchQuery = "github"
-		
+
 		model.MCPItems = []types.MCPItem{
 			{Name: "github-mcp", Active: true},
 			{Name: "docker-mcp", Active: false},
@@ -301,31 +301,31 @@ func TestView_ComponentIntegration(t *testing.T) {
 
 func TestView_ResponsiveLayout(t *testing.T) {
 	tests := []struct {
-		name   string
-		width  int
-		height int
-		columnCount int
+		name           string
+		width          int
+		height         int
+		columnCount    int
 		expectedLayout string
 	}{
 		{
-			name:   "Breakpoint 1: Narrow layout",
-			width:  70,
-			height: 25,
-			columnCount: 1,
+			name:           "Breakpoint 1: Narrow layout",
+			width:          70,
+			height:         25,
+			columnCount:    1,
 			expectedLayout: "Narrow",
 		},
 		{
-			name:   "Breakpoint 2: Medium layout",
-			width:  90,
-			height: 30,
-			columnCount: 2,
+			name:           "Breakpoint 2: Medium layout",
+			width:          90,
+			height:         30,
+			columnCount:    2,
 			expectedLayout: "Medium",
 		},
 		{
-			name:   "Breakpoint 3: Wide layout",
-			width:  140,
-			height: 45,
-			columnCount: 4,
+			name:           "Breakpoint 3: Wide layout",
+			width:          140,
+			height:         45,
+			columnCount:    4,
 			expectedLayout: "Grid (4-column MCP)",
 		},
 	}
@@ -340,7 +340,7 @@ func TestView_ResponsiveLayout(t *testing.T) {
 			result := model.View()
 
 			if !strings.Contains(result, tt.expectedLayout) {
-				t.Errorf("View() should show layout %q for %dx%d", 
+				t.Errorf("View() should show layout %q for %dx%d",
 					tt.expectedLayout, tt.width, tt.height)
 			}
 		})

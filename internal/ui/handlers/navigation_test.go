@@ -77,26 +77,26 @@ func TestHandleMainNavigationKeys(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, cmd := HandleMainNavigationKeys(tt.initialModel, tt.key)
-			
+
 			if result.State != tt.expectedState {
-				t.Errorf("HandleMainNavigationKeys() State = %v, expected %v", 
+				t.Errorf("HandleMainNavigationKeys() State = %v, expected %v",
 					result.State, tt.expectedState)
 			}
-			
+
 			if tt.key == "tab" || tt.key == "/" {
 				if result.SearchActive != tt.expectedActive {
-					t.Errorf("HandleMainNavigationKeys() SearchActive = %v, expected %v", 
+					t.Errorf("HandleMainNavigationKeys() SearchActive = %v, expected %v",
 						result.SearchActive, tt.expectedActive)
 				}
 				if result.SearchInputActive != tt.expectedInput {
-					t.Errorf("HandleMainNavigationKeys() SearchInputActive = %v, expected %v", 
+					t.Errorf("HandleMainNavigationKeys() SearchInputActive = %v, expected %v",
 						result.SearchInputActive, tt.expectedInput)
 				}
 				if result.SelectedItem != 0 {
 					t.Errorf("HandleMainNavigationKeys() should reset SelectedItem to 0")
 				}
 			}
-			
+
 			if cmd != nil {
 				t.Errorf("HandleMainNavigationKeys() should return nil cmd")
 			}
@@ -165,11 +165,11 @@ func TestHandleMainNavigationMovement(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model := createTestNavigationModel()
 			model.SelectedItem = tt.initialItem
-			
+
 			result, _ := HandleMainNavigationKeys(model, tt.key)
-			
+
 			if result.SelectedItem != tt.expectedItem {
-				t.Errorf("HandleMainNavigationKeys() SelectedItem = %d, expected %d", 
+				t.Errorf("HandleMainNavigationKeys() SelectedItem = %d, expected %d",
 					result.SelectedItem, tt.expectedItem)
 			}
 		})
@@ -217,24 +217,24 @@ func TestHandleSearchNavigationKeys(t *testing.T) {
 			model.State = types.SearchActiveNavigation
 			model.SearchActive = true
 			model.SearchInputActive = tt.initialInputActive
-			
+
 			result, cmd := HandleSearchNavigationKeys(model, tt.key)
-			
+
 			if result.State != tt.expectedState {
-				t.Errorf("HandleSearchNavigationKeys() State = %v, expected %v", 
+				t.Errorf("HandleSearchNavigationKeys() State = %v, expected %v",
 					result.State, tt.expectedState)
 			}
-			
+
 			if result.SearchInputActive != tt.expectedInputActive {
-				t.Errorf("HandleSearchNavigationKeys() SearchInputActive = %v, expected %v", 
+				t.Errorf("HandleSearchNavigationKeys() SearchInputActive = %v, expected %v",
 					result.SearchInputActive, tt.expectedInputActive)
 			}
-			
+
 			if result.SearchActive != tt.expectedSearchActive {
-				t.Errorf("HandleSearchNavigationKeys() SearchActive = %v, expected %v", 
+				t.Errorf("HandleSearchNavigationKeys() SearchActive = %v, expected %v",
 					result.SearchActive, tt.expectedSearchActive)
 			}
-			
+
 			if cmd != nil {
 				t.Errorf("HandleSearchNavigationKeys() should return nil cmd")
 			}
@@ -244,39 +244,39 @@ func TestHandleSearchNavigationKeys(t *testing.T) {
 
 func TestHandleSearchNavigationTextInput(t *testing.T) {
 	tests := []struct {
-		name            string
-		key             string
-		initialQuery    string
-		inputActive     bool
-		expectedQuery   string
+		name          string
+		key           string
+		initialQuery  string
+		inputActive   bool
+		expectedQuery string
 	}{
 		{
-			name:            "add character when input active",
-			key:             "a",
-			initialQuery:    "test",
-			inputActive:     true,
-			expectedQuery:   "testa",
+			name:          "add character when input active",
+			key:           "a",
+			initialQuery:  "test",
+			inputActive:   true,
+			expectedQuery: "testa",
 		},
 		{
-			name:            "ignore character when input inactive",
-			key:             "a",
-			initialQuery:    "test",
-			inputActive:     false,
-			expectedQuery:   "test",
+			name:          "ignore character when input inactive",
+			key:           "a",
+			initialQuery:  "test",
+			inputActive:   false,
+			expectedQuery: "test",
 		},
 		{
-			name:            "backspace removes character",
-			key:             "backspace",
-			initialQuery:    "test",
-			inputActive:     true,
-			expectedQuery:   "tes",
+			name:          "backspace removes character",
+			key:           "backspace",
+			initialQuery:  "test",
+			inputActive:   true,
+			expectedQuery: "tes",
 		},
 		{
-			name:            "backspace on empty query",
-			key:             "backspace",
-			initialQuery:    "",
-			inputActive:     true,
-			expectedQuery:   "",
+			name:          "backspace on empty query",
+			key:           "backspace",
+			initialQuery:  "",
+			inputActive:   true,
+			expectedQuery: "",
 		},
 	}
 
@@ -286,11 +286,11 @@ func TestHandleSearchNavigationTextInput(t *testing.T) {
 			model.State = types.SearchActiveNavigation
 			model.SearchInputActive = tt.inputActive
 			model.SearchQuery = tt.initialQuery
-			
+
 			result, _ := HandleSearchNavigationKeys(model, tt.key)
-			
+
 			if result.SearchQuery != tt.expectedQuery {
-				t.Errorf("HandleSearchNavigationKeys() SearchQuery = %s, expected %s", 
+				t.Errorf("HandleSearchNavigationKeys() SearchQuery = %s, expected %s",
 					result.SearchQuery, tt.expectedQuery)
 			}
 		})
@@ -358,11 +358,11 @@ func TestNavigateUp(t *testing.T) {
 			if tt.mcpCount < len(model.MCPItems) {
 				model.MCPItems = model.MCPItems[:tt.mcpCount]
 			}
-			
+
 			result := NavigateUp(model)
-			
+
 			if result.SelectedItem != tt.expectedItem {
-				t.Errorf("NavigateUp() SelectedItem = %d, expected %d", 
+				t.Errorf("NavigateUp() SelectedItem = %d, expected %d",
 					result.SelectedItem, tt.expectedItem)
 			}
 		})
@@ -430,11 +430,11 @@ func TestNavigateDown(t *testing.T) {
 			if tt.mcpCount < len(model.MCPItems) {
 				model.MCPItems = model.MCPItems[:tt.mcpCount]
 			}
-			
+
 			result := NavigateDown(model)
-			
+
 			if result.SelectedItem != tt.expectedItem {
-				t.Errorf("NavigateDown() SelectedItem = %d, expected %d", 
+				t.Errorf("NavigateDown() SelectedItem = %d, expected %d",
 					result.SelectedItem, tt.expectedItem)
 			}
 		})
@@ -490,16 +490,16 @@ func TestNavigateLeft(t *testing.T) {
 			model.ColumnCount = tt.columnCount
 			model.ActiveColumn = tt.activeColumn
 			model.SelectedItem = tt.initialItem
-			
+
 			result := NavigateLeft(model)
-			
+
 			if result.SelectedItem != tt.expectedItem {
-				t.Errorf("NavigateLeft() SelectedItem = %d, expected %d", 
+				t.Errorf("NavigateLeft() SelectedItem = %d, expected %d",
 					result.SelectedItem, tt.expectedItem)
 			}
-			
+
 			if result.ActiveColumn != tt.expectedColumn {
-				t.Errorf("NavigateLeft() ActiveColumn = %d, expected %d", 
+				t.Errorf("NavigateLeft() ActiveColumn = %d, expected %d",
 					result.ActiveColumn, tt.expectedColumn)
 			}
 		})
@@ -573,16 +573,16 @@ func TestNavigateRight(t *testing.T) {
 			if tt.mcpCount < len(model.MCPItems) {
 				model.MCPItems = model.MCPItems[:tt.mcpCount]
 			}
-			
+
 			result := NavigateRight(model)
-			
+
 			if result.SelectedItem != tt.expectedItem {
-				t.Errorf("NavigateRight() SelectedItem = %d, expected %d", 
+				t.Errorf("NavigateRight() SelectedItem = %d, expected %d",
 					result.SelectedItem, tt.expectedItem)
 			}
-			
+
 			if result.ActiveColumn != tt.expectedColumn {
-				t.Errorf("NavigateRight() ActiveColumn = %d, expected %d", 
+				t.Errorf("NavigateRight() ActiveColumn = %d, expected %d",
 					result.ActiveColumn, tt.expectedColumn)
 			}
 		})
@@ -594,26 +594,26 @@ func TestNavigationWithFilteredResults(t *testing.T) {
 	model.SearchQuery = "item1" // This should filter to just "item1"
 	model.ColumnCount = 4
 	model.SelectedItem = 0
-	
+
 	// Test that navigation respects filtered results
 	filtered := services.GetFilteredMCPs(model)
 	if len(filtered) != 1 {
 		t.Fatalf("Expected 1 filtered result, got %d", len(filtered))
 	}
-	
+
 	// Test NavigateDown with filtered results
 	result := NavigateDown(model)
 	// Should stay at 0 since there's only 1 filtered item
 	if result.SelectedItem != 0 {
-		t.Errorf("NavigateDown() with filtered results: SelectedItem = %d, expected 0", 
+		t.Errorf("NavigateDown() with filtered results: SelectedItem = %d, expected 0",
 			result.SelectedItem)
 	}
-	
+
 	// Test NavigateRight with filtered results
 	result = NavigateRight(model)
 	// Should stay at 0 since there's only 1 filtered item
 	if result.SelectedItem != 0 {
-		t.Errorf("NavigateRight() with filtered results: SelectedItem = %d, expected 0", 
+		t.Errorf("NavigateRight() with filtered results: SelectedItem = %d, expected 0",
 			result.SelectedItem)
 	}
 }
@@ -625,35 +625,35 @@ func TestNavigationBoundaryConditions(t *testing.T) {
 			SelectedItem: 0,
 			MCPItems:     []types.MCPItem{},
 		}
-		
+
 		// Navigation should handle empty list gracefully
 		result := NavigateDown(model)
 		if result.SelectedItem != 0 {
 			t.Errorf("NavigateDown() with empty list should keep SelectedItem at 0")
 		}
-		
+
 		result = NavigateUp(model)
 		if result.SelectedItem != 0 {
 			t.Errorf("NavigateUp() with empty list should keep SelectedItem at 0")
 		}
 	})
-	
+
 	t.Run("Single item navigation", func(t *testing.T) {
 		model := types.Model{
 			ColumnCount:  4,
 			SelectedItem: 0,
 			MCPItems:     []types.MCPItem{{Name: "single", Active: true}},
 		}
-		
+
 		// All navigation should stay at item 0
 		directions := []func(types.Model) types.Model{
 			NavigateUp, NavigateDown, NavigateLeft, NavigateRight,
 		}
-		
+
 		for i, navFunc := range directions {
 			result := navFunc(model)
 			if result.SelectedItem != 0 {
-				t.Errorf("Navigation function %d with single item should stay at 0, got %d", 
+				t.Errorf("Navigation function %d with single item should stay at 0, got %d",
 					i, result.SelectedItem)
 			}
 		}

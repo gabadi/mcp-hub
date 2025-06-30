@@ -33,7 +33,7 @@ func TestRenderFourColumnGrid(t *testing.T) {
 			expected: []string{
 				"MCP Inventory",
 				"● github",
-				"○ docker", 
+				"○ docker",
 				"● context7",
 				"○ filesystem",
 			},
@@ -96,7 +96,7 @@ func TestRenderFourColumnGrid(t *testing.T) {
 				WithSelectedItem(tt.selectedItem).
 				WithSearchQuery(tt.searchQuery).
 				Build()
-			
+
 			model.MCPItems = tt.mcpItems
 
 			result := RenderFourColumnGrid(model)
@@ -130,7 +130,7 @@ func TestRenderFourColumnGrid_GridLayout(t *testing.T) {
 		WithWindowSize(120, 40).
 		WithSelectedItem(5). // Select item in second row
 		Build()
-	
+
 	model.MCPItems = mcpItems
 
 	result := RenderFourColumnGrid(model)
@@ -184,7 +184,7 @@ func TestRenderFourColumnGrid_SelectionHighlight(t *testing.T) {
 				WithWindowSize(120, 40).
 				WithSelectedItem(tt.selectedItem).
 				Build()
-			
+
 			model.MCPItems = mcpItems
 
 			result := RenderFourColumnGrid(model)
@@ -206,7 +206,7 @@ func TestRenderFourColumnGrid_StatusIndicators(t *testing.T) {
 	model := testutil.NewTestModel().
 		WithWindowSize(120, 40).
 		Build()
-	
+
 	model.MCPItems = mcpItems
 
 	result := RenderFourColumnGrid(model)
@@ -252,19 +252,19 @@ func TestRenderFourColumnGrid_ResponsiveDimensions(t *testing.T) {
 			model := testutil.NewTestModel().
 				WithWindowSize(tt.width, tt.height).
 				Build()
-			
+
 			model.MCPItems = mcpItems
 
 			result := RenderFourColumnGrid(model)
 
 			// Should render without panic and contain basic elements
 			if result == "" {
-				t.Errorf("RenderFourColumnGrid() should not return empty string for %dx%d", 
+				t.Errorf("RenderFourColumnGrid() should not return empty string for %dx%d",
 					tt.width, tt.height)
 			}
 
 			if !strings.Contains(result, "MCP Inventory") {
-				t.Errorf("RenderFourColumnGrid() should contain header for %dx%d", 
+				t.Errorf("RenderFourColumnGrid() should contain header for %dx%d",
 					tt.width, tt.height)
 			}
 		})
@@ -316,7 +316,7 @@ func TestRenderMCPList(t *testing.T) {
 			model := testutil.NewTestModel().
 				WithSelectedItem(tt.selectedItem).
 				Build()
-			
+
 			model.MCPItems = tt.mcpItems
 
 			result := RenderMCPList(model)
@@ -341,7 +341,7 @@ func TestRenderMCPList_StatusIndicators(t *testing.T) {
 	model := testutil.NewTestModel().
 		WithSelectedItem(0).
 		Build()
-	
+
 	model.MCPItems = mcpItems
 
 	result := RenderMCPList(model)
@@ -373,7 +373,7 @@ func TestRenderFourColumnGrid_MinimumGridRows(t *testing.T) {
 	model := testutil.NewTestModel().
 		WithWindowSize(120, 40).
 		Build()
-	
+
 	model.MCPItems = mcpItems
 
 	result := RenderFourColumnGrid(model)
