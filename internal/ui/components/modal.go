@@ -239,7 +239,7 @@ func renderDeleteModalContent(model types.Model) string {
 		Bold(true)
 
 	content := []string{
-		fmt.Sprintf("Are you sure you want to delete this MCP?"),
+		"Are you sure you want to delete this MCP?",
 		"",
 		fmt.Sprintf("Name: %s", item.Name),
 		fmt.Sprintf("Type: %s", item.Type),

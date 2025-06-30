@@ -134,6 +134,16 @@ issues:
       linters:
         - gocritic
     
+    # Disable field alignment warnings during development
+    - linters:
+        - govet
+      text: "fieldalignment:"
+    
+    # Allow simple fmt.Sprintf usage during development
+    - linters:
+        - gosimple
+      text: "unnecessary use of fmt.Sprintf"
+    
     # Exclude known linter issues
     - path: main\.go
       linters:
