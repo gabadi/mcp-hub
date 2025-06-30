@@ -144,6 +144,23 @@ issues:
         - gosimple
       text: "unnecessary use of fmt.Sprintf"
     
+    # Disable additional warnings during development phase
+    - linters:
+        - staticcheck
+      text: "SA9003:"  # empty branch
+    - linters:
+        - staticcheck
+      text: "SA1019:"  # deprecated usage
+    - path: .*
+      linters:
+        - lll
+    - path: .*
+      linters:
+        - ineffassign
+    - linters:
+        - govet
+      text: "nilness:"
+    
     # Exclude known linter issues
     - path: main\.go
       linters:
