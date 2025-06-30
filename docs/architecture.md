@@ -1,14 +1,12 @@
 # CC MCP Manager - System Architecture
 
-**Document Version:** 1.0  
-**Created:** 2025-06-30  
-**Last Updated:** 2025-06-30  
-**Owner:** Technical Lead  
-**Status:** Active
+**Document Version:** 2.0 | **Created:** 2025-06-30 | **Last Updated:** 2025-06-30 | **Owner:** Technical Lead | **Status:** Active - Post Epic 1, Story 3 Implementation
 
 ## Executive Summary
 
-The CC MCP Manager is a Terminal User Interface (TUI) application built in Go that enables developers to manage their Model Context Protocol (MCP) inventory. The system follows a clean architecture pattern with clear separation of concerns, leveraging the Bubble Tea framework for reactive UI management and implementing a responsive, multi-column layout system with comprehensive modal workflow support.
+The CC MCP Manager is a Terminal User Interface (TUI) application built in Go that enables developers to manage their Model Context Protocol (MCP) inventory. The system follows clean architecture with the Bubble Tea framework for reactive UI management and implements a sophisticated modal workflow system with comprehensive form validation and state management.
+
+**Overall Architecture Rating:** 85% (Good) → Targeting 95% (Excellent)
 
 ### Key Architectural Decisions
 
@@ -17,9 +15,9 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 3. **Local-First Storage**: JSON-based configuration with atomic file operations and version management
 4. **Responsive Layout System**: Adaptive column layouts based on terminal width with breakpoint-driven design
 5. **Modular Component Architecture**: Separation of UI, business logic, and storage layers with dependency injection
-6. **Modal System Architecture**: Multi-stage workflow system with progressive disclosure and form validation
+6. **Progressive Modal System**: Multi-stage workflow system with type selection and form validation
 7. **Type-Safe MCP Management**: Support for Command/Binary, SSE Server, and JSON Configuration MCP types
-8. **Comprehensive Testing Framework**: 85.9% service coverage with unit, integration, and benchmark testing
+8. **Testing Framework**: 85.9% service coverage with identified improvement areas
 
 ## System Overview
 
@@ -34,7 +32,7 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 │                     UI Layer (Bubble Tea)                     │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
 │  │   Model     │ │    View     │ │   Update    │ │ Components│ │
-│  │  (State)    │ │ (Rendering) │ │ (Logic)     │ │ (Reusable)│ │
+│  │  (State)    │ │ (Rendering) │ │ (Logic)     │ │ (Modal)   │ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
 │                    Handler Layer                               │
@@ -52,7 +50,7 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 │                    Types Layer                                 │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐               │
 │  │    Model    │ │    State    │ │ Constants   │               │
-│  │  Definitions│ │ Definitions │ │    & Enums  │               │
+│  │ Definitions │ │ Management  │ │  & Enums    │               │
 │  └─────────────┘ └─────────────┘ └─────────────┘               │
 ├─────────────────────────────────────────────────────────────────┤
 │                  Storage Layer                                 │
@@ -67,14 +65,9 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 
 **Responsibility**: Application initialization and Bubble Tea program execution
 
-**Key Functions**:
-- Initialize the UI model with default or loaded MCP data
-- Start the Bubble Tea program loop
-- Handle graceful shutdown
+**Key Functions:** Initialize the UI model with default or loaded MCP data, start the Bubble Tea program loop, handle graceful shutdown
 
-**Dependencies**:
-- `internal/ui` package for model initialization
-- Bubble Tea framework for program execution
+**Dependencies:** `internal/ui` package for model initialization, Bubble Tea framework for program execution
 
 ### 2. UI Layer (`internal/ui/`)
 
@@ -100,46 +93,54 @@ type Model struct {
     SearchQuery     string
     SearchActive    bool
     SearchInputActive bool
+    
+    // Modal system state
+    ActiveModal     ModalType
+    FormData        FormData
+    FormErrors      map[string]string
+    SuccessMessage  string
 }
 ```
 
 **State Management**:
 - Immutable state updates following Bubble Tea patterns
-- Centralized state for all UI components
-- Type-safe state transitions
+- Centralized state for all UI components including modal workflows
+- Type-safe state transitions with comprehensive modal support
 
 #### 2.2 View (`view.go`)
 
-**Responsibility**: UI rendering and layout composition
+**Responsibility**: UI rendering and layout composition with modal overlay support
 
 **Layout System**:
 - Responsive design with breakpoints (120+, 80-119, <80 width)
 - Dynamic column allocation based on terminal dimensions
+- Modal overlay system with backdrop dimming and centered positioning
 - Component composition with consistent styling
 
 **Rendering Pipeline**:
 1. Calculate available space
 2. Determine layout configuration
 3. Render individual components
-4. Compose final view with proper spacing
+4. Apply modal overlay if active
+5. Compose final view with proper spacing
 
 #### 2.3 Update (`update.go`)
 
-**Responsibility**: Event handling and state transitions
+**Responsibility**: Event handling and state transitions with modal workflow support
 
 **Message Processing**:
 - Window resize events
-- Keyboard input events
-- Application state transitions
+- Keyboard input events with modal-aware routing
+- Application state transitions including modal states
 - Command generation for side effects
 
 **Event Flow**:
 ```
-User Input → Keyboard Handler → State Update → View Render
-                ↓
-         Side Effects (Commands)
-                ↓
-         Service Layer Operations
+User Input → State-Aware Handler → Modal/Main Logic → State Update → View Render
+                ↓                       ↓                 ↓
+         Keyboard Router         Modal Handler    Service Layer
+                ↓                       ↓                 ↓
+         Context Switching       Form Processing   Storage Operations
 ```
 
 ### 3. Component Layer (`internal/ui/components/`)
@@ -149,105 +150,74 @@ User Input → Keyboard Handler → State Update → View Render
 **Responsibility**: MCP list rendering and selection management
 
 **Features**:
-- Multi-column MCP display
+- Multi-column MCP display with adaptive layout
 - Active/inactive status visualization
+- Search-aware filtering and display
+- Selection highlighting with keyboard navigation
 - Responsive column allocation
-- Selection highlighting
 
 #### 3.2 Header Component (`header.go`)
 
 **Responsibility**: Application title and status information
 
 **Information Display**:
-- Application branding
-- Current mode indication
-- Active MCP count
-- Layout adaptation
+- Application branding and version
+- Current mode indication (search, modal, navigation)
+- Active MCP count with real-time updates
+- Layout adaptation for narrow terminals
 
 #### 3.3 Footer Component (`footer.go`)
 
-**Responsibility**: Help text and keyboard shortcut display
+**Responsibility**: Context-sensitive help and keyboard shortcuts
 
 **Dynamic Content**:
-- Context-sensitive help
-- Available actions based on current state
-- Search mode indicators
+- State-aware help text (main, search, modal)
+- Available actions based on current modal state
+- Keyboard shortcut guidance
+- Status message display
 
-#### 3.4 Modal Component (`modal.go`)
+#### 3.4 Modal Component (`modal.go`) - **IMPLEMENTED**
 
-**Responsibility**: Overlay dialogs for user interactions with comprehensive form workflow support
+**Responsibility**: Comprehensive modal workflow system with progressive disclosure
 
-**Modal Types**:
-- **Add MCP Type Selection**: Progressive disclosure starting point for MCP addition
-- **Add Command Form**: Command/Binary MCP configuration with name, command, and args fields
-- **Add SSE Form**: SSE Server MCP configuration with name and URL validation
-- **Add JSON Form**: JSON Configuration MCP with multi-line input and syntax validation
-- **Edit Modal**: In-place editing of existing MCP configurations
-- **Delete Modal**: Confirmation dialog with item details and warning messaging
+**Modal Types**: Add MCP Type Selection (1-3 keys), Add Command Form (name, command, args), Add SSE Form (name, URL validation), Add JSON Form (multi-line input, syntax validation), Edit Modal (Future: Story 1.4), Delete Modal (Future: Story 1.5)
 
-**Modal Architecture Features**:
-- **Overlay System**: Centered modal with backdrop dimming for focus
-- **Progressive Disclosure**: Type selection → specific form workflow
-- **Real-time Validation**: Field-level validation with inline error messaging
-- **Form Navigation**: Tab-based field navigation with Enter submission
-- **State Preservation**: Modal state maintained in centralized model
-- **Responsive Design**: Modal dimensions adapt to terminal size constraints
+**Features**: Progressive disclosure workflow, overlay system with backdrop dimming, real-time field validation, Tab/Shift+Tab navigation, state preservation across transitions, comprehensive error handling, responsive design adapting to terminal constraints
 
 ### 4. Handler Layer (`internal/ui/handlers/`)
 
 #### 4.1 Navigation Handler (`navigation.go`)
 
-**Responsibility**: Column and item navigation logic with search integration
+**Responsibility**: Column and item navigation with search integration
 
 **Navigation Features**:
 - Left/Right arrow column navigation with bounds checking
 - Up/Down arrow item selection with wraparound behavior
-- Search-aware navigation with filtered item support
+- Search-aware navigation supporting filtered results
 - Layout-aware constraints with responsive column counts
-- Dual-index tracking for filtered vs. full inventory navigation
+- Dual-index tracking for filtered vs. full inventory
 
 #### 4.2 Keyboard Handler (`keyboard.go`)
 
-**Responsibility**: Global keyboard input processing with state-aware routing
+**Responsibility**: State-aware keyboard input routing
 
-**Key Bindings**:
-- **Navigation keys**: arrows, hjkl with context-sensitive behavior
-- **Action keys**: space (toggle), enter (confirm/apply), A (add MCP)
-- **Mode switches**: / (search), tab (focus toggle), escape (cancel/exit)
-- **Application controls**: q (quit), ctrl+c (force quit), ctrl+l (refresh)
+**Key Bindings**: Main Navigation (arrows/hjkl, space toggle, A add, / search, q quit), Search Mode (text input, escape exit, enter activate), Modal Active (Tab field nav, Enter submit, Escape cancel, 1-3 type select), Global (ctrl+c force quit, ctrl+l refresh)
 
-**State-Aware Processing**:
-- Main Navigation: Full navigation and action key support
-- Search Mode: Text input with navigation key passthrough
-- Search Active Navigation: Dual-mode input/navigation toggle
-- Modal Active: Modal-specific key handling with form navigation
+**Processing**: Context-sensitive key handling based on AppState, modal-specific routing for form navigation, search mode text input with navigation passthrough, graceful state transitions with cleanup
 
 #### 4.3 Search Handler (`search.go`)
 
-**Responsibility**: Search functionality and filtering with state management
+**Responsibility**: Real-time search functionality with state management
 
-**Search Features**:
-- Real-time filtering with case-insensitive matching
-- Multi-mode search: input-focused and navigation-focused
-- Search state persistence across mode transitions
-- Query input handling with backspace and character support
-- Filtered result navigation with index synchronization
+**Features**: Case-insensitive matching across MCP name and type, real-time filtering with immediate UI updates, search state persistence across mode transitions, filtered result navigation with proper index synchronization, search query input handling with backspace support
 
-#### 4.4 Modal Handler (`modal.go`) - **NEW**
+#### 4.4 Modal Handler (`modal.go`) - **IMPLEMENTED**
 
 **Responsibility**: Modal workflow orchestration and form processing
 
-**Modal Management Features**:
-- **Type Selection**: Number key (1-3) and arrow navigation for MCP type selection
-- **Form Processing**: Tab navigation, field validation, and submission handling
-- **Multi-Stage Workflows**: Type selection → specific form → validation → persistence
-- **Form Validation**: Real-time field validation with error message management
-- **Data Integration**: Form data to MCP item conversion and inventory persistence
+**Core Features**: Type selection management (1-3 keys), progressive form workflow (Type → Form → Validation → Persistence), multi-form support (Command, SSE, JSON), real-time validation with immediate feedback, Tab-based navigation with focus management, data integration with inventory persistence
 
-**Form-Specific Handlers**:
-- Command Form: Name, command, args with required field validation
-- SSE Form: Name, URL with format validation and accessibility checking
-- JSON Form: Name, JSON config with syntax validation and multi-line support
+**Form Processing**: Command Form (name validation, command checking, args parsing), SSE Form (URL validation, accessibility checking, duplicate prevention), JSON Form (syntax validation, multi-line input, configuration parsing)
 
 ### 5. Service Layer (`internal/ui/services/`)
 
@@ -256,29 +226,28 @@ User Input → Keyboard Handler → State Update → View Render
 **Responsibility**: MCP business logic and operations
 
 **Core Operations**:
-- MCP filtering and search
-- Status toggling (active/inactive)
-- MCP data validation
-- Collection management
-
-**Data Operations**:
 ```go
-// Core service methods
+// Primary service methods
 GetFilteredMCPs(model Model) []MCPItem
 ToggleMCPStatus(model *Model, index int)
 GetSelectedMCP(model Model) *MCPItem
 GetActiveMCPCount(model Model) int
+AddMCPItem(model *Model, item MCPItem) error
+ValidateMCPItem(item MCPItem) error
 ```
+
+**Business Logic**:
+- MCP filtering and search with multi-criteria support
+- Status toggling with persistence integration  
+- MCP validation with comprehensive error checking
+- Collection management with duplicate prevention
+- Type-specific validation for different MCP types
 
 #### 5.2 Storage Service (`storage_service.go`)
 
 **Responsibility**: Data persistence and configuration management
 
-**Storage Features**:
-- Atomic file operations
-- JSON serialization with metadata
-- Configuration directory management
-- Error handling and recovery
+**Features**: Atomic file operations with temporary file safety, JSON serialization with metadata and versioning, configuration directory management with proper permissions, error handling and recovery with backup support, cross-platform compatibility
 
 **File Structure**:
 ```json
@@ -290,7 +259,14 @@ GetActiveMCPCount(model Model) int
       "name": "github-mcp",
       "type": "CMD",
       "active": true,
-      "command": "github-mcp"
+      "command": "github-mcp",
+      "args": "--config ~/.config/github-mcp.json"
+    },
+    {
+      "name": "web-search",
+      "type": "SSE",
+      "active": false,
+      "url": "http://localhost:3001/sse"
     }
   ]
 }
@@ -300,11 +276,7 @@ GetActiveMCPCount(model Model) int
 
 **Responsibility**: Responsive layout calculations
 
-**Layout Logic**:
-- Breakpoint determination
-- Column count calculation
-- Width distribution
-- Component sizing
+**Logic**: Breakpoint determination based on terminal dimensions, dynamic column count calculation (2-4 columns), proportional width distribution, component sizing with minimum constraints, modal overlay positioning and sizing
 
 ### 6. Types Layer (`internal/ui/types/`)
 
@@ -314,9 +286,9 @@ GetActiveMCPCount(model Model) int
 ```go
 type MCPItem struct {
     Name       string `json:"name"`
-    Type       string `json:"type"`        // CMD, SSE, JSON, HTTP
+    Type       string `json:"type"`        // CMD, SSE, JSON
     Active     bool   `json:"active"`
-    Command    string `json:"command"`
+    Command    string `json:"command,omitempty"`
     Args       string `json:"args,omitempty"`
     URL        string `json:"url,omitempty"`
     JSONConfig string `json:"json_config,omitempty"`
@@ -333,13 +305,12 @@ const (
 type ModalType int
 const (
     NoModal ModalType = iota
-    AddModal
-    AddMCPTypeSelection     // Progressive disclosure starting point
+    AddMCPTypeSelection     // Progressive disclosure entry point
     AddCommandForm          // Command/Binary MCP form
-    AddSSEForm             // SSE Server MCP form
+    AddSSEForm             // SSE Server MCP form  
     AddJSONForm            // JSON Configuration MCP form
-    EditModal
-    DeleteModal
+    EditModal              // Future: Story 1.4
+    DeleteModal            // Future: Story 1.5
 )
 
 type FormData struct {
@@ -348,16 +319,27 @@ type FormData struct {
     Args       string
     URL        string
     JSONConfig string
-    ActiveField int    // Track focused field for Tab navigation
+    ActiveField int    // Tab navigation tracking
 }
 ```
 
 #### 6.2 Constants (`constants.go`)
 
-**Layout Constants**:
-- Breakpoint values (WIDE_LAYOUT_MIN, MEDIUM_LAYOUT_MIN)
-- Column counts (WIDE_COLUMNS, MEDIUM_COLUMNS, NARROW_COLUMNS)
-- UI dimensions and spacing
+**Layout and UI Constants**:
+- Breakpoint values (WIDE_LAYOUT_MIN: 120, MEDIUM_LAYOUT_MIN: 80)
+- Column counts (WIDE_COLUMNS: 4, MEDIUM_COLUMNS: 3, NARROW_COLUMNS: 2)
+- UI dimensions, spacing, and styling constants
+- Modal sizing constraints and positioning offsets
+
+## Modal System Architecture - **IMPLEMENTED**
+
+**Progressive Disclosure**: A key → Type Selection → Specific Form → Validation → Persistence → Success. Workflow supports Command Form (field input), SSE Form (tab navigation), JSON Form (enter submit) with real-time validation, storage service integration, and automatic success message display.
+
+**State Management**: Centralized modal state with ActiveModal, FormData, FormErrors, and SuccessMessage. Clear state separation between modal types, form data preservation across transitions, field-specific error tracking, success state with automatic cleanup.
+
+**Validation Framework**: Multi-level validation including input validation (required fields, format checking), business logic (duplicate detection, type constraints), integration validation (URL accessibility), and submission validation (complete form validation before persistence). Real-time validation with field-specific error messages and clear recovery workflows.
+
+**Integration**: Modal handlers delegate to MCP service, form validation leverages existing patterns, storage operations use atomic persistence, modal rendering overlays existing interface, form components reuse styling patterns, success messaging integrates with notification system.
 
 ## Data Flow Architecture
 
@@ -366,35 +348,39 @@ type FormData struct {
 ```
 main() → NewModel() → LoadInventory() → StartProgram()
   ↓
-Default MCPs + Loaded MCPs → Initial State
+Default MCPs + Loaded Configuration → Initial State Setup
   ↓
-First Render
+Layout Calculation → Component Initialization → First Render
 ```
 
-### 2. User Interaction Flow
+### 2. Modal Workflow Data Flow
 
 ```
-User Input → Keyboard Handler → Update Logic
-     ↓              ↓               ↓
-  Key Event → State Validation → New State
-                    ↓               ↓
-               Side Effects → Command Execution
-                              ↓
-                         Service Layer
-                              ↓
-                         Storage/Operations
+Add MCP Request (A key) → Modal Activation → Type Selection Display
+        ↓                        ↓                 ↓
+   State Update            Modal State Set    User Selection (1-3)
+        ↓                        ↓                 ↓
+   Form Display           Form Data Init    Field Input/Navigation
+        ↓                        ↓                 ↓
+ Real-time Validation    Error State Update   Form Submission
+        ↓                        ↓                 ↓
+ Business Validation     Service Integration   Storage Persistence
+        ↓                        ↓                 ↓
+Success Confirmation     State Cleanup      Return to Main
 ```
 
-### 3. State Update Cycle
+### 3. State Update Cycle with Modal Support
 
 ```
-Previous State + Event → New State + Commands
-        ↓                        ↓
-   View Rendering           Command Execution
-        ↓                        ↓
-   Terminal Display         Service Operations
-                                 ↓
-                            Future Events
+Previous State + Event → State Router → Modal/Main Handler
+        ↓                     ↓              ↓
+   State Validation     Context Check    Handler Logic
+        ↓                     ↓              ↓
+   New State + Commands → Command Execution → Service Operations
+        ↓                     ↓              ↓
+   View Rendering       Side Effects    Storage/Network
+        ↓                     ↓              ↓
+Terminal Display     Future Events    State Updates
 ```
 
 ## Storage Architecture
@@ -403,553 +389,364 @@ Previous State + Event → New State + Commands
 
 **Location**: `~/.config/cc-mcp-manager/inventory.json`
 
-**Benefits**:
-- Standard configuration directory
-- Cross-platform compatibility
-- User-specific settings
-- Version control friendly
-
-### 2. Data Persistence
-
-**Atomic Operations**:
-1. Write to temporary file
-2. Verify write success
-3. Atomic rename to target
-4. Clean up temporary files
-
-**Error Handling**:
-- Corrupted file backup
-- Default data fallback
-- Graceful degradation
-- User notification
-
-### 3. Data Format
-
-**Version Management**:
-- Explicit version field
-- Migration support
-- Backward compatibility
-- Schema validation
-
-## Component Communication
-
-### 1. Service Integration
-
-```go
-// Handler uses service
-func HandleKeyPress(model *Model, key string) {
-    switch key {
-    case " ":
-        services.ToggleMCPStatus(model, model.SelectedItem)
-        return SaveInventoryCommand(model)
-    }
-}
-
-// Service operates on model
-func ToggleMCPStatus(model *Model, index int) {
-    if index >= 0 && index < len(model.MCPItems) {
-        model.MCPItems[index].Active = !model.MCPItems[index].Active
-    }
-}
-```
-
-### 2. Component Composition
-
-```go
-// View composes components
-func (m Model) View() string {
-    header := components.RenderHeader(m)
-    grid := components.RenderGrid(m)
-    footer := components.RenderFooter(m)
-    
-    return lipgloss.JoinVertical(
-        lipgloss.Left,
-        header,
-        grid,
-        footer,
-    )
-}
-```
-
-## Responsive Design System
-
-### 1. Breakpoint Strategy
-
-**Wide Layout (120+ chars)**:
-- 4-column MCP grid
-- Maximum information density
-- Full feature display
-
-**Medium Layout (80-119 chars)**:
-- 3-column layout
-- Balanced information display
-- Optimized for standard terminals
-
-**Narrow Layout (<80 chars)**:
-- 2-column layout
-- Essential information only
-- Mobile-friendly design
-
-### 2. Adaptive Components
-
-**Grid Adaptation**:
-- Dynamic column count
-- Proportional width allocation
-- Content prioritization
-
-**Component Scaling**:
-- Text truncation strategies
-- Priority-based information display
-- Consistent spacing ratios
-
-## Security Considerations
-
-### 1. Configuration Security
-
-**File Permissions**:
+**Security Model**:
 - Configuration directory: 0700 (user only)
 - Configuration file: 0600 (user read/write only)
-- Temporary files: 0600
+- Temporary files: 0600 with automatic cleanup
 
-**Data Validation**:
-- JSON schema validation
-- Command injection prevention
-- Path traversal protection
+### 2. Atomic Persistence Operations
 
-### 2. Command Execution
+**Write Process**:
+1. Create temporary file with unique suffix
+2. Write complete data to temporary file
+3. Verify write operation success
+4. Atomic rename to target file
+5. Clean up temporary files on success/failure
 
-**Future Considerations**:
-- MCP command validation
-- Sandboxed execution
-- User permission prompts
+**Error Recovery**:
+- Corrupted file detection and backup
+- Default configuration fallback
+- Graceful degradation with user notification
+- Recovery workflow guidance
+
+### 3. Data Format and Versioning
+
+**Version Management**:
+```json
+{
+  "version": "1.0",
+  "timestamp": "2025-06-30T12:00:00Z",
+  "inventory": [...]
+}
+```
+
+**Migration Support** (Future):
+- Schema version detection
+- Automatic migration workflows
+- Backward compatibility preservation
+- Migration validation and rollback
+
+## Testing Architecture - **IMPLEMENTED & IDENTIFIED GAPS**
+
+**Coverage Status**: Services Layer 85.9% (exceeds requirements), Handlers Layer 40.1% (below 80% target), Components Layer 37.0% (significant gap), UI Layer 34.7% (requires attention)
+
+**Test Infrastructure**: Model builders with fluent API, helper functions, test fixtures, integration test utilities (`internal/testutil/`)
+
+**Critical Gaps**: 7 failing integration tests not aligned with modal system implementation including TestCompleteUserWorkflow_InitializeAndNavigate, SearchAndSelection, MCPToggleAndPersistence, ResponsiveLayout, ErrorHandlingAndRecovery, PerformanceUnderLoad, ModalWorkflows
+
+**Patterns**: Table-driven tests, benchmark tests for performance regression prevention, mock service integration, builder pattern for test data generation. Required improvements include modal workflow test coverage, component rendering validation, state transition testing, error handling coverage.
 
 ## Performance Architecture
 
 ### 1. Rendering Optimization
 
-**Efficient Updates**:
-- Minimal re-rendering
-- Component-level change detection
-- Lazy evaluation where possible
+**Efficient Update Strategy**:
+- Minimal re-rendering with change detection
+- Component-level update isolation
+- Lazy evaluation for expensive operations
+- String builder usage for complex rendering
 
 **Memory Management**:
-- Bounded slice operations
-- String builder usage
-- Garbage collection friendly
+- Bounded slice operations to prevent growth
+- Garbage collection friendly allocation patterns
+- Proper cleanup of modal state and form data
+- Efficient string handling for large configurations
 
-### 2. Data Operations
+### 2. Data Operation Performance
 
 **Search Performance**:
-- Case-insensitive string matching
-- Early termination
-- Bounded result sets
+- Case-insensitive matching with early termination
+- Bounded result sets for large inventories
+- Incremental filtering with state preservation
+- Memory-efficient filtered view generation
 
-**File I/O**:
-- Atomic operations
-- Minimal disk access
-- Error recovery
+**File I/O Optimization**:
+- Minimal disk access with atomic operations
+- Configuration caching with change detection
+- Error recovery without performance penalty
+- Cross-platform compatibility with optimal paths
 
-## Testing Architecture
+## Security Considerations
 
-### 1. Testing Strategy
+### 1. Configuration Security
 
-**Test Categories**:
-- Unit tests: Individual component testing
-- Integration tests: Cross-component workflows
-- End-to-end tests: Complete user scenarios
-- Performance tests: Benchmark critical paths
+**File System Security**:
+- Configuration directory permissions (0700)
+- Configuration file permissions (0600)
+- Temporary file security with cleanup
+- Path traversal protection
 
-### 2. Test Infrastructure - **IMPLEMENTED**
+**Data Validation Security**:
+- JSON schema validation to prevent injection
+- Command string sanitization (future implementation)
+- URL validation for SSE endpoints
+- Input length limits and character filtering
 
-**Test Utilities** (`internal/testutil/`):
-- **Model builders**: Consistent test data generation with fluent API
-- **Helper functions**: Common operations for model manipulation
-- **Test fixtures**: Standardized test scenarios and data sets
-- **Integration helpers**: End-to-end workflow testing utilities
+### 2. Future Security Enhancements
 
-**Current Coverage Status**:
-- **Services Layer**: 85.9% coverage (exceeds minimum requirements)
-- **Handlers Layer**: 40.1% coverage (improvement needed)
-- **Components Layer**: 37.0% coverage (significant gap identified)
-- **UI Layer**: 34.7% coverage (requires attention)
+**Command Execution Security** (for MCP management):
+- Command validation before execution
+- Sandboxed execution environment
+- User permission prompts for sensitive operations
+- Audit logging for security events
 
-**Testing Architecture Patterns**:
-- **Unit Tests**: Individual component and service testing
-- **Integration Tests**: Complete user workflow validation
-- **Benchmark Tests**: Performance regression prevention
-- **Table-Driven Tests**: Multiple scenario validation
-
-**Test Quality Standards**:
-- **Minimum 85% overall coverage target**
-- **90% coverage for new features (Epic 1, Story 3 compliance)**
-- **100% coverage for error paths and edge cases**
-- **Cross-platform compatibility testing**
-
-**Testing Gaps Identified** (for improvement prioritization):
-1. **Critical**: Integration test alignment (7 failing tests)
-2. **High**: UI component coverage below threshold
-3. **Medium**: Text rendering consistency validation
-4. **Low**: Performance benchmark baseline establishment
-
-## Modal System Architecture - **IMPLEMENTED**
-
-### 1. Modal Architecture Pattern
-
-**Design Philosophy**: Progressive disclosure with overlay-based modal system
-
-**Core Components**:
-- **Modal Overlay System**: Centered modals with backdrop dimming
-- **Progressive Workflow**: Type selection → specific form → validation → persistence
-- **State Management**: Centralized modal state within main Bubble Tea model
-- **Form Validation**: Real-time validation with field-level error messaging
-
-### 2. Modal State Management
-
-**State Architecture**:
-```go
-type Model struct {
-    // Modal state
-    ActiveModal ModalType
-    
-    // Form state for add MCP workflow
-    FormData    FormData
-    FormErrors  map[string]string
-    
-    // Success message state
-    SuccessMessage string
-}
-```
-
-**State Transitions**:
-```
-MainNavigation → ModalActive (A key)
-  ↓
-AddMCPTypeSelection → AddCommandForm/AddSSEForm/AddJSONForm
-  ↓
-Form Validation → Submission → MainNavigation
-  ↓
-Success Message Display → Auto-hide
-```
-
-### 3. Form Validation Architecture
-
-**Real-time Validation System**:
-- **Field-level validation**: Immediate feedback on input change
-- **Cross-field validation**: Duplicate name detection across inventory
-- **Type-specific validation**: URL format, JSON syntax, command existence
-- **Error messaging**: Specific, actionable error messages with inline display
-
-**Validation Pipeline**:
-1. Input validation (required fields, format checking)
-2. Business logic validation (duplicate detection, constraints)
-3. Async validation (URL accessibility, command validation)
-4. Submission validation (final form completeness check)
-
-### 4. Integration Patterns
-
-**Service Layer Integration**:
-- Modal handlers use MCP service for inventory management
-- Storage service handles atomic persistence operations
-- Form data validation leverages existing validation patterns
-
-**Component Integration**:
-- Modal rendering overlays existing interface with preserved context
-- Form components reuse existing styling and layout patterns
-- Success messaging integrates with existing notification system
-
-## Future Architecture Considerations
-
-### 1. Enhanced Modal Workflows
-
-**Edit MCP Modal** (Epic 1, Story 4):
-- Pre-populate forms with existing MCP data
-- Support for in-place editing with change tracking
-- Validation for modified vs. original data
-
-**Batch Operations**:
-- Multi-select modal for bulk actions
-- Import/export modal workflows
-- Batch validation and error handling
-
-### 2. Advanced MCP Operations
-
-**MCP Lifecycle Management**:
-- Start/stop MCP servers with health checking
-- Performance monitoring integration
-- Dependency management and resolution
-
-**Configuration Wizards**:
-- Template-based MCP creation
-- Step-by-step configuration guidance
-- Integration with external MCP registries
-
-### 2. Scalability Considerations
-
-**Large Inventories**:
-- Pagination support
-- Virtual scrolling
-- Incremental search
-
-**Cross-Platform Support**:
-- Windows compatibility
-- Terminal capability detection
-- Fallback rendering modes
-
-## Development Guidelines
-
-### 1. Code Organization
-
-**Package Structure**:
-- **Clear separation of concerns**: UI, handlers, services, types layers
-- **Minimal inter-package dependencies**: Service layer independence
-- **Consistent naming conventions**: Go standard naming with domain context
-- **Component reusability**: Shared components across modal and main interface
-
-**Interface Design**:
-- **Small, focused interfaces**: Single responsibility principle
-- **Dependency injection friendly**: Service layer abstraction
-- **Testability first**: Mock-friendly interface design
-- **State management patterns**: Centralized state with immutable updates
-
-### 2. Modal Development Patterns - **NEW**
-
-**Modal Implementation Guidelines**:
-- **Progressive disclosure**: Start with type selection, proceed to specific forms
-- **State preservation**: Maintain form state across modal transitions
-- **Validation consistency**: Use common validation patterns across form types
-- **Error handling**: Provide specific, actionable error messages
-- **Keyboard navigation**: Support Tab navigation and Enter/Escape patterns
-
-**Form Development Standards**:
-- **Field validation**: Real-time validation with immediate feedback
-- **Required field marking**: Clear visual indication of mandatory fields
-- **Navigation patterns**: Consistent Tab/Shift+Tab field navigation
-- **Submission handling**: Validate before persistence, show success confirmation
-- **Cancellation behavior**: Preserve previous state on ESC cancellation
-
-### 3. Testing Development Patterns
-
-**Test Organization**:
-- **Co-located tests**: `*_test.go` files alongside source files
-- **Test categorization**: Unit, integration, benchmark test separation
-- **Test data builders**: Use `internal/testutil` builders for consistency
-- **Coverage verification**: Maintain minimum thresholds per component
-
-**Modal Testing Strategies**:
-- **State transition testing**: Verify modal state changes
-- **Form validation testing**: Test all validation scenarios
-- **Integration workflow testing**: Complete add/edit/delete workflows
-- **Error handling testing**: Validate error recovery patterns
-
-### 2. Contribution Guidelines
-
-**Code Quality**:
-- Go fmt compliance
-- Comprehensive testing
-- Documentation requirements
-- Performance considerations
-
-**Architecture Compliance**:
-- Follow established patterns
-- Maintain separation of concerns
-- Consider backward compatibility
-- Update documentation
-
-## Deployment Architecture
-
-### 1. Build System
-
-**Single Binary**:
-- Static compilation with embedded dependencies
-- No external runtime dependencies
-- Cross-platform builds (macOS, Linux, Windows)
-- Optimized binary size with build constraints
-
-**Distribution**:
-- CLI installation via package managers
-- GitHub releases with automated builds
-- Docker container support for isolated environments
-
-### 2. Configuration Management
-
-**Default Behavior**:
-- Graceful degradation with fallback to defaults
-- Sensible defaults for first-time users
-- User customization support via configuration files
-
-**Migration Support**:
-- Version detection and automatic schema migration
-- Backward compatibility with configuration format evolution
-- Safe upgrade paths with data preservation
-
-## Architectural Quality Assessment
+## Quality Gates and Architecture Assessment
 
 ### 1. Current Architecture Strengths
 
-**Modular Design**:
-- ✅ Clear separation of concerns across layers
-- ✅ Dependency injection patterns enable testability
+**Excellent Design Patterns**:
+- ✅ Progressive modal disclosure reduces cognitive load
+- ✅ Centralized state management with type safety
+- ✅ Clear separation of concerns across all layers
+- ✅ Service layer independence enables excellent testability
 - ✅ Component reusability across modal and main interface
-- ✅ Service layer independence from UI concerns
+- ✅ Responsive design with comprehensive breakpoint management
 
-**State Management**:
-- ✅ Centralized state management with Bubble Tea framework
-- ✅ Immutable state updates following reactive patterns
-- ✅ Type-safe state transitions with well-defined AppState enum
+**Strong Implementation Quality**:
+- ✅ Real-time form validation with immediate feedback
+- ✅ Atomic storage operations with error recovery
+- ✅ Consistent keyboard navigation patterns
 - ✅ Modal state preservation across complex workflows
 
-**User Experience**:
-- ✅ Progressive disclosure reduces cognitive load
-- ✅ Consistent keyboard navigation patterns
-- ✅ Real-time validation with immediate feedback
-- ✅ Responsive design adapts to terminal constraints
+### 2. Critical Architecture Gaps **FOR IMMEDIATE RESOLUTION**
 
-### 2. Identified Architecture Gaps
+**Testing Architecture Alignment** (CRITICAL):
+- ❌ 7 failing integration tests block Epic 1 completion
+- ❌ Component coverage below 50% creates maintenance risk
+- ❌ Modal workflow test coverage insufficient
 
-**Testing Architecture** (Priority: High):
-- ⚠️ Integration test alignment issues (7 failing tests)
-- ⚠️ UI component coverage below 50% threshold
-- ⚠️ Text rendering consistency needs standardization
-- ⚠️ Performance benchmark baselines not established
+**Documentation Gaps** (HIGH):
+- ⚠️ State transition diagrams missing for modal workflows
+- ⚠️ Component interaction patterns not visually documented
+- ⚠️ Error handling flows need mapping
 
-**Error Handling** (Priority: Medium):
-- ⚠️ Inconsistent error propagation patterns
-- ⚠️ Limited error recovery mechanisms
-- ⚠️ Network error handling needs improvement
-- ⚠️ User error messaging could be more actionable
+### 3. Architecture Compliance Requirements
 
-**Performance** (Priority: Low):
-- ⚠️ Large dataset handling not optimized
-- ⚠️ Memory usage patterns not benchmarked
-- ⚠️ Rendering performance under load untested
+**Epic 1 Completion Gates**:
+- [ ] All integration tests passing (0 failures)
+- [ ] Component test coverage >80%
+- [ ] Modal workflow documentation complete
+- [ ] Architecture compliance >90%
 
-### 3. Architecture Recommendations
+**Quality Standards**:
+- Minimum 85% overall test coverage
+- 90% coverage for new features (Modal system compliance)
+- 100% coverage for error paths and edge cases
+- Cross-platform compatibility validation
 
-**Immediate Actions** (Epic 1 completion):
-1. **Resolve Integration Test Failures**: Address 7 failing integration tests
-2. **Improve Component Coverage**: Bring UI component coverage to 80%+
-3. **Standardize Text Rendering**: Ensure consistent component display
-4. **Document State Management**: Create state transition diagrams
+## Technical Debt Analysis and Prioritization
 
-**Strategic Improvements** (Future Epics):
-1. **Error Handling Framework**: Implement structured error recovery
-2. **Performance Optimization**: Add performance monitoring and optimization
-3. **Accessibility Improvements**: Enhance terminal accessibility features
-4. **Extensibility Framework**: Plugin architecture for custom MCP types
+### 1. Current Technical Debt Inventory
 
-## Integration Architecture Patterns
+**Critical (Address for Epic 1 Completion)**:
+1. **Integration Test Alignment**: 7 failing tests indicate architectural misalignment
+2. **Component Test Coverage**: UI layer coverage below acceptable thresholds
+3. **State Management Documentation**: Complex workflows lack visual documentation
 
-### 1. Service Integration Patterns
+**High Priority (Address in Next Epic)**:
+4. **Error Handling Standardization**: Inconsistent patterns across components
+5. **Performance Benchmark Establishment**: No performance regression detection
+6. **Component Interaction Documentation**: Integration patterns not documented
 
-**Handler-Service Integration**:
-```go
-// Pattern: Handlers delegate business logic to services
-func HandleKeyPress(model types.Model, key string) (types.Model, tea.Cmd) {
-    switch key {
-    case " ":
-        // Delegate to service layer
-        model = services.ToggleMCPStatus(model)
-        return model, SaveInventoryCommand(model)
-    }
-}
-```
-
-**Service-Storage Integration**:
-```go
-// Pattern: Services handle business logic, storage handles persistence
-func ToggleMCPStatus(model types.Model) types.Model {
-    // Business logic
-    model.MCPItems[index].Active = !model.MCPItems[index].Active
-    
-    // Persist immediately
-    SaveInventory(model.MCPItems)
-    return model
-}
-```
-
-### 2. Component Integration Patterns
-
-**Modal-Component Integration**:
-```go
-// Pattern: Modal system overlays existing components
-func (m Model) View() string {
-    content := buildMainInterface(m)
-    
-    if m.State == types.ModalActive {
-        return components.OverlayModal(m, content)
-    }
-    return content
-}
-```
-
-**State-Component Integration**:
-```go
-// Pattern: Components render based on centralized state
-func RenderFooter(model types.Model) string {
-    switch model.State {
-    case types.MainNavigation:
-        return renderMainHelp()
-    case types.ModalActive:
-        return renderModalHelp(model.ActiveModal)
-    }
-}
-```
-
-## Technical Debt Analysis
-
-### 1. Current Technical Debt
-
-**High Priority**:
-- Integration test failures indicate architectural misalignment
-- UI component test coverage gaps create maintenance risk
-- Inconsistent error handling patterns across components
-
-**Medium Priority**:
-- State management complexity in modal workflows
-- Performance optimization opportunities not addressed
-- Documentation gaps in component interaction patterns
-
-**Low Priority**:
-- Code duplication in form validation logic
-- Naming inconsistencies in some components
-- Build optimization opportunities
+**Medium Priority (Future Improvement)**:
+7. **Form Validation Code Duplication**: Repeated validation logic across forms
+8. **Build Process Optimization**: Compilation and distribution improvements
+9. **Accessibility Enhancement Preparation**: Terminal accessibility features
 
 ### 2. Debt Reduction Strategy
 
-**Phase 1** (Immediate - Epic 1 completion):
-- Fix integration test failures
-- Improve UI component test coverage
-- Standardize error handling patterns
+**Phase 1: Epic 1 Completion** (5-7 days):
+- Fix all integration test failures
+- Improve component test coverage to 80%+
+- Create state transition documentation with diagrams
+- Validate architecture compliance >90%
 
-**Phase 2** (Next Epic):
-- Refactor state management for clarity
-- Implement performance monitoring
-- Create comprehensive component documentation
+**Phase 2: Strategic Improvements** (Next Epic):
+- Implement structured error handling framework
+- Establish performance monitoring and benchmarking
+- Create comprehensive component interaction documentation
+- Optimize build process and distribution
 
-**Phase 3** (Future):
-- Optimize build process
-- Implement automated code quality checks
-- Create architectural compliance monitoring
+**Phase 3: Future Enhancement** (Ongoing):
+- Implement automated architecture compliance monitoring
+- Create plugin architecture for extensibility
+- Enhance accessibility features
+- Optimize for large-scale deployments
+
+## Development Guidelines and Patterns
+
+### 1. Modal Development Patterns **ESTABLISHED**
+
+**Implementation Guidelines**:
+- **Progressive Disclosure**: Always start with type selection, proceed to specific forms
+- **State Preservation**: Maintain form state across modal transitions and validations
+- **Validation Consistency**: Use established real-time validation patterns
+- **Error Messaging**: Provide specific, actionable error messages with inline display
+- **Navigation Standards**: Support Tab/Shift+Tab navigation and Enter/Escape patterns
+
+**Form Development Standards**:
+- **Field Validation**: Implement real-time validation with immediate feedback
+- **Required Field Indication**: Clear visual marking of mandatory fields
+- **Navigation Patterns**: Consistent Tab-based field traversal
+- **Submission Handling**: Validate completely before persistence
+- **Cancellation Behavior**: Clean state on ESC without side effects
+
+### 2. Testing Development Patterns
+
+**Test Organization Standards**:
+- Co-locate tests with source code (`*_test.go` files)
+- Separate unit, integration, and benchmark tests clearly
+- Use `internal/testutil` builders for consistent test data
+- Maintain minimum coverage thresholds per component
+
+**Modal Testing Strategies**:
+- **State Transition Testing**: Verify all modal state changes
+- **Form Validation Testing**: Test all validation scenarios including edge cases
+- **Integration Workflow Testing**: Complete add/edit/delete workflows end-to-end
+- **Error Handling Testing**: Validate error recovery and user feedback
+
+### 3. Architecture Compliance Guidelines
+
+**Development Process**:
+- **Before Feature Implementation**: Review established architecture patterns
+- **During Development**: Maintain test coverage requirements continuously  
+- **After Implementation**: Update architecture documentation with changes
+- **Before Deployment**: Validate against all quality gates
+
+**Code Quality Standards**:
+- Go fmt compliance with consistent formatting
+- Comprehensive testing with coverage validation
+- Performance consideration for all new features
+- Security review for user input and file operations
+
+## Future Architecture Evolution
+
+### 1. Epic 1 Remaining Stories Architecture Readiness
+
+**Story 1.4 (Edit MCP)**: 
+- ✅ Modal patterns established and working
+- ✅ Form validation framework ready
+- ✅ Pre-population patterns need implementation
+- ✅ Change tracking requirements identified
+
+**Story 1.5 (Delete MCP)**:
+- ✅ Confirmation modal patterns ready
+- ✅ Item detail display components available
+- ✅ Safety confirmation workflows established
+- ✅ Storage operations with rollback ready
+
+**Story 1.6 (Enhanced Search)**:
+- ✅ Search integration patterns working
+- ✅ Real-time filtering established
+- ✅ Advanced search criteria patterns needed
+- ✅ Search result management ready
+
+**Story 1.7 (Settings Management)**:
+- ✅ Configuration patterns established
+- ✅ Storage service ready for settings
+- ✅ Modal workflows adaptable to settings
+- ✅ Persistence patterns proven
+
+### 2. Strategic Architecture Enhancements
+
+**Error Handling Framework** (Next Epic Priority):
+- Structured error recovery patterns
+- Consistent error propagation mechanisms
+- User-friendly error messaging standards
+- Error handling testing patterns
+
+**Performance Architecture** (Future Epic):
+- Large dataset handling optimization
+- Memory usage monitoring and benchmarking
+- Rendering performance under load
+- Performance regression testing automation
+
+**Extensibility Framework** (Long-term):
+- Plugin architecture for custom MCP types
+- Configuration-driven behavior patterns
+- Extension point documentation and standards
+- Third-party integration patterns
+
+### 3. Scalability Considerations
+
+**Large Inventory Support**:
+- Pagination and virtual scrolling implementation
+- Incremental search with performance optimization
+- Memory-efficient data structures
+- Background loading patterns
+
+**Cross-Platform Enhancement**:
+- Terminal capability detection and adaptation
+- Platform-specific optimizations
+- Fallback rendering modes for limited terminals
+- Accessibility feature comprehensive support
+
+## Immediate Action Plan - Epic 1 Completion
+
+### Critical Path Resolution (5-7 days)
+
+**Action 1: Integration Test Alignment** (Priority: CRITICAL)
+- **Owner**: Development Team
+- **Timeline**: 3-5 days
+- **Tasks**:
+  1. Analyze failing integration tests against current modal implementation
+  2. Update test expectations to match progressive disclosure workflow
+  3. Revise navigation test patterns for search integration
+  4. Implement proper modal state setup for workflow tests
+  5. Validate all integration tests pass with current architecture
+
+**Action 2: Component Test Coverage Improvement** (Priority: HIGH)
+- **Owner**: Development Team  
+- **Timeline**: 2-3 days
+- **Tasks**:
+  1. Add comprehensive unit tests for modal component rendering
+  2. Implement form validation test coverage across all modal types
+  3. Create component state transition tests
+  4. Add text rendering consistency validation tests
+  5. Achieve 80%+ coverage target for UI components
+
+**Action 3: Architecture Documentation Completion** (Priority: MEDIUM)
+- **Owner**: Architecture Team
+- **Timeline**: 1-2 days  
+- **Tasks**:
+  1. Create visual state transition diagrams for modal workflows
+  2. Document component interaction patterns with examples
+  3. Map error handling state flows across the application
+  4. Update architecture documentation with implementation details
+
+### Success Criteria
+
+**Epic 1 Completion Requirements**:
+- [ ] 0 failing integration tests
+- [ ] >80% component test coverage
+- [ ] Complete modal workflow documentation
+- [ ] >90% architecture compliance score
+- [ ] All identified critical technical debt resolved
+
+## Conclusion
+
+The CC MCP Manager architecture has evolved significantly through Epic 1, Story 3 implementation, establishing a sophisticated modal system with progressive disclosure patterns and comprehensive state management. The architecture demonstrates strong design principles with clear separation of concerns, excellent service layer maturity, and a robust foundation for future development.
+
+**Current State**: Strong architectural foundation with identified improvement areas
+**Immediate Focus**: Resolve critical testing alignment and coverage gaps
+**Epic 1 Completion Confidence**: HIGH (pending critical issue resolution)
+**Long-term Architectural Health**: EXCELLENT with continued improvement trajectory
+
+The modal system implementation represents a significant architectural achievement, providing a reusable pattern for complex user workflows while maintaining the clean, responsive design principles established in earlier stories. With the completion of critical testing improvements, this architecture will provide an excellent foundation for remaining Epic 1 stories and future system evolution.
 
 ---
 
-**Document Maintenance**:
-This architecture document is a living document that should be updated as the system evolves. Major architectural changes should be reviewed and approved by the technical lead before implementation.
-
-**Architecture Review Process**:
-1. **Epic Planning**: Architecture review before epic start
-2. **Story Completion**: Architecture impact assessment after each story
-3. **Release Preparation**: Comprehensive architecture validation
-4. **Post-Release**: Architecture lessons learned and improvements
+**Document Maintenance Protocol**:
+This architecture document serves as the single source of truth for CC MCP Manager system architecture. It should be updated with each major architectural change and reviewed during epic planning, story completion, and release preparation phases.
 
 **Related Documentation**:
-- [Testing Standards](./testing-standards.md) - Testing architecture and quality gates
-- [Story Documentation](./stories/) - Implementation-specific architectural decisions
-- [Front-End Specifications](./front-end-spec.md) - UI/UX architectural patterns
-- [Product Requirements](./prd.md) - Business architecture alignment
+- Testing Standards and Quality Gates
+- Story Implementation Documentation
+- Front-End UI/UX Specifications  
+- Product Requirements and Business Architecture
 
-**Architecture Metrics**:
-- **Test Coverage**: 85.9% (services), 40.1% (handlers), 37.0% (components), 34.7% (ui)
-- **Technical Debt**: 7 critical issues, 12 medium issues, 5 low issues
-- **Architecture Compliance**: 85% (good), targeting 95% (excellent)
-- **Documentation Coverage**: 90% (comprehensive with identified gaps)
+**Architecture Review Schedule**:
+- Epic Planning: Comprehensive architecture review
+- Story Completion: Impact assessment and documentation updates
+- Release Preparation: Architecture validation and compliance check
+- Post-Release: Lessons learned and improvement planning

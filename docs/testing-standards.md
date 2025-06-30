@@ -1,85 +1,42 @@
 # Testing Standards - Definition of Done
 
-**Document Version:** 1.0  
-**Created:** 2025-06-30  
-**Last Updated:** 2025-06-30  
-**Owner:** Development Team  
-**Approved By:** Technical Lead & QA Team
+**Document Version:** 1.0 | **Created:** 2025-06-30 | **Last Updated:** 2025-06-30 | **Owner:** Development Team | **Approved By:** Technical Lead & QA Team
 
 ## Overview
 
-This document defines the comprehensive Testing Definition of Done (DoD) standards for the CC MCP Manager project. These standards ensure production-ready quality assurance and full process compliance for all code changes.
+This document defines the Testing Definition of Done (DoD) standards for the CC MCP Manager project, ensuring production-ready quality assurance and full process compliance for all code changes.
 
 ## Testing Definition of Done Criteria
 
 ### Mandatory Requirements
 
-Every code change MUST satisfy ALL of the following criteria before being considered complete:
+Every code change MUST satisfy ALL criteria before completion:
 
-#### 1. Unit Test Coverage
-- **Minimum Coverage:** 85% line coverage for all new code
-- **Quality Standard:** Tests must verify both happy path and error conditions
-- **Isolation:** All unit tests must be independent and not rely on external dependencies
-- **Naming Convention:** Test functions must follow `Test[MethodName]_[Scenario]` pattern
-- **Assertions:** Each test must have clear, specific assertions with descriptive error messages
+**Unit Test Coverage:** 85% line coverage for new code, verify happy path and error conditions, independent tests without external dependencies, follow `Test[MethodName]_[Scenario]` naming, clear assertions with descriptive error messages
 
-#### 2. Integration Test Coverage
-- **End-to-End Workflows:** All user workflows must have integration tests
-- **Component Integration:** Tests must verify interaction between major components
-- **Error Handling:** Integration tests must cover error scenarios and recovery
-- **Data Persistence:** Tests must verify data integrity across storage operations
+**Integration Test Coverage:** End-to-end workflows, component integration verification, error scenarios and recovery, data persistence integrity validation
 
-#### 3. Test Organization and Structure
-- **File Organization:** Test files must be co-located with source files (`*_test.go`)
-- **Test Categories:** Tests must be categorized (unit, integration, benchmark)
-- **Setup/Teardown:** Tests must properly clean up resources and test data
-- **Test Data:** Use builders and fixtures for consistent test data
+**Test Organization:** Co-located test files (`*_test.go`), categorized tests (unit, integration, benchmark), proper setup/teardown with resource cleanup, builders and fixtures for consistent test data
 
-#### 4. Performance and Benchmark Tests
-- **Critical Paths:** Performance tests for user-facing operations
-- **Regression Prevention:** Benchmark tests to prevent performance degradation
-- **Resource Usage:** Memory and CPU usage verification for long-running operations
+**Performance and Benchmarks:** Performance tests for user-facing operations, benchmark tests for regression prevention, memory and CPU usage verification for long-running operations
 
-#### 5. Error Handling and Edge Cases
-- **Error Path Coverage:** All error conditions must be tested
-- **Boundary Conditions:** Tests for edge cases and boundary values
-- **Input Validation:** Tests for invalid input handling
-- **Race Conditions:** Concurrent access testing where applicable
+**Error Handling and Edge Cases:** All error conditions tested, boundary conditions and edge cases, input validation tests, concurrent access testing where applicable
 
 ### Code Quality Standards
 
-#### Test Code Quality
-- **Readability:** Tests must be self-documenting with clear intent
-- **Maintainability:** Test code follows same quality standards as production code
-- **DRY Principle:** Common test utilities in `internal/testutil` package
-- **Test Helpers:** Reusable builders and helpers for complex test scenarios
+**Test Code Quality:** Self-documenting tests with clear intent, same quality standards as production code, common utilities in `internal/testutil` package, reusable builders and helpers for complex scenarios
 
-#### Test Execution Standards
-- **Speed:** Unit tests must complete in < 100ms per test
-- **Reliability:** Tests must be deterministic and not flaky
-- **Isolation:** Tests must not depend on external services or files
-- **Parallelization:** Tests must be safe to run in parallel
+**Test Execution:** Unit tests complete in < 100ms, deterministic and non-flaky tests, no external service dependencies, parallel-safe execution
 
 ### Implementation Verification
 
-#### Automated Checks
-- **CI Integration:** All tests must pass in CI pipeline
-- **Coverage Reports:** Coverage reports generated and reviewed
-- **Performance Baselines:** Benchmark results compared against baselines
-- **Lint Compliance:** Test code must pass all linting rules
+**Automated Checks:** All tests pass in CI pipeline, coverage reports generated and reviewed, benchmark results compared against baselines, test code passes all linting rules
 
-#### Manual Verification
-- **Code Review:** Test coverage and quality reviewed during code review
-- **Functional Testing:** Manual verification of critical user workflows
-- **Cross-Platform:** Testing on target platforms (macOS, Linux, Windows)
+**Manual Verification:** Test coverage and quality reviewed during code review, manual verification of critical user workflows, cross-platform testing (macOS, Linux, Windows)
 
 ## Testing Framework Standards
 
-### Go Testing Best Practices
-- Use standard `testing` package for all tests
-- Leverage `testify` assertions for better error messages
-- Use table-driven tests for multiple scenarios
-- Implement proper test fixtures and cleanup
+**Go Testing Best Practices:** Use standard `testing` package, leverage `testify` assertions for better error messages, table-driven tests for multiple scenarios, proper test fixtures and cleanup
 
 ### Test Categories
 
@@ -133,18 +90,13 @@ func BenchmarkMCPService_FilterMCPs(b *testing.B) {
 
 ## Test Coverage Requirements
 
-### Minimum Coverage Thresholds
-- **Overall Project:** 85% line coverage
-- **New Features:** 90% line coverage
-- **Critical Components:** 95% line coverage (storage, UI handlers)
-- **Error Handling:** 100% error path coverage
+**Minimum Thresholds:** Overall Project 85%, New Features 90%, Critical Components 95% (storage, UI handlers), Error Handling 100%
 
-### Coverage Verification
+**Coverage Verification:**
 ```bash
 # Generate coverage report
 go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out -o coverage.html
-
 # Verify minimum thresholds
 go test -cover ./... | grep -E "coverage: [0-9]+\.[0-9]+%" 
 ```
@@ -193,48 +145,23 @@ import "cc-mcp-manager/internal/testutil"
 
 ## Quality Gates
 
-### Development Phase Gates
-1. **Code Complete:** All tests written and passing locally
-2. **Review Ready:** Coverage meets thresholds, tests reviewed
-3. **Merge Ready:** CI passes, all quality gates satisfied
+**Development Phase:** Code Complete (all tests written and passing locally), Review Ready (coverage meets thresholds, tests reviewed), Merge Ready (CI passes, all quality gates satisfied)
 
-### Release Phase Gates
-1. **Integration Testing:** All workflows tested end-to-end
-2. **Performance Validation:** Benchmarks meet performance criteria
-3. **Production Readiness:** Full test suite passes with confidence
+**Release Phase:** Integration Testing (all workflows tested end-to-end), Performance Validation (benchmarks meet performance criteria), Production Readiness (full test suite passes with confidence)
 
 ## Continuous Improvement
 
-### Metrics Tracking
-- Test execution time trends
-- Coverage percentage over time
-- Flaky test identification and resolution
-- Performance benchmark trends
+**Metrics Tracking:** Test execution time trends, coverage percentage over time, flaky test identification and resolution, performance benchmark trends
 
-### Regular Reviews
-- **Monthly:** Review test quality and coverage metrics
-- **Per Story:** Assess testing approach effectiveness
-- **Per Release:** Comprehensive testing retrospective
+**Regular Reviews:** Monthly (test quality and coverage metrics), Per Story (testing approach effectiveness), Per Release (comprehensive testing retrospective)
 
 ## Enforcement and Accountability
 
-### Development Team Responsibilities
-- Write tests following these standards
-- Maintain existing test suites
-- Review test quality in code reviews
-- Report and address testing gaps
+**Development Team:** Write tests following standards, maintain existing test suites, review test quality in code reviews, report and address testing gaps
 
-### Quality Assurance Team Responsibilities
-- Validate testing standards compliance
-- Provide guidance on testing approaches
-- Review complex testing scenarios
-- Maintain testing documentation
+**Quality Assurance Team:** Validate standards compliance, provide guidance on testing approaches, review complex scenarios, maintain testing documentation
 
-### Technical Lead Responsibilities
-- Enforce testing standards in code reviews
-- Approve exceptions to testing requirements
-- Ensure team training on testing practices
-- Monitor and report testing metrics
+**Technical Lead:** Enforce standards in code reviews, approve exceptions to requirements, ensure team training on practices, monitor and report testing metrics
 
 ---
 
