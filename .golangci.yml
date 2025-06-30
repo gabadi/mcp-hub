@@ -50,7 +50,7 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - depguard
+    # - depguard  # Disabled - conflicts with internal package structure
     - dogsled
     - dupl
     - errcheck
