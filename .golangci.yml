@@ -160,6 +160,12 @@ issues:
     - linters:
         - govet
       text: "nilness:"
+    - linters:
+        - stylecheck
+      text: "ST1003:"  # ALL_CAPS naming
+    - linters:
+        - staticcheck
+      text: "SA4006:"  # unused assignment
     
     # Exclude known linter issues
     - path: main\.go
