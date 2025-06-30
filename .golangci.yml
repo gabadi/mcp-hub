@@ -54,7 +54,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
-    - exportloopref
+    # - exportloopref  # Deprecated since v1.60.2, replaced by copyloopvar
     - exhaustive
     - funlen
     - gochecknoinits
@@ -64,7 +64,7 @@ linters:
     - gofmt
     - goimports
     - revive
-    - gomnd
+    # - gomnd  # Deprecated since v1.58.0, replaced by mnd
     - goprintffuncname
     - gosec
     - gosimple
