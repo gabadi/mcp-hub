@@ -2,7 +2,7 @@
 
 **Epic:** Core MCP Inventory Management  
 **Story Number:** 1.3  
-**Story Status:** Draft  
+**Story Status:** Changes Committed  
 **Created:** 2025-06-30  
 **Scrum Master:** Bob (SM Agent)
 
@@ -353,6 +353,42 @@ const (
 - Added MCP automatically selected in refreshed list
 - Modal closes immediately upon successful addition
 **Rationale:** Provides confirmation while maintaining workflow momentum
+
+### TD-007: State Management Architecture
+**Decision:** Centralized modal state within main Bubble Tea model
+**Implementation:**
+- ActiveModal field tracks current modal type
+- FormData struct holds all form state across modal types
+- FormErrors map provides field-specific validation feedback
+- State transitions managed through message passing
+**Rationale:** Maintains consistency with Bubble Tea patterns while enabling complex modal workflows
+
+### TD-008: Testing Strategy Hierarchy
+**Decision:** Multi-layer testing with unit, integration, and benchmark tests
+**Implementation:**
+- Unit tests for individual components and validation logic
+- Integration tests for complete workflow validation
+- Benchmark tests for performance regression detection
+- Test builders for consistent test data generation
+**Rationale:** Ensures comprehensive coverage while maintaining development velocity
+
+### TD-009: Dependency Management Philosophy
+**Decision:** Minimal external dependencies with careful justification
+**Implementation:**
+- Added testify only for testing infrastructure
+- Leveraged Go standard library for validation (url, json)
+- Used existing Bubble Tea patterns for UI components
+- No additional UI or validation libraries
+**Rationale:** Maintains lightweight architecture while providing necessary functionality
+
+### TD-010: Documentation Architecture
+**Decision:** Multi-tier documentation with implementation tracking
+**Implementation:**
+- Story documentation with detailed acceptance criteria
+- Architecture decisions documented with rationale
+- Testing standards and patterns documented
+- Implementation tracking with learning items captured
+**Rationale:** Enables team knowledge sharing and maintains implementation context
 
 ## Definition of Done
 
