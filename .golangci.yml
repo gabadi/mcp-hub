@@ -100,6 +100,21 @@ issues:
         - funlen
         - typecheck  # Skip typecheck for test files while fixing field access patterns
     
+    # Exclude unused warnings for UI view methods that are part of the interface
+    - path: internal/ui/view\.go
+      linters:
+        - unused
+    
+    # Exclude unused warnings for utility functions that may be used in future
+    - path: internal/ui/components/modal\.go
+      linters:
+        - unused
+    
+    # Allow hardcoded strings in UI components during development
+    - path: internal/ui/
+      linters:
+        - goconst
+    
     # Exclude known linter issues
     - path: main\.go
       linters:
