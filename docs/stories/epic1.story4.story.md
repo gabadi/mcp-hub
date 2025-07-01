@@ -2,7 +2,7 @@
 
 **Epic:** Core MCP Inventory Management  
 **Story Number:** 1.4  
-**Story Status:** Learning Reviewed  
+**Story Status:** Changes Committed  
 **Created:** 2025-07-01  
 **Scrum Master:** Bob (SM Agent)
 
@@ -259,3 +259,34 @@ No debug logging was required during development. All implementation proceeded s
 ## QA Results
 
 [[LLM: QA Agent Results]]
+
+## Technical Decisions
+
+### Implementation Architecture
+- **Modal System Reuse**: Successfully leveraged existing modal infrastructure without architectural changes, reusing AddCommandForm, AddSSEForm, and AddJSONForm with conditional logic
+- **State Management**: Added EditMode and EditMCPName fields to Model struct for clean edit state tracking with proper cleanup
+- **Form Pre-population**: Implemented comprehensive form data population with type conversion (Args []string to display string, Environment map to display format)
+- **Validation Enhancement**: Enhanced validation to allow current MCP name during edits while preventing duplicates for other MCPs
+
+### Storage and Data Integrity
+- **Atomic Operations**: Leveraged existing SaveInventory function with atomic file operations for update consistency
+- **Data Preservation**: Maintained original MCP active status and metadata during updates
+- **Error Recovery**: Implemented comprehensive error handling with rollback capabilities
+
+### Testing Strategy
+- **Test Coverage**: Achieved comprehensive coverage with 6 new test functions covering form pre-population, validation, update operations, and state cleanup
+- **Integration Testing**: Validated complete edit workflow integration with existing modal system
+- **Cross-platform Testing**: Ensured compatibility across supported platforms
+
+### Key Technical Decisions
+1. **Reuse Over Rebuild**: Decision to reuse existing modal forms rather than create dedicated edit forms reduced complexity and maintained consistency
+2. **Conditional Logic**: Used conditional rendering for modal titles and footer text based on edit mode rather than separate components
+3. **State Centralization**: Chose to add edit state to main Model struct rather than separate edit context for simplicity
+4. **Validation Consistency**: Maintained identical validation logic between add and edit workflows for user experience consistency
+
+### Learning Items for Future Improvement
+- **High Priority**: Navigation test failure investigation (CI reliability)
+- **High Priority**: Modal system consolidation (architectural improvement)  
+- **High Priority**: Error handling enhancement (user experience)
+- **Medium Priority**: Modal type inconsistency resolution, state management enhancement, integration testing framework, accessibility improvements
+- **Low Priority**: Performance testing framework (post-MVP)
