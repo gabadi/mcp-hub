@@ -55,6 +55,9 @@ func HandleSearchModeKeys(model types.Model, key string) (types.Model, tea.Cmd) 
 		if len(model.SearchQuery) > 0 {
 			model.SearchQuery = model.SearchQuery[:len(model.SearchQuery)-1]
 		}
+	case "ctrl+v", "cmd+v", "⌘v", "command+v":
+		// Paste clipboard content to search query
+		model = pasteToSearchQuery(model)
 	default:
 		// Add character to search query
 		if len(key) == 1 {
