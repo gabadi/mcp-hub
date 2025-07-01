@@ -3,6 +3,7 @@ module cc-mcp-manager
 go 1.23.5
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/charmbracelet/bubbletea v1.3.5
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/stretchr/testify v1.10.0

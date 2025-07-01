@@ -378,7 +378,7 @@ func generateBenchmarkMCPDataset(count int) []types.MCPItem {
 			Type:    mcpTypes[typeIndex],
 			Active:  i%3 == 0, // Every third MCP is active
 			Command: fmt.Sprintf("benchmark-command-%04d", i),
-			Args:    fmt.Sprintf("--config=%04d", i),
+			Args:    []string{fmt.Sprintf("--config=%04d", i)},
 		}
 	}
 

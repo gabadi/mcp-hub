@@ -74,18 +74,20 @@ type FormData struct {
 	Args        string
 	URL         string
 	JSONConfig  string
-	ActiveField int // Track which field is currently focused for Tab navigation
+	Environment string // UI input as string, converted to map[string]string on save
+	ActiveField int    // Track which field is currently focused for Tab navigation
 }
 
 // MCPItem represents an MCP in the inventory
 type MCPItem struct {
-	Name       string `json:"name"`
-	Type       string `json:"type"`
-	Active     bool   `json:"active"`
-	Command    string `json:"command"`
-	Args       string `json:"args,omitempty"`
-	URL        string `json:"url,omitempty"`
-	JSONConfig string `json:"json_config,omitempty"`
+	Name        string            `json:"name"`
+	Type        string            `json:"type"`
+	Active      bool              `json:"active"`
+	Command     string            `json:"command"`
+	Args        []string          `json:"args,omitempty"` // Changed from string to []string for MCP standard compliance
+	URL         string            `json:"url,omitempty"`
+	JSONConfig  string            `json:"json_config,omitempty"`
+	Environment map[string]string `json:"env,omitempty"` // New field for environment variables
 }
 
 // Column represents a UI column

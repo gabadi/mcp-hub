@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -35,6 +36,8 @@ func HandleModalKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 		return handleSSEFormKeys(model, key)
 	case types.AddJSONForm:
 		return handleJSONFormKeys(model, key)
+	case types.DeleteModal:
+		return handleDeleteModalKeys(model, key)
 	default:
 		// Legacy modal handling
 		switch key {
@@ -99,18 +102,28 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 	switch key {
 	case "tab":
 		// Move to next field
-		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 3 // 3 fields: Name, Command, Args
+		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 4 // 4 fields: Name, Command, Args, Environment
 	case "enter":
 		// Submit form if valid
 		var valid bool
 		model, valid = validateCommandForm(model)
-		if valid {
+		if !valid {
+			// Focus on first field with error
+			model = focusOnFirstErrorField(model)
+		} else {
+			// Parse args from string to []string
+			args := parseArgsString(model.FormData.Args)
+
+			// Parse environment variables from string to map[string]string
+			env := parseEnvironmentString(model.FormData.Environment)
+
 			mcpItem := types.MCPItem{
-				Name:    model.FormData.Name,
-				Type:    "CMD",
-				Active:  false,
-				Command: model.FormData.Command,
-				Args:    model.FormData.Args,
+				Name:        model.FormData.Name,
+				Type:        "CMD",
+				Active:      false,
+				Command:     model.FormData.Command,
+				Args:        args,
+				Environment: env,
 			}
 			var cmd tea.Cmd
 			model, cmd = addMCPToInventory(model, mcpItem)
@@ -124,6 +137,12 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
+	case "ctrl+c":
+		// Copy active field content to clipboard
+		model = copyActiveFieldToClipboard(model)
+	case "ctrl+v":
+		// Paste clipboard content to active field
+		model = pasteFromClipboardToActiveField(model)
 	default:
 		// Add character to active field
 		if len(key) == 1 {
@@ -142,17 +161,24 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
 	case "tab":
 		// Move to next field
-		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 2 // 2 fields: Name, URL
+		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 3 // 3 fields: Name, URL, Environment
 	case "enter":
 		// Submit form if valid
 		var valid bool
 		model, valid = validateSSEForm(model)
-		if valid {
+		if !valid {
+			// Focus on first field with error
+			model = focusOnFirstErrorField(model)
+		} else {
+			// Parse environment variables from string to map[string]string
+			env := parseEnvironmentString(model.FormData.Environment)
+
 			mcpItem := types.MCPItem{
-				Name:   model.FormData.Name,
-				Type:   "SSE",
-				Active: false,
-				URL:    model.FormData.URL,
+				Name:        model.FormData.Name,
+				Type:        "SSE",
+				Active:      false,
+				URL:         model.FormData.URL,
+				Environment: env,
 			}
 			var cmd tea.Cmd
 			model, cmd = addMCPToInventory(model, mcpItem)
@@ -166,6 +192,12 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
+	case "ctrl+c":
+		// Copy active field content to clipboard
+		model = copyActiveFieldToClipboard(model)
+	case "ctrl+v":
+		// Paste clipboard content to active field
+		model = pasteFromClipboardToActiveField(model)
 	default:
 		// Add character to active field
 		if len(key) == 1 {
@@ -184,7 +216,7 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
 	case "tab":
 		// Move to next field
-		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 2 // 2 fields: Name, JSONConfig
+		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 3 // 3 fields: Name, JSONConfig, Environment
 	case "enter":
 		// Submit form if valid (or newline in JSON field)
 		if model.FormData.ActiveField == 1 { // JSON field
@@ -192,12 +224,19 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 		} else {
 			var valid bool
 			model, valid = validateJSONForm(model)
-			if valid {
+			if !valid {
+				// Focus on first field with error
+				model = focusOnFirstErrorField(model)
+			} else {
+				// Parse environment variables from string to map[string]string
+				env := parseEnvironmentString(model.FormData.Environment)
+
 				mcpItem := types.MCPItem{
-					Name:       model.FormData.Name,
-					Type:       "JSON",
-					Active:     false,
-					JSONConfig: model.FormData.JSONConfig,
+					Name:        model.FormData.Name,
+					Type:        "JSON",
+					Active:      false,
+					JSONConfig:  model.FormData.JSONConfig,
+					Environment: env,
 				}
 				var cmd tea.Cmd
 				model, cmd = addMCPToInventory(model, mcpItem)
@@ -212,6 +251,12 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
+	case "ctrl+c":
+		// Copy active field content to clipboard
+		model = copyActiveFieldToClipboard(model)
+	case "ctrl+v":
+		// Paste clipboard content to active field
+		model = pasteFromClipboardToActiveField(model)
 	default:
 		// Add character to active field
 		if len(key) == 1 {
@@ -236,6 +281,8 @@ func addCharToActiveField(model types.Model, char string) types.Model {
 			model.FormData.Command += char
 		case 2:
 			model.FormData.Args += char
+		case 3:
+			model.FormData.Environment += char
 		}
 	case types.AddSSEForm:
 		switch model.FormData.ActiveField {
@@ -243,6 +290,8 @@ func addCharToActiveField(model types.Model, char string) types.Model {
 			model.FormData.Name += char
 		case 1:
 			model.FormData.URL += char
+		case 2:
+			model.FormData.Environment += char
 		}
 	case types.AddJSONForm:
 		switch model.FormData.ActiveField {
@@ -250,6 +299,8 @@ func addCharToActiveField(model types.Model, char string) types.Model {
 			model.FormData.Name += char
 		case 1:
 			model.FormData.JSONConfig += char
+		case 2:
+			model.FormData.Environment += char
 		}
 	}
 	return model
@@ -275,6 +326,8 @@ func deleteCharFromCommandForm(model types.Model) types.Model {
 		model.FormData.Command = deleteLastChar(model.FormData.Command)
 	case 2:
 		model.FormData.Args = deleteLastChar(model.FormData.Args)
+	case 3:
+		model.FormData.Environment = deleteLastChar(model.FormData.Environment)
 	}
 	return model
 }
@@ -285,6 +338,8 @@ func deleteCharFromSSEForm(model types.Model) types.Model {
 		model.FormData.Name = deleteLastChar(model.FormData.Name)
 	case 1:
 		model.FormData.URL = deleteLastChar(model.FormData.URL)
+	case 2:
+		model.FormData.Environment = deleteLastChar(model.FormData.Environment)
 	}
 	return model
 }
@@ -295,6 +350,8 @@ func deleteCharFromJSONForm(model types.Model) types.Model {
 		model.FormData.Name = deleteLastChar(model.FormData.Name)
 	case 1:
 		model.FormData.JSONConfig = deleteLastChar(model.FormData.JSONConfig)
+	case 2:
+		model.FormData.Environment = deleteLastChar(model.FormData.Environment)
 	}
 	return model
 }
@@ -319,6 +376,14 @@ func validateCommandForm(model types.Model) (types.Model, bool) {
 	if model.FormData.Command == "" {
 		model.FormErrors["command"] = "Command is required"
 		valid = false
+	}
+
+	// Validate environment variables format if provided
+	if model.FormData.Environment != "" {
+		if err := validateEnvironmentFormat(model.FormData.Environment); err != nil {
+			model.FormErrors["environment"] = err.Error()
+			valid = false
+		}
 	}
 
 	// Check for duplicate names
@@ -353,6 +418,14 @@ func validateSSEForm(model types.Model) (types.Model, bool) {
 		}
 	}
 
+	// Validate environment variables format if provided
+	if model.FormData.Environment != "" {
+		if err := validateEnvironmentFormat(model.FormData.Environment); err != nil {
+			model.FormErrors["environment"] = err.Error()
+			valid = false
+		}
+	}
+
 	// Check for duplicate names
 	for _, item := range model.MCPItems {
 		if item.Name == model.FormData.Name {
@@ -378,10 +451,12 @@ func validateJSONForm(model types.Model) (types.Model, bool) {
 		model.FormErrors["json"] = "JSON configuration is required"
 		valid = false
 	} else {
-		// Validate JSON syntax
+		// Validate JSON syntax with enhanced error reporting
 		var js interface{}
 		if err := json.Unmarshal([]byte(model.FormData.JSONConfig), &js); err != nil {
-			model.FormErrors["json"] = "Invalid JSON: " + err.Error()
+			// Extract line and column information from JSON error
+			enhancedError := enhanceJSONError(err, model.FormData.JSONConfig)
+			model.FormErrors["json"] = enhancedError
 			valid = false
 		}
 	}
@@ -417,4 +492,393 @@ func addMCPToInventory(model types.Model, mcpItem types.MCPItem) (types.Model, t
 	model.SuccessMessage = fmt.Sprintf("Added %s successfully", mcpItem.Name)
 
 	return model, hideSuccessMsg()
+}
+
+// handleDeleteModalKeys handles keyboard input in the delete confirmation modal
+func handleDeleteModalKeys(model types.Model, key string) (types.Model, tea.Cmd) {
+	switch key {
+	case "enter":
+		// Confirm deletion
+		var cmd tea.Cmd
+		model, cmd = deleteMCPFromInventory(model)
+		// Close modal and return to main navigation
+		model.State = types.MainNavigation
+		model.ActiveModal = types.NoModal
+		return model, cmd
+	case "esc":
+		// Cancel deletion
+		model.State = types.MainNavigation
+		model.ActiveModal = types.NoModal
+		return model, nil
+	}
+	return model, nil
+}
+
+// deleteMCPFromInventory removes the selected MCP from the inventory and saves it
+func deleteMCPFromInventory(model types.Model) (types.Model, tea.Cmd) {
+	// Get the selected MCP
+	filteredMCPs := services.GetFilteredMCPs(model)
+	selectedIndex := model.SelectedItem
+	if model.SearchQuery != "" {
+		selectedIndex = model.FilteredSelectedIndex
+	}
+
+	if selectedIndex >= len(filteredMCPs) {
+		model.SuccessMessage = "No MCP selected to delete"
+		return model, hideSuccessMsg()
+	}
+
+	mcpToDelete := filteredMCPs[selectedIndex]
+
+	// Find the MCP in the main inventory and remove it
+	for i, mcp := range model.MCPItems {
+		if mcp.Name == mcpToDelete.Name {
+			// Remove the MCP from the slice
+			model.MCPItems = append(model.MCPItems[:i], model.MCPItems[i+1:]...)
+			break
+		}
+	}
+
+	// Adjust selection if needed
+	if model.SelectedItem >= len(model.MCPItems) && len(model.MCPItems) > 0 {
+		model.SelectedItem = len(model.MCPItems) - 1
+	} else if len(model.MCPItems) == 0 {
+		model.SelectedItem = 0
+	}
+
+	// Adjust filtered selection if needed
+	if model.SearchQuery != "" {
+		newFilteredMCPs := services.GetFilteredMCPs(model)
+		if model.FilteredSelectedIndex >= len(newFilteredMCPs) && len(newFilteredMCPs) > 0 {
+			model.FilteredSelectedIndex = len(newFilteredMCPs) - 1
+		} else if len(newFilteredMCPs) == 0 {
+			model.FilteredSelectedIndex = 0
+		}
+	}
+
+	// Save to storage
+	if err := services.SaveInventory(model.MCPItems); err != nil {
+		model.SuccessMessage = fmt.Sprintf("Failed to delete %s: %v", mcpToDelete.Name, err)
+		return model, hideSuccessMsg()
+	}
+
+	// Show success message
+	model.SuccessMessage = fmt.Sprintf("Deleted %s successfully", mcpToDelete.Name)
+
+	return model, hideSuccessMsg()
+}
+
+// parseArgsString converts a string of arguments to []string
+// Supports both space-separated ("arg1 arg2 arg3") and quoted arguments
+func parseArgsString(argsStr string) []string {
+	if argsStr == "" {
+		return nil
+	}
+
+	var args []string
+	var current strings.Builder
+	inQuotes := false
+	quoteChar := byte(0)
+
+	for i := 0; i < len(argsStr); i++ {
+		char := argsStr[i]
+
+		switch char {
+		case '"', '\'':
+			if !inQuotes {
+				// Start of quoted string
+				inQuotes = true
+				quoteChar = char
+			} else if char == quoteChar {
+				// End of quoted string
+				inQuotes = false
+				quoteChar = 0
+			} else {
+				// Quote inside different quote type
+				current.WriteByte(char)
+			}
+		case ' ', '\t':
+			if inQuotes {
+				// Space inside quotes - add to current arg
+				current.WriteByte(char)
+			} else if current.Len() > 0 {
+				// Space outside quotes - end current arg
+				args = append(args, current.String())
+				current.Reset()
+			}
+			// Skip spaces outside quotes
+		default:
+			current.WriteByte(char)
+		}
+	}
+
+	// Add final argument if exists
+	if current.Len() > 0 {
+		args = append(args, current.String())
+	}
+
+	return args
+}
+
+// parseEnvironmentString converts a string of environment variables to map[string]string
+// Supports formats: "KEY1=value1,KEY2=value2" or "KEY1=value1\nKEY2=value2"
+func parseEnvironmentString(envStr string) map[string]string {
+	if envStr == "" {
+		return nil
+	}
+
+	env := make(map[string]string)
+
+	// Support both comma-separated and newline-separated
+	lines := strings.FieldsFunc(envStr, func(c rune) bool {
+		return c == ',' || c == '\n'
+	})
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Split on first = sign
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			if key != "" {
+				env[key] = value
+			}
+		}
+	}
+
+	if len(env) == 0 {
+		return nil
+	}
+
+	return env
+}
+
+// copyActiveFieldToClipboard copies the content of the active field to clipboard
+func copyActiveFieldToClipboard(model types.Model) types.Model {
+	clipboardService := services.NewClipboardService()
+
+	var content string
+	switch model.ActiveModal {
+	case types.AddCommandForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			content = model.FormData.Name
+		case 1:
+			content = model.FormData.Command
+		case 2:
+			content = model.FormData.Args
+		case 3:
+			content = model.FormData.Environment
+		}
+	case types.AddSSEForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			content = model.FormData.Name
+		case 1:
+			content = model.FormData.URL
+		case 2:
+			content = model.FormData.Environment
+		}
+	case types.AddJSONForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			content = model.FormData.Name
+		case 1:
+			content = model.FormData.JSONConfig
+		case 2:
+			content = model.FormData.Environment
+		}
+	}
+
+	if content != "" {
+		if err := clipboardService.Copy(content); err != nil {
+			// Add user feedback for clipboard copy failure
+			model.SuccessMessage = "Failed to copy to clipboard: " + err.Error()
+			model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
+		} else {
+			model.SuccessMessage = "Copied to clipboard"
+			model.SuccessTimer = 120 // Show success message for 2 seconds
+		}
+	}
+
+	return model
+}
+
+// pasteFromClipboardToActiveField pastes clipboard content to the active field
+func pasteFromClipboardToActiveField(model types.Model) types.Model {
+	clipboardService := services.NewClipboardService()
+
+	content, err := clipboardService.Paste()
+	if err != nil {
+		// Add user feedback for clipboard paste failure
+		model.SuccessMessage = "Failed to paste from clipboard: " + err.Error()
+		model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
+		return model
+	}
+
+	switch model.ActiveModal {
+	case types.AddCommandForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			model.FormData.Name = content
+		case 1:
+			model.FormData.Command = content
+		case 2:
+			model.FormData.Args = content
+		case 3:
+			model.FormData.Environment = content
+		}
+	case types.AddSSEForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			model.FormData.Name = content
+		case 1:
+			model.FormData.URL = content
+		case 2:
+			model.FormData.Environment = content
+		}
+	case types.AddJSONForm:
+		switch model.FormData.ActiveField {
+		case 0:
+			model.FormData.Name = content
+		case 1:
+			model.FormData.JSONConfig = content
+		case 2:
+			model.FormData.Environment = content
+		}
+	}
+
+	// Add success feedback for successful paste operation
+	model.SuccessMessage = "Pasted from clipboard"
+	model.SuccessTimer = 120 // Show success message for 2 seconds
+
+	return model
+}
+
+// enhanceJSONError provides detailed JSON error information with line/column details
+func enhanceJSONError(err error, jsonContent string) string {
+	errStr := err.Error()
+
+	// Check if it's a JSON syntax error with offset information
+	if syntaxErr, ok := err.(*json.SyntaxError); ok {
+		line, col := getLineColumn(jsonContent, syntaxErr.Offset)
+		return fmt.Sprintf("JSON syntax error at line %d, column %d: %s", line, col, errStr)
+	}
+
+	// Check if it's a JSON unmarshaling type error
+	if typeErr, ok := err.(*json.UnmarshalTypeError); ok {
+		line, col := getLineColumn(jsonContent, typeErr.Offset)
+		return fmt.Sprintf("JSON type error at line %d, column %d: expected %s but got %s",
+			line, col, typeErr.Type.String(), typeErr.Value)
+	}
+
+	// For other errors, provide general guidance
+	if strings.Contains(errStr, "unexpected end of JSON input") {
+		return "Incomplete JSON: missing closing bracket or brace"
+	}
+
+	if strings.Contains(errStr, "invalid character") {
+		return errStr + " - check for unescaped quotes or special characters"
+	}
+
+	return "Invalid JSON: " + errStr
+}
+
+// getLineColumn calculates line and column numbers from byte offset
+func getLineColumn(content string, offset int64) (line int, col int) {
+	line = 1
+	col = 1
+
+	for i, r := range content {
+		if int64(i) >= offset {
+			break
+		}
+		if r == '\n' {
+			line++
+			col = 1
+		} else {
+			col++
+		}
+	}
+
+	return line, col
+}
+
+// focusOnFirstErrorField moves focus to the first field that has a validation error
+func focusOnFirstErrorField(model types.Model) types.Model {
+	switch model.ActiveModal {
+	case types.AddCommandForm:
+		// Check field order: Name (0), Command (1), Args (2), Environment (3)
+		if _, exists := model.FormErrors["name"]; exists {
+			model.FormData.ActiveField = 0
+		} else if _, exists := model.FormErrors["command"]; exists {
+			model.FormData.ActiveField = 1
+		}
+		// Args and Environment don't have validation errors in current implementation
+	case types.AddSSEForm:
+		// Check field order: Name (0), URL (1), Environment (2)
+		if _, exists := model.FormErrors["name"]; exists {
+			model.FormData.ActiveField = 0
+		} else if _, exists := model.FormErrors["url"]; exists {
+			model.FormData.ActiveField = 1
+		}
+	case types.AddJSONForm:
+		// Check field order: Name (0), JSONConfig (1), Environment (2)
+		if _, exists := model.FormErrors["name"]; exists {
+			model.FormData.ActiveField = 0
+		} else if _, exists := model.FormErrors["json"]; exists {
+			model.FormData.ActiveField = 1
+		}
+	}
+
+	return model
+}
+
+// validateEnvironmentFormat validates environment variable format
+func validateEnvironmentFormat(envStr string) error {
+	if envStr == "" {
+		return nil
+	}
+
+	// Support both comma-separated and newline-separated
+	lines := strings.FieldsFunc(envStr, func(c rune) bool {
+		return c == ',' || c == '\n'
+	})
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Must contain = sign
+		if !strings.Contains(line, "=") {
+			return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
+		}
+
+		// Split on first = sign
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
+		}
+
+		key := strings.TrimSpace(parts[0])
+		if key == "" {
+			return fmt.Errorf("empty key in: '%s'", line)
+		}
+
+		// Basic validation of key format (alphanumeric + underscore)
+		for _, r := range key {
+			if !((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_') {
+				return fmt.Errorf("invalid key '%s' - use letters, numbers, and underscores only", key)
+			}
+		}
+	}
+
+	return nil
 }

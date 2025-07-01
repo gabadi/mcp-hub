@@ -195,6 +195,18 @@ func renderCommandFormContent(model types.Model) string {
 	}
 	lines = append(lines, argsLabel)
 	lines = append(lines, fmt.Sprintf("[%s]", argsValue))
+	lines = append(lines, "")
+
+	// Environment Variables field
+	envLabel := "Environment: (optional)"
+	envValue := model.FormData.Environment
+	if model.FormData.ActiveField == 3 {
+		envValue = envValue + "_"
+		envLabel = "> " + envLabel
+	}
+	lines = append(lines, envLabel)
+	lines = append(lines, fmt.Sprintf("[%s]", envValue))
+	lines = append(lines, "Format: KEY1=value1,KEY2=value2")
 
 	return strings.Join(lines, "\n")
 }
@@ -229,6 +241,18 @@ func renderSSEFormContent(model types.Model) string {
 	if err, exists := model.FormErrors["url"]; exists {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	}
+	lines = append(lines, "")
+
+	// Environment Variables field
+	envLabel := "Environment: (optional)"
+	envValue := model.FormData.Environment
+	if model.FormData.ActiveField == 2 {
+		envValue = envValue + "_"
+		envLabel = "> " + envLabel
+	}
+	lines = append(lines, envLabel)
+	lines = append(lines, fmt.Sprintf("[%s]", envValue))
+	lines = append(lines, "Format: KEY1=value1,KEY2=value2")
 	lines = append(lines, "")
 	lines = append(lines, "Enter a valid HTTP/HTTPS URL for the SSE server.")
 
@@ -273,6 +297,18 @@ func renderJSONFormContent(model types.Model) string {
 	} else if jsonValue != "" {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#51CF66")).Render("  ✓ Valid JSON"))
 	}
+	lines = append(lines, "")
+
+	// Environment Variables field
+	envLabel := "Environment: (optional)"
+	envValue := model.FormData.Environment
+	if model.FormData.ActiveField == 2 {
+		envValue = envValue + "_"
+		envLabel = "> " + envLabel
+	}
+	lines = append(lines, envLabel)
+	lines = append(lines, fmt.Sprintf("[%s]", envValue))
+	lines = append(lines, "Format: KEY1=value1,KEY2=value2")
 
 	return strings.Join(lines, "\n")
 }
