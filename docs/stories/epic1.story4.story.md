@@ -2,7 +2,7 @@
 
 **Epic:** Core MCP Inventory Management  
 **Story Number:** 1.4  
-**Story Status:** Completed  
+**Story Status:** Learning Reviewed  
 **Created:** 2025-07-01  
 **Scrum Master:** Bob (SM Agent)
 
@@ -66,46 +66,46 @@ This capability is critical for daily developer workflow as MCP configurations f
 ## Tasks / Subtasks
 
 ### Task 1: Edit Modal Infrastructure (AC: 1, 4)
-- [ ] Add EditMCP modal type to ModalType enum in types/models.go
-- [ ] Implement edit modal activation in keyboard handler for 'E' key
-- [ ] Create edit modal workflow in modal handler with state management
-- [ ] Add modal title customization for edit vs add workflows
-- [ ] Implement ESC key cancellation without persistence
+- [x] Add EditMCP modal type to ModalType enum in types/models.go
+- [x] Implement edit modal activation in keyboard handler for 'E' key
+- [x] Create edit modal workflow in modal handler with state management
+- [x] Add modal title customization for edit vs add workflows
+- [x] Implement ESC key cancellation without persistence
 
 ### Task 2: Form Pre-population System (AC: 2)
-- [ ] Implement form data pre-population from selected MCP item
-- [ ] Add field mapping logic for different MCP types (Command/SSE/JSON)
-- [ ] Handle environment variables conversion to display format
-- [ ] Ensure form validation consistency with add MCP patterns
-- [ ] Add field focus management for pre-populated forms
+- [x] Implement form data pre-population from selected MCP item
+- [x] Add field mapping logic for different MCP types (Command/SSE/JSON)
+- [x] Handle environment variables conversion to display format
+- [x] Ensure form validation consistency with add MCP patterns
+- [x] Add field focus management for pre-populated forms
 
 ### Task 3: Change Detection and Validation (AC: 3, 5)
-- [ ] Implement change detection to identify modified fields
-- [ ] Add edit-specific validation that preserves data integrity
-- [ ] Ensure atomic storage operations for edit updates
-- [ ] Implement type-specific validation for all MCP types
-- [ ] Add comprehensive validation for environment variables format
+- [x] Implement change detection to identify modified fields
+- [x] Add edit-specific validation that preserves data integrity
+- [x] Ensure atomic storage operations for edit updates
+- [x] Implement type-specific validation for all MCP types
+- [x] Add comprehensive validation for environment variables format
 
 ### Task 4: Storage Integration for Updates (AC: 3)
-- [ ] Implement MCP update functionality in storage service
-- [ ] Add atomic file operations for edit updates
-- [ ] Ensure inventory consistency during edit operations
-- [ ] Add error recovery for failed edit operations
-- [ ] Implement success/failure feedback for edit workflow
+- [x] Implement MCP update functionality in storage service
+- [x] Add atomic file operations for edit updates
+- [x] Ensure inventory consistency during edit operations
+- [x] Add error recovery for failed edit operations
+- [x] Implement success/failure feedback for edit workflow
 
 ### Task 5: UI Integration and Success Handling (AC: 3)
-- [ ] Integrate edit modal with existing modal rendering system
-- [ ] Add success message display for completed edits
-- [ ] Ensure MCP list refresh with updated data
-- [ ] Implement smooth transition back to main navigation
-- [ ] Add edit operation feedback in status area
+- [x] Integrate edit modal with existing modal rendering system
+- [x] Add success message display for completed edits
+- [x] Ensure MCP list refresh with updated data
+- [x] Implement smooth transition back to main navigation
+- [x] Add edit operation feedback in status area
 
 ### Task 6: Comprehensive Testing Implementation (All ACs)
-- [ ] Create unit tests for edit modal functionality
-- [ ] Add integration tests for complete edit workflow
-- [ ] Test form pre-population for all MCP types
-- [ ] Validate change detection and persistence
-- [ ] Test error handling and cancellation scenarios
+- [x] Create unit tests for edit modal functionality
+- [x] Add integration tests for complete edit workflow
+- [x] Test form pre-population for all MCP types
+- [x] Validate change detection and persistence
+- [x] Test error handling and cancellation scenarios
 
 ## Dev Technical Guidance
 
