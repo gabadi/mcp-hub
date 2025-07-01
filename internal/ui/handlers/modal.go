@@ -137,10 +137,10 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c":
+	case "ctrl+c", "cmd+c", "⌘c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v":
+	case "ctrl+v", "cmd+v", "⌘v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -192,10 +192,10 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c":
+	case "ctrl+c", "cmd+c", "⌘c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v":
+	case "ctrl+v", "cmd+v", "⌘v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -251,10 +251,10 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c":
+	case "ctrl+c", "cmd+c", "⌘c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v":
+	case "ctrl+v", "cmd+v", "⌘v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
