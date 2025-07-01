@@ -194,6 +194,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 		if len(data) > 0 {
 			return string(data), nil
 		}
+		// Store error for fallback reporting
 		lastErr = fmt.Errorf("golang.design/x/clipboard returned empty data")
 	}
 

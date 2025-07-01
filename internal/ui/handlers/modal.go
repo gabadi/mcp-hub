@@ -883,7 +883,7 @@ func parseEnvironmentLines(envStr string) []string {
 	lines := strings.FieldsFunc(envStr, func(c rune) bool {
 		return c == ',' || c == '\n'
 	})
-	
+
 	var cleanLines []string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
