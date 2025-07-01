@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	"cc-mcp-manager/internal/ui/services"
+	"cc-mcp-manager/internal/ui/types"
 )
 
 // SuccessMsg represents a success message
