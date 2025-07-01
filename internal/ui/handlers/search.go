@@ -28,6 +28,12 @@ func HandleEscKey(model types.Model) (types.Model, tea.Cmd) {
 		// Close modal and return to main navigation
 		model.State = types.MainNavigation
 		model.ActiveModal = types.NoModal
+		// Clear edit mode state if canceling edit
+		model.EditMode = false
+		model.EditMCPName = ""
+		// Clear form data and errors
+		model.FormData = types.FormData{}
+		model.FormErrors = make(map[string]string)
 		return model, nil
 	case types.MainNavigation:
 		// Clear search if active, otherwise exit application

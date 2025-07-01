@@ -43,9 +43,33 @@ func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.C
 		model.FormData = types.FormData{}
 		model.FormErrors = make(map[string]string)
 	case "e":
-		// Edit MCP (future functionality)
+		// Edit MCP - Pre-populate form with selected MCP data
+		selectedMCP := services.GetSelectedMCP(model)
+		if selectedMCP == nil {
+			// No MCP selected, don't open edit modal
+			return model, nil
+		}
+
 		model.State = types.ModalActive
-		model.ActiveModal = types.EditModal
+		// Set the appropriate edit modal type based on MCP type
+		switch selectedMCP.Type {
+		case "CMD":
+			model.ActiveModal = types.AddCommandForm
+		case "SSE":
+			model.ActiveModal = types.AddSSEForm
+		case "JSON":
+			model.ActiveModal = types.AddJSONForm
+		default:
+			model.ActiveModal = types.AddCommandForm // Default fallback
+		}
+
+		// Pre-populate form data with existing MCP values
+		model.FormData = populateFormDataFromMCP(*selectedMCP)
+		model.FormErrors = make(map[string]string)
+
+		// Set edit mode state
+		model.EditMode = true
+		model.EditMCPName = selectedMCP.Name
 	case "d":
 		// Delete MCP (future functionality)
 		model.State = types.ModalActive
@@ -166,21 +190,15 @@ func NavigateDown(model types.Model) types.Model {
 		// Use appropriate index based on search state
 		if model.SearchQuery != "" {
 			newIndex := model.FilteredSelectedIndex + 4
+			// Only move if there's actually an item 4 positions down
 			if newIndex < len(filteredMCPs) {
 				model.FilteredSelectedIndex = newIndex
 			}
-			// Stay within filtered results bounds
-			if model.FilteredSelectedIndex >= len(filteredMCPs) && len(filteredMCPs) > 0 {
-				model.FilteredSelectedIndex = len(filteredMCPs) - 1
-			}
 		} else {
 			newIndex := model.SelectedItem + 4
+			// Only move if there's actually an item 4 positions down
 			if newIndex < len(filteredMCPs) {
 				model.SelectedItem = newIndex
-			}
-			// Stay within filtered results bounds
-			if model.SelectedItem >= len(filteredMCPs) && len(filteredMCPs) > 0 {
-				model.SelectedItem = len(filteredMCPs) - 1
 			}
 		}
 	} else if model.ActiveColumn == 0 {
@@ -271,4 +289,60 @@ func pasteToSearchQuery(model types.Model) types.Model {
 	model.SuccessTimer = 120 // Show success message for 2 seconds
 
 	return model
+}
+
+// populateFormDataFromMCP converts an MCPItem to FormData for editing
+func populateFormDataFromMCP(mcp types.MCPItem) types.FormData {
+	formData := types.FormData{
+		Name:        mcp.Name,
+		Command:     mcp.Command,
+		URL:         mcp.URL,
+		JSONConfig:  mcp.JSONConfig,
+		ActiveField: 0, // Start with first field focused
+	}
+
+	// Convert Args slice to string
+	if len(mcp.Args) > 0 {
+		formData.Args = formatArgsForDisplay(mcp.Args)
+	}
+
+	// Convert Environment map to string
+	if len(mcp.Environment) > 0 {
+		formData.Environment = formatEnvironmentForDisplay(mcp.Environment)
+	}
+
+	return formData
+}
+
+// formatArgsForDisplay converts []string to display format
+func formatArgsForDisplay(args []string) string {
+	if len(args) == 0 {
+		return ""
+	}
+
+	// Join with spaces, quoting arguments that contain spaces
+	var formattedArgs []string
+	for _, arg := range args {
+		if strings.Contains(arg, " ") {
+			formattedArgs = append(formattedArgs, `"`+arg+`"`)
+		} else {
+			formattedArgs = append(formattedArgs, arg)
+		}
+	}
+
+	return strings.Join(formattedArgs, " ")
+}
+
+// formatEnvironmentForDisplay converts map[string]string to display format
+func formatEnvironmentForDisplay(env map[string]string) string {
+	if len(env) == 0 {
+		return ""
+	}
+
+	var pairs []string
+	for key, value := range env {
+		pairs = append(pairs, key+"="+value)
+	}
+
+	return strings.Join(pairs, ",")
 }

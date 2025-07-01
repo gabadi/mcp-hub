@@ -52,17 +52,32 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 		content = renderTypeSelectionContent(model)
 		footer = "[1-3] Select • ESC Cancel"
 	case types.AddCommandForm:
-		title = "Add New MCP - Command/Binary"
+		if model.EditMode {
+			title = "Edit MCP - Command/Binary: " + model.EditMCPName
+			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
+		} else {
+			title = "Add New MCP - Command/Binary"
+			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+		}
 		content = renderCommandFormContent(model)
-		footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
 	case types.AddSSEForm:
-		title = "Add New MCP - SSE Server"
+		if model.EditMode {
+			title = "Edit MCP - SSE Server: " + model.EditMCPName
+			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
+		} else {
+			title = "Add New MCP - SSE Server"
+			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+		}
 		content = renderSSEFormContent(model)
-		footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
 	case types.AddJSONForm:
-		title = "Add New MCP - JSON Configuration"
+		if model.EditMode {
+			title = "Edit MCP - JSON Configuration: " + model.EditMCPName
+			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
+		} else {
+			title = "Add New MCP - JSON Configuration"
+			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+		}
 		content = renderJSONFormContent(model)
-		footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
 	case types.EditModal:
 		title = "Edit MCP"
 		content = renderEditModalContent(model)

@@ -1,0 +1,325 @@
+package handlers
+
+import (
+	"testing"
+
+	"cc-mcp-manager/internal/testutil"
+	"cc-mcp-manager/internal/ui/types"
+)
+
+func TestEditMCPFormPrePopulation(t *testing.T) {
+	tests := []struct {
+		name       string
+		mcpItem    types.MCPItem
+		expectName string
+		expectType string
+	}{
+		{
+			name: "Command MCP pre-population",
+			mcpItem: types.MCPItem{
+				Name:        "test-cmd",
+				Type:        "CMD",
+				Command:     "test-command",
+				Args:        []string{"arg1", "arg2"},
+				Environment: map[string]string{"KEY1": "value1", "KEY2": "value2"},
+			},
+			expectName: "test-cmd",
+			expectType: "CMD",
+		},
+		{
+			name: "SSE MCP pre-population",
+			mcpItem: types.MCPItem{
+				Name:        "test-sse",
+				Type:        "SSE",
+				URL:         "https://example.com/sse",
+				Environment: map[string]string{"API_KEY": "secret"},
+			},
+			expectName: "test-sse",
+			expectType: "SSE",
+		},
+		{
+			name: "JSON MCP pre-population",
+			mcpItem: types.MCPItem{
+				Name:       "test-json",
+				Type:       "JSON",
+				JSONConfig: `{"key": "value"}`,
+			},
+			expectName: "test-json",
+			expectType: "JSON",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			formData := populateFormDataFromMCP(tt.mcpItem)
+
+			if formData.Name != tt.expectName {
+				t.Errorf("Expected name %s, got %s", tt.expectName, formData.Name)
+			}
+
+			if tt.mcpItem.Type == "CMD" {
+				if formData.Command != tt.mcpItem.Command {
+					t.Errorf("Expected command %s, got %s", tt.mcpItem.Command, formData.Command)
+				}
+
+				if len(tt.mcpItem.Args) > 0 {
+					expectedArgs := formatArgsForDisplay(tt.mcpItem.Args)
+					if formData.Args != expectedArgs {
+						t.Errorf("Expected args %s, got %s", expectedArgs, formData.Args)
+					}
+				}
+			}
+
+			if tt.mcpItem.Type == "SSE" {
+				if formData.URL != tt.mcpItem.URL {
+					t.Errorf("Expected URL %s, got %s", tt.mcpItem.URL, formData.URL)
+				}
+			}
+
+			if tt.mcpItem.Type == "JSON" {
+				if formData.JSONConfig != tt.mcpItem.JSONConfig {
+					t.Errorf("Expected JSON config %s, got %s", tt.mcpItem.JSONConfig, formData.JSONConfig)
+				}
+			}
+
+			if len(tt.mcpItem.Environment) > 0 {
+				// For environment variables, check that all key=value pairs are present
+				// since map iteration order is not guaranteed
+				for key, value := range tt.mcpItem.Environment {
+					expectedPair := key + "=" + value
+					if !contains(formData.Environment, expectedPair) {
+						t.Errorf("Expected environment to contain %q, but got %q", expectedPair, formData.Environment)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestFormatArgsForDisplay(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		expected string
+	}{
+		{
+			name:     "Empty args",
+			args:     []string{},
+			expected: "",
+		},
+		{
+			name:     "Single arg without spaces",
+			args:     []string{"arg1"},
+			expected: "arg1",
+		},
+		{
+			name:     "Multiple args without spaces",
+			args:     []string{"arg1", "arg2", "arg3"},
+			expected: "arg1 arg2 arg3",
+		},
+		{
+			name:     "Args with spaces get quoted",
+			args:     []string{"arg with spaces", "normal-arg"},
+			expected: `"arg with spaces" normal-arg`,
+		},
+		{
+			name:     "Mixed args with and without spaces",
+			args:     []string{"normal", "arg with spaces", "another"},
+			expected: `normal "arg with spaces" another`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatArgsForDisplay(tt.args)
+			if result != tt.expected {
+				t.Errorf("Expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestFormatEnvironmentForDisplay(t *testing.T) {
+	tests := []struct {
+		name     string
+		env      map[string]string
+		expected string
+	}{
+		{
+			name:     "Empty environment",
+			env:      map[string]string{},
+			expected: "",
+		},
+		{
+			name:     "Single environment variable",
+			env:      map[string]string{"KEY1": "value1"},
+			expected: "KEY1=value1",
+		},
+		{
+			name: "Multiple environment variables",
+			env:  map[string]string{"KEY1": "value1", "KEY2": "value2"},
+			// Note: map iteration order is not guaranteed, so we need to check both possible orders
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatEnvironmentForDisplay(tt.env)
+
+			if len(tt.env) == 0 {
+				if result != tt.expected {
+					t.Errorf("Expected %q, got %q", tt.expected, result)
+				}
+			} else if len(tt.env) == 1 {
+				if result != tt.expected {
+					t.Errorf("Expected %q, got %q", tt.expected, result)
+				}
+			} else {
+				// For multiple environment variables, check that all key=value pairs are present
+				for key, value := range tt.env {
+					expectedPair := key + "=" + value
+					if !contains(result, expectedPair) {
+						t.Errorf("Expected result to contain %q, but got %q", expectedPair, result)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestUpdateMCPInInventory(t *testing.T) {
+	// Create a model with some test MCPs
+	model := testutil.NewTestModel().Build()
+	model.MCPItems = []types.MCPItem{
+		{Name: "test-mcp", Type: "CMD", Command: "old-command", Active: true},
+		{Name: "other-mcp", Type: "SSE", URL: "https://old.com", Active: false},
+	}
+	model.EditMode = true
+	model.EditMCPName = "test-mcp"
+
+	// Create updated MCP
+	updatedMCP := types.MCPItem{
+		Name:    "test-mcp-updated",
+		Type:    "CMD",
+		Command: "new-command",
+		Args:    []string{"new-arg"},
+	}
+
+	// Update the MCP
+	newModel, _ := updateMCPInInventory(model, updatedMCP)
+
+	// Verify the MCP was updated
+	found := false
+	for _, mcp := range newModel.MCPItems {
+		if mcp.Name == "test-mcp-updated" {
+			found = true
+			if mcp.Command != "new-command" {
+				t.Errorf("Expected command to be updated to 'new-command', got %s", mcp.Command)
+			}
+			if len(mcp.Args) != 1 || mcp.Args[0] != "new-arg" {
+				t.Errorf("Expected args to be updated to ['new-arg'], got %v", mcp.Args)
+			}
+			// Active status should be preserved
+			if !mcp.Active {
+				t.Errorf("Expected active status to be preserved as true, got %v", mcp.Active)
+			}
+		}
+	}
+
+	if !found {
+		t.Error("Updated MCP not found in inventory")
+	}
+
+	// Verify other MCPs are unchanged
+	for _, mcp := range newModel.MCPItems {
+		if mcp.Name == "other-mcp" {
+			if mcp.URL != "https://old.com" {
+				t.Errorf("Other MCP should be unchanged, but URL changed to %s", mcp.URL)
+			}
+		}
+	}
+}
+
+func TestEditModeValidation(t *testing.T) {
+	// Test that duplicate name validation allows the current MCP name in edit mode
+	model := testutil.NewTestModel().Build()
+	model.MCPItems = []types.MCPItem{
+		{Name: "existing-mcp", Type: "CMD", Command: "test"},
+		{Name: "another-mcp", Type: "CMD", Command: "test2"},
+	}
+	model.EditMode = true
+	model.EditMCPName = "existing-mcp"
+	model.FormData.Name = "existing-mcp" // Same name as original
+	model.FormData.Command = "test"      // Required field
+
+	// This should be valid (keeping the same name)
+	newModel, valid := validateCommandForm(model)
+	if !valid {
+		t.Error("Edit mode should allow keeping the same MCP name")
+	}
+	if _, exists := newModel.FormErrors["name"]; exists {
+		t.Error("Edit mode should not show duplicate name error for same name")
+	}
+
+	// Test changing to another existing name (should fail)
+	model.FormData.Name = "another-mcp"
+	model.FormData.Command = "test" // Keep required field
+	newModel, valid = validateCommandForm(model)
+	if valid {
+		t.Error("Edit mode should not allow changing to another existing MCP name")
+	}
+	if _, exists := newModel.FormErrors["name"]; !exists {
+		t.Error("Edit mode should show duplicate name error for another existing name")
+	}
+}
+
+func TestEditModeStateCleanup(t *testing.T) {
+	// Test that edit mode state is properly cleaned up on cancel
+	model := testutil.NewTestModel().Build()
+	model.EditMode = true
+	model.EditMCPName = "test-mcp"
+	model.State = types.ModalActive
+	model.ActiveModal = types.AddCommandForm
+	model.FormData.Name = "test-data"
+	model.FormErrors = map[string]string{"test": "error"}
+
+	// Simulate ESC key (cancel)
+	newModel, _ := HandleEscKey(model)
+
+	// Verify state is cleaned up
+	if newModel.EditMode {
+		t.Error("EditMode should be false after cancel")
+	}
+	if newModel.EditMCPName != "" {
+		t.Error("EditMCPName should be empty after cancel")
+	}
+	if newModel.State != types.MainNavigation {
+		t.Error("State should return to MainNavigation after cancel")
+	}
+	if newModel.ActiveModal != types.NoModal {
+		t.Error("ActiveModal should be NoModal after cancel")
+	}
+	if newModel.FormData.Name != "" {
+		t.Error("FormData should be cleared after cancel")
+	}
+	if len(newModel.FormErrors) != 0 {
+		t.Error("FormErrors should be cleared after cancel")
+	}
+}
+
+// Helper function to check if a string contains a substring
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr ||
+		(len(s) > len(substr) && (s[:len(substr)] == substr ||
+			s[len(s)-len(substr):] == substr ||
+			findInString(s, substr))))
+}
+
+func findInString(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

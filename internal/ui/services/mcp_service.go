@@ -66,8 +66,20 @@ func GetActiveMCPCount(model types.Model) int {
 
 // GetSelectedMCP returns the currently selected MCP item, or nil if none selected
 func GetSelectedMCP(model types.Model) *types.MCPItem {
-	if model.SelectedItem < 0 || model.SelectedItem >= len(model.MCPItems) {
+	filteredMCPs := GetFilteredMCPs(model)
+
+	// Use appropriate index based on search state
+	selectedIndex := model.SelectedItem
+	if model.SearchQuery != "" {
+		selectedIndex = model.FilteredSelectedIndex
+	}
+
+	if selectedIndex < 0 || selectedIndex >= len(filteredMCPs) {
 		return nil
 	}
-	return &model.MCPItems[model.SelectedItem]
+
+	selectedItem := filteredMCPs[selectedIndex]
+
+	// Return a copy to avoid accidental modifications
+	return &selectedItem
 }

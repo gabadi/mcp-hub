@@ -51,6 +51,10 @@ type Model struct {
 	// Success message state
 	SuccessMessage string
 	SuccessTimer   int // Timer for auto-hiding success message
+
+	// Edit mode state
+	EditMode    bool   // True when editing an existing MCP
+	EditMCPName string // Name of the MCP being edited
 }
 
 // ModalType represents the type of modal being displayed

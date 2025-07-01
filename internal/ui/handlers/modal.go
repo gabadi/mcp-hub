@@ -125,13 +125,23 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 				Args:        args,
 				Environment: env,
 			}
+
 			var cmd tea.Cmd
-			model, cmd = addMCPToInventory(model, mcpItem)
+			if model.EditMode {
+				// Update existing MCP
+				model, cmd = updateMCPInInventory(model, mcpItem)
+			} else {
+				// Add new MCP
+				model, cmd = addMCPToInventory(model, mcpItem)
+			}
+
 			// Close modal and return to main navigation
 			model.State = types.MainNavigation
 			model.ActiveModal = types.NoModal
 			model.FormData = types.FormData{}
 			model.FormErrors = make(map[string]string)
+			model.EditMode = false
+			model.EditMCPName = ""
 			return model, cmd
 		}
 	case "backspace":
@@ -180,13 +190,23 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 				URL:         model.FormData.URL,
 				Environment: env,
 			}
+
 			var cmd tea.Cmd
-			model, cmd = addMCPToInventory(model, mcpItem)
+			if model.EditMode {
+				// Update existing MCP
+				model, cmd = updateMCPInInventory(model, mcpItem)
+			} else {
+				// Add new MCP
+				model, cmd = addMCPToInventory(model, mcpItem)
+			}
+
 			// Close modal and return to main navigation
 			model.State = types.MainNavigation
 			model.ActiveModal = types.NoModal
 			model.FormData = types.FormData{}
 			model.FormErrors = make(map[string]string)
+			model.EditMode = false
+			model.EditMCPName = ""
 			return model, cmd
 		}
 	case "backspace":
@@ -238,13 +258,23 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 					JSONConfig:  model.FormData.JSONConfig,
 					Environment: env,
 				}
+
 				var cmd tea.Cmd
-				model, cmd = addMCPToInventory(model, mcpItem)
+				if model.EditMode {
+					// Update existing MCP
+					model, cmd = updateMCPInInventory(model, mcpItem)
+				} else {
+					// Add new MCP
+					model, cmd = addMCPToInventory(model, mcpItem)
+				}
+
 				// Close modal and return to main navigation
 				model.State = types.MainNavigation
 				model.ActiveModal = types.NoModal
 				model.FormData = types.FormData{}
 				model.FormErrors = make(map[string]string)
+				model.EditMode = false
+				model.EditMCPName = ""
 				return model, cmd
 			}
 		}
@@ -386,12 +416,15 @@ func validateCommandForm(model types.Model) (types.Model, bool) {
 		}
 	}
 
-	// Check for duplicate names
+	// Check for duplicate names (but allow the current MCP name in edit mode)
 	for _, item := range model.MCPItems {
 		if item.Name == model.FormData.Name {
-			model.FormErrors["name"] = "Name already exists"
-			valid = false
-			break
+			// Allow the current name in edit mode
+			if !model.EditMode || item.Name != model.EditMCPName {
+				model.FormErrors["name"] = "Name already exists"
+				valid = false
+				break
+			}
 		}
 	}
 
@@ -426,12 +459,15 @@ func validateSSEForm(model types.Model) (types.Model, bool) {
 		}
 	}
 
-	// Check for duplicate names
+	// Check for duplicate names (but allow the current MCP name in edit mode)
 	for _, item := range model.MCPItems {
 		if item.Name == model.FormData.Name {
-			model.FormErrors["name"] = "Name already exists"
-			valid = false
-			break
+			// Allow the current name in edit mode
+			if !model.EditMode || item.Name != model.EditMCPName {
+				model.FormErrors["name"] = "Name already exists"
+				valid = false
+				break
+			}
 		}
 	}
 
@@ -461,12 +497,15 @@ func validateJSONForm(model types.Model) (types.Model, bool) {
 		}
 	}
 
-	// Check for duplicate names
+	// Check for duplicate names (but allow the current MCP name in edit mode)
 	for _, item := range model.MCPItems {
 		if item.Name == model.FormData.Name {
-			model.FormErrors["name"] = "Name already exists"
-			valid = false
-			break
+			// Allow the current name in edit mode
+			if !model.EditMode || item.Name != model.EditMCPName {
+				model.FormErrors["name"] = "Name already exists"
+				valid = false
+				break
+			}
 		}
 	}
 
@@ -490,6 +529,50 @@ func addMCPToInventory(model types.Model, mcpItem types.MCPItem) (types.Model, t
 
 	// Show success message
 	model.SuccessMessage = fmt.Sprintf("Added %s successfully", mcpItem.Name)
+
+	return model, hideSuccessMsg()
+}
+
+// updateMCPInInventory updates an existing MCP in the inventory and saves it
+func updateMCPInInventory(model types.Model, updatedMCP types.MCPItem) (types.Model, tea.Cmd) {
+	// Find and update the MCP in the inventory
+	found := false
+	for i, mcp := range model.MCPItems {
+		if mcp.Name == model.EditMCPName {
+			// Preserve the original active status
+			updatedMCP.Active = model.MCPItems[i].Active
+			model.MCPItems[i] = updatedMCP
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		// MCP not found, show error
+		model.SuccessMessage = fmt.Sprintf("Could not find MCP '%s' to update", model.EditMCPName)
+		return model, hideSuccessMsg()
+	}
+
+	// Save to storage
+	if err := services.SaveInventory(model.MCPItems); err != nil {
+		// Show error message instead of success
+		model.SuccessMessage = fmt.Sprintf("Failed to update %s: %v", updatedMCP.Name, err)
+		return model, hideSuccessMsg()
+	}
+
+	// Update selection to the updated item if name changed
+	if updatedMCP.Name != model.EditMCPName {
+		// Find the updated MCP's new position
+		for i, mcp := range model.MCPItems {
+			if mcp.Name == updatedMCP.Name {
+				model.SelectedItem = i
+				break
+			}
+		}
+	}
+
+	// Show success message
+	model.SuccessMessage = fmt.Sprintf("Updated %s successfully", updatedMCP.Name)
 
 	return model, hideSuccessMsg()
 }
