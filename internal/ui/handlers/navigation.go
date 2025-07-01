@@ -34,9 +34,12 @@ func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.C
 		model.FilteredSelectedIndex = 0
 		// Don't add the "/" character to the search query
 	case "a":
-		// Add MCP (future functionality)
+		// Add MCP - Start with type selection
 		model.State = types.ModalActive
-		model.ActiveModal = types.AddModal
+		model.ActiveModal = types.AddMCPTypeSelection
+		// Reset form data
+		model.FormData = types.FormData{}
+		model.FormErrors = make(map[string]string)
 	case "e":
 		// Edit MCP (future functionality)
 		model.State = types.ModalActive

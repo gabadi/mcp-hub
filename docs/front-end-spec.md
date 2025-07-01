@@ -184,12 +184,7 @@ graph TD
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Navigation:**
-- `↑↓` - Navigate within column
-- `←→` - Move between columns  
-- `Tab` - Jump to search field
-- `Space` - Toggle selected MCP
-- `A/E/D` - Add/Edit/Delete operations
+**Navigation:** `↑↓` - Navigate within column, `←→` - Move between columns, `Tab` - Jump to search field, `Space` - Toggle selected MCP, `A/E/D` - Add/Edit/Delete operations
 
 ### Add MCP Type Selection Modal
 
@@ -211,11 +206,7 @@ graph TD
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Interaction:**
-- `1/2/3` - Quick selection
-- `↑↓` - Navigate options
-- `Enter` - Confirm selection
-- `ESC` - Cancel and return
+**Interaction:** `1/2/3` - Quick selection, `↑↓` - Navigate options, `Enter` - Confirm selection, `ESC` - Cancel and return
 
 ### Add Command MCP Form
 
@@ -237,11 +228,7 @@ graph TD
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Interaction:**
-- `Tab` - Navigate between fields
-- `Enter` - Submit (when valid)
-- `ESC` - Cancel and return
-- Real-time validation feedback
+**Interaction:** `Tab` - Navigate between fields, `Enter` - Submit (when valid), `ESC` - Cancel and return, Real-time validation feedback
 
 ### Add SSE MCP Form
 
@@ -249,7 +236,6 @@ graph TD
 ┌─── Add SSE MCP ───────────────────────────────────────────────────────────────────────────────────┐
 │ Name: [context7-clone             ]                                                                │
 │ URL:  [https://api.example.com/sse]                                                                │
-│                                                                                                     │
 │ [Enter] Add    [ESC] Cancel                                                                         │
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -261,7 +247,6 @@ graph TD
 │ [A]dd [E]dit [D]elete [Space]Toggle [R]efresh [Q]uit │ Search: [github     ] │ 2 matches found     │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ● **github**-mcp      ○ **github**-api                                                              │
-│                                                                                                       │
 │ [ESC] to clear search                                                                                 │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ Project: /web-app • Claude sync: 2m ago • Search: "github" • 2 of 30 MCPs shown                   │

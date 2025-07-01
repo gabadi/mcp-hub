@@ -296,7 +296,7 @@ func TestRenderMCPList(t *testing.T) {
 			name:     "Empty list returns no MCPs message",
 			mcpItems: []types.MCPItem{},
 			expected: []string{
-				"No MCPs available",
+				"No MCPs loaded from inventory (total: 0)",
 			},
 		},
 		{

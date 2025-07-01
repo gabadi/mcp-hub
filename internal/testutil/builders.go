@@ -63,6 +63,19 @@ func (b *TestModelBuilder) WithSearchInputActive(active bool) *TestModelBuilder 
 	return b
 }
 
+// WithMCPs sets the MCP items for testing
+func (b *TestModelBuilder) WithMCPs(mcps []types.MCPItem) *TestModelBuilder {
+	b.model.MCPItems = mcps
+	return b
+}
+
+// WithTempStorage is a placeholder for storage configuration (for testing with temp directories)
+func (b *TestModelBuilder) WithTempStorage(tempDir string) *TestModelBuilder {
+	// This is used for testing but doesn't modify the model directly
+	// The tempDir is handled by test code when calling storage functions
+	return b
+}
+
 // Build returns the constructed model
 func (b *TestModelBuilder) Build() types.Model {
 	return b.model

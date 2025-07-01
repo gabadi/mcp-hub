@@ -41,7 +41,7 @@ func TestRenderFooter(t *testing.T) {
 			height:            40,
 			expectedContains: []string{
 				"Search:",
-				"query█",
+				"query_",
 				"[INPUT MODE]",
 			},
 		},

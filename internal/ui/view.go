@@ -24,21 +24,23 @@ func (m Model) View() string {
 	// Join components vertically without extra container
 	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
 
+	// Add success message if present
+	if m.Model.SuccessMessage != "" {
+		successStyle := lipgloss.NewStyle().
+			Background(lipgloss.Color("#51CF66")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Bold(true).
+			Padding(0, 2).
+			MarginBottom(1)
+
+		successBar := successStyle.Render(m.Model.SuccessMessage)
+		content = lipgloss.JoinVertical(lipgloss.Left, successBar, header, body, footer)
+	}
+
 	// If a modal is active, render it on top
 	if m.Model.State == types.ModalActive {
-		// Convert types.ModalType to components.ModalType
-		var modalType components.ModalType
-		switch m.Model.ActiveModal {
-		case types.AddModal:
-			modalType = components.AddModal
-		case types.EditModal:
-			modalType = components.EditModal
-		case types.DeleteModal:
-			modalType = components.DeleteModal
-		}
-
 		// Render the modal overlay on top of the main content
-		modalOverlay := components.OverlayModal(m.Model, modalType, m.Model.Width, m.Model.Height, content)
+		modalOverlay := components.OverlayModal(m.Model, m.Model.Width, m.Model.Height, content)
 		return modalOverlay
 	}
 

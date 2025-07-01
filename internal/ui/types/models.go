@@ -43,6 +43,14 @@ type Model struct {
 
 	// Modal state
 	ActiveModal ModalType
+
+	// Form state for add MCP workflow
+	FormData   FormData
+	FormErrors map[string]string
+
+	// Success message state
+	SuccessMessage string
+	SuccessTimer   int // Timer for auto-hiding success message
 }
 
 // ModalType represents the type of modal being displayed
@@ -51,16 +59,33 @@ type ModalType int
 const (
 	NoModal ModalType = iota
 	AddModal
+	AddMCPTypeSelection
+	AddCommandForm
+	AddSSEForm
+	AddJSONForm
 	EditModal
 	DeleteModal
 )
 
+// FormData represents the current form data during MCP addition
+type FormData struct {
+	Name        string
+	Command     string
+	Args        string
+	URL         string
+	JSONConfig  string
+	ActiveField int // Track which field is currently focused for Tab navigation
+}
+
 // MCPItem represents an MCP in the inventory
 type MCPItem struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Active  bool   `json:"active"`
-	Command string `json:"command"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
+	Active     bool   `json:"active"`
+	Command    string `json:"command"`
+	Args       string `json:"args,omitempty"`
+	URL        string `json:"url,omitempty"`
+	JSONConfig string `json:"json_config,omitempty"`
 }
 
 // Column represents a UI column
@@ -123,6 +148,7 @@ func NewModel() Model {
 		Columns:           make([]Column, 1),
 		ColumnCount:       1,
 		MCPItems:          getDefaultMCPs(), // This will be replaced by storage loading
+		FormErrors:        make(map[string]string),
 	}
 }
 
@@ -130,6 +156,7 @@ func NewModel() Model {
 func NewModelWithMCPs(mcpItems []MCPItem) Model {
 	model := NewModel()
 	model.MCPItems = mcpItems
+	model.FormErrors = make(map[string]string)
 	return model
 }
 

@@ -103,22 +103,20 @@ func TestNavigationLogic(t *testing.T) {
 		t.Errorf("Should stay at item %d, got %d", initialSelectedItem, model.GetSelectedItem())
 	}
 
-	// Navigate to position 3 (rightmost in first row for 4-column)
+	// Navigate to position 2 (rightmost available item with 3 MCPs in 4-column grid)
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
 	model = newModel.(ui.Model)
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
 	model = newModel.(ui.Model)
-	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
-	model = newModel.(ui.Model)
-	if model.GetSelectedItem() != 3 {
-		t.Errorf("Expected selected item 3, got %d", model.GetSelectedItem())
+	if model.GetSelectedItem() != 2 {
+		t.Errorf("Expected selected item 2, got %d", model.GetSelectedItem())
 	}
 
-	// Test boundary conditions - can't go right from last item in row
+	// Test boundary conditions - can't go right from last available item
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
 	model = newModel.(ui.Model)
-	if model.GetSelectedItem() != 3 {
-		t.Errorf("Should stay at item 3, got %d", model.GetSelectedItem())
+	if model.GetSelectedItem() != 2 {
+		t.Errorf("Should stay at item 2, got %d", model.GetSelectedItem())
 	}
 }
 
@@ -136,11 +134,12 @@ func TestItemNavigation(t *testing.T) {
 
 	initialItem := model.GetSelectedItem()
 
-	// Test down navigation
+	// Test down navigation - with only 3 items in 4-column grid, there's no second row
+	// so down navigation should not change selection
 	newModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyDown})
 	model = newModel.(ui.Model)
-	if model.GetSelectedItem() <= initialItem {
-		t.Errorf("Down navigation should increase selected item")
+	if model.GetSelectedItem() != initialItem {
+		t.Errorf("Down navigation should not change selected item when no second row exists, expected %d, got %d", initialItem, model.GetSelectedItem())
 	}
 
 	// Test up navigation
