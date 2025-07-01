@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"strings"
 
 	"cc-mcp-manager/internal/ui/services"
@@ -77,6 +78,9 @@ func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.C
 	case " ", "space":
 		// Toggle MCP active status
 		model = services.ToggleMCPStatus(model)
+	case "r", "R":
+		// Refresh Claude status
+		return model, RefreshClaudeStatusCmd()
 	}
 
 	return model, nil
@@ -102,6 +106,9 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 		// Toggle MCP active status
 		model = services.ToggleMCPStatus(model)
 		return model, nil
+	case "r", "R":
+		// Refresh Claude status
+		return model, RefreshClaudeStatusCmd()
 	}
 
 	// Priority 2: Search control keys (mode switching)
@@ -291,7 +298,7 @@ func pasteToSearchQuery(model types.Model) types.Model {
 	return model
 }
 
-// populateFormDataFromMCP converts an MCPItem to FormData for editing
+// populateFormDataFromMCP converts an MCPItem to FormData for editing (Epic 1 Story 4)
 func populateFormDataFromMCP(mcp types.MCPItem) types.FormData {
 	formData := types.FormData{
 		Name:        mcp.Name,
@@ -314,7 +321,7 @@ func populateFormDataFromMCP(mcp types.MCPItem) types.FormData {
 	return formData
 }
 
-// formatArgsForDisplay converts []string to display format
+// formatArgsForDisplay converts []string to display format (Epic 1 Story 4)
 func formatArgsForDisplay(args []string) string {
 	if len(args) == 0 {
 		return ""
@@ -333,7 +340,7 @@ func formatArgsForDisplay(args []string) string {
 	return strings.Join(formattedArgs, " ")
 }
 
-// formatEnvironmentForDisplay converts map[string]string to display format
+// formatEnvironmentForDisplay converts map[string]string to display format (Epic 1 Story 4)
 func formatEnvironmentForDisplay(env map[string]string) string {
 	if len(env) == 0 {
 		return ""
@@ -345,4 +352,19 @@ func formatEnvironmentForDisplay(env map[string]string) string {
 	}
 
 	return strings.Join(pairs, ",")
+}
+
+// ClaudeStatusMsg represents a Claude status update message (Epic 2 Story 1)
+type ClaudeStatusMsg struct {
+	Status types.ClaudeStatus
+}
+
+// RefreshClaudeStatusCmd creates a command to refresh Claude status (Epic 2 Story 1)
+func RefreshClaudeStatusCmd() tea.Cmd {
+	return func() tea.Msg {
+		claudeService := services.NewClaudeService()
+		ctx := context.Background()
+		status := claudeService.RefreshClaudeStatus(ctx)
+		return ClaudeStatusMsg{Status: status}
+	}
 }

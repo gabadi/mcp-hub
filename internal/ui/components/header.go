@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 
+	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -21,14 +22,14 @@ func RenderHeader(model types.Model) string {
 	var shortcuts string
 	switch model.State {
 	case types.MainNavigation:
-		shortcuts = "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • ESC=Exit • ↑↓←→=Navigate"
+		shortcuts = "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • R=Refresh Claude • ESC=Exit • ↑↓←→=Navigate"
 	case types.SearchMode:
 		shortcuts = "Type to search • Enter=Apply • ESC=Cancel"
 	case types.SearchActiveNavigation:
 		if model.SearchInputActive {
-			shortcuts = "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
+			shortcuts = "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • R=Refresh • Enter=Apply • ESC=Cancel"
 		} else {
-			shortcuts = "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel"
+			shortcuts = "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • R=Refresh • Enter=Apply • ESC=Cancel"
 		}
 	case types.ModalActive:
 		shortcuts = "Enter=Confirm • ESC=Cancel"
@@ -42,8 +43,11 @@ func RenderHeader(model types.Model) string {
 		}
 	}
 
-	contextInfo := fmt.Sprintf("MCPs: %d/%d Active • Layout: %s",
-		activeCount, len(model.MCPItems), GetLayoutName(model))
+	// Claude status information
+	claudeStatusText := services.FormatClaudeStatusForDisplay(model.ClaudeStatus)
+
+	contextInfo := fmt.Sprintf("MCPs: %d/%d Active • Layout: %s • %s",
+		activeCount, len(model.MCPItems), GetLayoutName(model), claudeStatusText)
 
 	title := "MCP Manager v1.0"
 

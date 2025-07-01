@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -52,9 +54,15 @@ type Model struct {
 	SuccessMessage string
 	SuccessTimer   int // Timer for auto-hiding success message
 
-	// Edit mode state
+	// Edit mode state (Epic 1 Story 4)
 	EditMode    bool   // True when editing an existing MCP
 	EditMCPName string // Name of the MCP being edited
+
+	// Claude integration state (Epic 2 Story 1)
+	ClaudeAvailable bool
+	ClaudeStatus    ClaudeStatus
+	LastClaudeSync  time.Time
+	ClaudeSyncError string
 }
 
 // ModalType represents the type of modal being displayed
@@ -99,6 +107,16 @@ type Column struct {
 	Title string
 	Items []string
 	Width int
+}
+
+// ClaudeStatus represents the status of Claude CLI integration
+type ClaudeStatus struct {
+	Available    bool      `json:"available"`
+	Version      string    `json:"version,omitempty"`
+	ActiveMCPs   []string  `json:"active_mcps,omitempty"`
+	LastCheck    time.Time `json:"last_check"`
+	Error        string    `json:"error,omitempty"`
+	InstallGuide string    `json:"install_guide,omitempty"`
 }
 
 // getDefaultMCPs returns the default MCP items for fallback

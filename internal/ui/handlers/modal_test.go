@@ -7,6 +7,8 @@ import (
 	"cc-mcp-manager/internal/ui/types"
 )
 
+// Epic 1 Story 4 Tests - Edit MCP Functionality
+
 func TestEditMCPFormPrePopulation(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -304,6 +306,543 @@ func TestEditModeStateCleanup(t *testing.T) {
 	}
 	if len(newModel.FormErrors) != 0 {
 		t.Error("FormErrors should be cleared after cancel")
+	}
+}
+
+// Epic 2 Story 1 Tests - Original modal functionality
+
+func TestHideSuccessMsg(t *testing.T) {
+	cmd := hideSuccessMsg()
+	if cmd == nil {
+		t.Error("hideSuccessMsg() should return a command")
+	}
+}
+
+func TestHandleModalKeys(t *testing.T) {
+	tests := []struct {
+		name          string
+		model         types.Model
+		key           string
+		expectedModal types.ModalType
+	}{
+		{
+			name: "AddMCPTypeSelection modal",
+			model: types.Model{
+				State:       types.ModalActive,
+				ActiveModal: types.AddMCPTypeSelection,
+			},
+			key:           "1",
+			expectedModal: types.AddCommandForm,
+		},
+		{
+			name: "Legacy modal with enter",
+			model: types.Model{
+				State:       types.ModalActive,
+				ActiveModal: types.AddModal,
+			},
+			key:           "enter",
+			expectedModal: types.AddModal,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newModel, _ := HandleModalKeys(tt.model, tt.key)
+			// Test passes if it doesn't panic and returns a model
+			if newModel.ActiveModal != tt.expectedModal && tt.name == "Legacy modal with enter" {
+				// For legacy modal, we expect state change to MainNavigation
+				if newModel.State != types.MainNavigation {
+					t.Errorf("Expected state MainNavigation, got %v", newModel.State)
+				}
+			}
+		})
+	}
+}
+
+func TestHandleTypeSelectionKeys(t *testing.T) {
+	model := types.Model{
+		State:       types.ModalActive,
+		ActiveModal: types.AddMCPTypeSelection,
+		FormData:    types.FormData{},
+		FormErrors:  make(map[string]string),
+	}
+
+	tests := []struct {
+		name          string
+		key           string
+		expectedModal types.ModalType
+		shouldExit    bool
+	}{
+		{
+			name:          "Select command type",
+			key:           "1",
+			expectedModal: types.AddCommandForm,
+			shouldExit:    false,
+		},
+		{
+			name:          "Select SSE type",
+			key:           "2",
+			expectedModal: types.AddSSEForm,
+			shouldExit:    false,
+		},
+		{
+			name:          "Select JSON type",
+			key:           "3",
+			expectedModal: types.AddJSONForm,
+			shouldExit:    false,
+		},
+		{
+			name:       "Escape modal",
+			key:        "esc",
+			shouldExit: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			newModel, _ := handleTypeSelectionKeys(model, tt.key)
+
+			if tt.shouldExit {
+				if newModel.State != types.MainNavigation {
+					t.Errorf("Expected to exit to MainNavigation, got %v", newModel.State)
+				}
+			} else if tt.expectedModal != types.NoModal {
+				if newModel.ActiveModal != tt.expectedModal {
+					t.Errorf("Expected modal %v, got %v", tt.expectedModal, newModel.ActiveModal)
+				}
+			}
+		})
+	}
+}
+
+func TestParseArgsString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: []string{},
+		},
+		{
+			name:     "single argument",
+			input:    "arg1",
+			expected: []string{"arg1"},
+		},
+		{
+			name:     "multiple arguments",
+			input:    "arg1 arg2 arg3",
+			expected: []string{"arg1", "arg2", "arg3"},
+		},
+		{
+			name:     "quoted arguments",
+			input:    `"arg with spaces" arg2`,
+			expected: []string{"arg with spaces", "arg2"},
+		},
+		{
+			name:     "mixed quotes",
+			input:    `arg1 "arg 2" 'arg 3'`,
+			expected: []string{"arg1", "arg 2", "arg 3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseArgsString(tt.input)
+			if len(result) != len(tt.expected) {
+				t.Errorf("Expected %d args, got %d", len(tt.expected), len(result))
+				return
+			}
+			for i, expected := range tt.expected {
+				if result[i] != expected {
+					t.Errorf("Expected arg[%d] = %q, got %q", i, expected, result[i])
+				}
+			}
+		})
+	}
+}
+
+func TestParseEnvironmentString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected map[string]string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:  "single variable",
+			input: "KEY=value",
+			expected: map[string]string{
+				"KEY": "value",
+			},
+		},
+		{
+			name:  "multiple variables",
+			input: "KEY1=value1\nKEY2=value2",
+			expected: map[string]string{
+				"KEY1": "value1",
+				"KEY2": "value2",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseEnvironmentString(tt.input)
+
+			if tt.expected == nil && result != nil {
+				t.Errorf("Expected nil, got %v", result)
+				return
+			}
+
+			if tt.expected != nil && result == nil {
+				t.Errorf("Expected %v, got nil", tt.expected)
+				return
+			}
+
+			if tt.expected == nil && result == nil {
+				return // Both nil, test passes
+			}
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("Expected %d vars, got %d", len(tt.expected), len(result))
+				return
+			}
+
+			for key, expected := range tt.expected {
+				if result[key] != expected {
+					t.Errorf("Expected %q = %q, got %q", key, expected, result[key])
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteLastChar(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "single character",
+			input:    "a",
+			expected: "",
+		},
+		{
+			name:     "multiple characters",
+			input:    "hello",
+			expected: "hell",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := deleteLastChar(tt.input)
+			if result != tt.expected {
+				t.Errorf("Expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestValidateCommandForm(t *testing.T) {
+	tests := []struct {
+		name        string
+		model       types.Model
+		expectValid bool
+		errorField  string
+	}{
+		{
+			name: "valid form",
+			model: types.Model{
+				FormData: types.FormData{
+					Name:    "test-mcp",
+					Command: "test-command",
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: true,
+		},
+		{
+			name: "missing name",
+			model: types.Model{
+				FormData: types.FormData{
+					Command: "test-command",
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: false,
+			errorField:  "name",
+		},
+		{
+			name: "missing command",
+			model: types.Model{
+				FormData: types.FormData{
+					Name: "test-mcp",
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: false,
+			errorField:  "command",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resultModel, valid := validateCommandForm(tt.model)
+
+			if valid != tt.expectValid {
+				t.Errorf("Expected valid = %v, got %v", tt.expectValid, valid)
+			}
+
+			if !tt.expectValid {
+				if len(resultModel.FormErrors) == 0 {
+					t.Error("Expected validation errors, got none")
+				}
+				if tt.errorField != "" {
+					if _, exists := resultModel.FormErrors[tt.errorField]; !exists {
+						t.Errorf("Expected error for field %q", tt.errorField)
+					}
+				}
+			} else {
+				if len(resultModel.FormErrors) > 0 {
+					t.Errorf("Expected no errors, got: %v", resultModel.FormErrors)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateSSEForm(t *testing.T) {
+	tests := []struct {
+		name        string
+		model       types.Model
+		expectValid bool
+	}{
+		{
+			name: "valid SSE form",
+			model: types.Model{
+				FormData: types.FormData{
+					Name: "test-mcp",
+					URL:  "http://example.com",
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: true,
+		},
+		{
+			name: "invalid URL",
+			model: types.Model{
+				FormData: types.FormData{
+					Name: "test-mcp",
+					URL:  "not-a-url",
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resultModel, valid := validateSSEForm(tt.model)
+
+			if valid != tt.expectValid {
+				t.Errorf("Expected valid = %v, got %v", tt.expectValid, valid)
+			}
+
+			if !tt.expectValid {
+				if len(resultModel.FormErrors) == 0 {
+					t.Error("Expected validation errors, got none")
+				}
+			} else {
+				if len(resultModel.FormErrors) > 0 {
+					t.Errorf("Expected no errors, got: %v", resultModel.FormErrors)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateJSONForm(t *testing.T) {
+	tests := []struct {
+		name        string
+		model       types.Model
+		expectValid bool
+	}{
+		{
+			name: "valid JSON form",
+			model: types.Model{
+				FormData: types.FormData{
+					Name:       "test-mcp",
+					JSONConfig: `{"key": "value"}`,
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: true,
+		},
+		{
+			name: "invalid JSON",
+			model: types.Model{
+				FormData: types.FormData{
+					Name:       "test-mcp",
+					JSONConfig: `{invalid json}`,
+				},
+				MCPItems:   []types.MCPItem{},
+				FormErrors: make(map[string]string),
+			},
+			expectValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resultModel, valid := validateJSONForm(tt.model)
+
+			if valid != tt.expectValid {
+				t.Errorf("Expected valid = %v, got %v", tt.expectValid, valid)
+			}
+
+			if !tt.expectValid {
+				if len(resultModel.FormErrors) == 0 {
+					t.Error("Expected validation errors, got none")
+				}
+			} else {
+				if len(resultModel.FormErrors) > 0 {
+					t.Errorf("Expected no errors, got: %v", resultModel.FormErrors)
+				}
+			}
+		})
+	}
+}
+
+func TestValidateEnvironmentFormat(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectError bool
+	}{
+		{
+			name:        "valid format",
+			input:       "KEY=value\nKEY2=value2",
+			expectError: false,
+		},
+		{
+			name:        "invalid line",
+			input:       "INVALID_LINE",
+			expectError: true,
+		},
+		{
+			name:        "empty string",
+			input:       "",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateEnvironmentFormat(tt.input)
+
+			if tt.expectError && err == nil {
+				t.Error("Expected error, got nil")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestIsValidKeyChar(t *testing.T) {
+	tests := []struct {
+		name     string
+		char     rune
+		expected bool
+	}{
+		{
+			name:     "letter",
+			char:     'A',
+			expected: true,
+		},
+		{
+			name:     "number",
+			char:     '1',
+			expected: true,
+		},
+		{
+			name:     "underscore",
+			char:     '_',
+			expected: true,
+		},
+		{
+			name:     "space",
+			char:     ' ',
+			expected: false,
+		},
+		{
+			name:     "equals",
+			char:     '=',
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidKeyChar(tt.char)
+			if result != tt.expected {
+				t.Errorf("Expected %v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestAddCharToActiveField(t *testing.T) {
+	model := types.Model{
+		ActiveModal: types.AddCommandForm,
+		FormData: types.FormData{
+			Name:        "test",
+			ActiveField: 0, // Name field
+		},
+	}
+
+	newModel := addCharToActiveField(model, "x")
+
+	if newModel.FormData.Name != "testx" {
+		t.Errorf("Expected name to be 'testx', got %q", newModel.FormData.Name)
+	}
+}
+
+func TestDeleteCharFromActiveField(t *testing.T) {
+	model := types.Model{
+		ActiveModal: types.AddCommandForm,
+		FormData: types.FormData{
+			Name:        "test",
+			ActiveField: 0, // Name field
+		},
+	}
+
+	newModel := deleteCharFromActiveField(model)
+
+	if newModel.FormData.Name != "tes" {
+		t.Errorf("Expected name to be 'tes', got %q", newModel.FormData.Name)
 	}
 }
 

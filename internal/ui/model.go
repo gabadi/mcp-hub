@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"cc-mcp-manager/internal/ui/handlers"
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
@@ -17,30 +19,37 @@ type Model struct {
 func NewModel() Model {
 	// Try to load inventory from storage
 	mcpItems, err := services.LoadInventory()
+	var model Model
+
 	if err != nil {
 		// Fall back to default model if loading fails
-		return Model{
+		model = Model{
 			Model: types.NewModel(),
 		}
-	}
-
-	// If no items loaded (empty inventory), start with defaults for first-time users
-	if len(mcpItems) == 0 {
+	} else if len(mcpItems) == 0 {
 		// First-time setup: save defaults to storage
 		defaultModel := types.NewModel()
 		if saveErr := services.SaveInventory(defaultModel.MCPItems); saveErr != nil {
 			// Log error but continue - the app should still work
 			// Error is already logged in SaveInventory
 		}
-		return Model{
+		model = Model{
 			Model: defaultModel,
+		}
+	} else {
+		// Use loaded inventory
+		model = Model{
+			Model: types.NewModelWithMCPs(mcpItems),
 		}
 	}
 
-	// Use loaded inventory
-	return Model{
-		Model: types.NewModelWithMCPs(mcpItems),
-	}
+	return model
+}
+
+// Init initializes the application and returns initial commands
+func (m Model) Init() tea.Cmd {
+	// Initialize Claude status on startup
+	return handlers.RefreshClaudeStatusCmd()
 }
 
 // Update handles messages and updates the model
@@ -58,6 +67,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case handlers.SuccessMsg:
 		m.Model.SuccessMessage = msg.Message
+
+	case handlers.ClaudeStatusMsg:
+		// Update model with Claude status
+		m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
+		// Sync MCP status if Claude is available and has active MCPs
+		if msg.Status.Available && len(msg.Status.ActiveMCPs) > 0 {
+			m.Model = services.SyncMCPStatus(m.Model, msg.Status.ActiveMCPs)
+			// Save updated inventory after sync
+			if err := services.SaveModelInventory(m.Model); err != nil {
+				// Set error message but don't fail
+				m.Model.SuccessMessage = fmt.Sprintf("Claude status updated, but failed to save inventory: %v", err)
+				m.Model.SuccessTimer = 240 // Show error for 4 seconds
+			} else {
+				m.Model.SuccessMessage = "Claude status refreshed and MCPs synced"
+				m.Model.SuccessTimer = 120 // Show success for 2 seconds
+			}
+		} else if msg.Status.Available {
+			m.Model.SuccessMessage = "Claude status refreshed"
+			m.Model.SuccessTimer = 120
+		} else {
+			m.Model.SuccessMessage = "Claude CLI not available"
+			m.Model.SuccessTimer = 180 // Show message for 3 seconds
+		}
 	}
 
 	return m, nil
