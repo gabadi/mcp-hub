@@ -67,4 +67,3 @@ func HandleSearchModeKeys(model types.Model, key string) (types.Model, tea.Cmd) 
 
 	return model, nil
 }
-

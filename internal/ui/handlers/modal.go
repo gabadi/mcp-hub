@@ -660,53 +660,76 @@ func parseEnvironmentString(envStr string) map[string]string {
 
 // copyActiveFieldToClipboard copies the content of the active field to clipboard
 func copyActiveFieldToClipboard(model types.Model) types.Model {
-	clipboardService := services.NewClipboardService()
-
-	var content string
-	switch model.ActiveModal {
-	case types.AddCommandForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			content = model.FormData.Name
-		case 1:
-			content = model.FormData.Command
-		case 2:
-			content = model.FormData.Args
-		case 3:
-			content = model.FormData.Environment
-		}
-	case types.AddSSEForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			content = model.FormData.Name
-		case 1:
-			content = model.FormData.URL
-		case 2:
-			content = model.FormData.Environment
-		}
-	case types.AddJSONForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			content = model.FormData.Name
-		case 1:
-			content = model.FormData.JSONConfig
-		case 2:
-			content = model.FormData.Environment
-		}
+	content := getActiveFieldContent(model)
+	if content == "" {
+		return model
 	}
 
-	if content != "" {
-		if err := clipboardService.Copy(content); err != nil {
-			// Add user feedback for clipboard copy failure
-			model.SuccessMessage = "Failed to copy to clipboard: " + err.Error()
-			model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
-		} else {
-			model.SuccessMessage = "Copied to clipboard"
-			model.SuccessTimer = 120 // Show success message for 2 seconds
-		}
+	clipboardService := services.NewClipboardService()
+	if err := clipboardService.Copy(content); err != nil {
+		model.SuccessMessage = "Failed to copy to clipboard: " + err.Error()
+		model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
+	} else {
+		model.SuccessMessage = "Copied to clipboard"
+		model.SuccessTimer = 120 // Show success message for 2 seconds
 	}
 
 	return model
+}
+
+// getActiveFieldContent extracts content from the currently active field
+func getActiveFieldContent(model types.Model) string {
+	switch model.ActiveModal {
+	case types.AddCommandForm:
+		return getCommandFormFieldContent(model)
+	case types.AddSSEForm:
+		return getSSEFormFieldContent(model)
+	case types.AddJSONForm:
+		return getJSONFormFieldContent(model)
+	default:
+		return ""
+	}
+}
+
+func getCommandFormFieldContent(model types.Model) string {
+	switch model.FormData.ActiveField {
+	case 0:
+		return model.FormData.Name
+	case 1:
+		return model.FormData.Command
+	case 2:
+		return model.FormData.Args
+	case 3:
+		return model.FormData.Environment
+	default:
+		return ""
+	}
+}
+
+func getSSEFormFieldContent(model types.Model) string {
+	switch model.FormData.ActiveField {
+	case 0:
+		return model.FormData.Name
+	case 1:
+		return model.FormData.URL
+	case 2:
+		return model.FormData.Environment
+	default:
+		return ""
+	}
+}
+
+func getJSONFormFieldContent(model types.Model) string {
+	switch model.FormData.ActiveField {
+	case 0:
+		return model.FormData.Name
+	case 1:
+		return model.FormData.JSONConfig
+	case 2:
+		return model.FormData.Environment
+	default:
+		return ""
+	}
 }
 
 // pasteFromClipboardToActiveField pastes clipboard content to the active field
@@ -846,40 +869,58 @@ func validateEnvironmentFormat(envStr string) error {
 		return nil
 	}
 
-	// Support both comma-separated and newline-separated
-	lines := strings.FieldsFunc(envStr, func(c rune) bool {
-		return c == ',' || c == '\n'
-	})
-
+	lines := parseEnvironmentLines(envStr)
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		// Must contain = sign
-		if !strings.Contains(line, "=") {
-			return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
-		}
-
-		// Split on first = sign
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
-		}
-
-		key := strings.TrimSpace(parts[0])
-		if key == "" {
-			return fmt.Errorf("empty key in: '%s'", line)
-		}
-
-		// Basic validation of key format (alphanumeric + underscore)
-		for _, r := range key {
-			if !((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_') {
-				return fmt.Errorf("invalid key '%s' - use letters, numbers, and underscores only", key)
-			}
+		if err := validateEnvironmentLine(line); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func parseEnvironmentLines(envStr string) []string {
+	lines := strings.FieldsFunc(envStr, func(c rune) bool {
+		return c == ',' || c == '\n'
+	})
+	
+	var cleanLines []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			cleanLines = append(cleanLines, line)
+		}
+	}
+	return cleanLines
+}
+
+func validateEnvironmentLine(line string) error {
+	if !strings.Contains(line, "=") {
+		return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
+	}
+
+	parts := strings.SplitN(line, "=", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid format: '%s' - use KEY=value format", line)
+	}
+
+	key := strings.TrimSpace(parts[0])
+	if key == "" {
+		return fmt.Errorf("empty key in: '%s'", line)
+	}
+
+	return validateEnvironmentKey(key)
+}
+
+func validateEnvironmentKey(key string) error {
+	for _, r := range key {
+		if !isValidKeyChar(r) {
+			return fmt.Errorf("invalid key '%s' - use letters, numbers, and underscores only", key)
+		}
+	}
+	return nil
+}
+
+func isValidKeyChar(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '_'
 }

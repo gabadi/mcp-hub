@@ -15,12 +15,12 @@ import (
 
 // ClipboardService provides clipboard operations with enhanced macOS support
 type ClipboardService struct {
-	isAvailable   *bool
-	lastCheck     time.Time
-	checkDuration time.Duration
-	mutex         sync.RWMutex
+	isAvailable        *bool
+	lastCheck          time.Time
+	checkDuration      time.Duration
+	mutex              sync.RWMutex
 	useDesignClipboard bool
-	initialized   bool
+	initialized        bool
 }
 
 // NewClipboardService creates a new clipboard service with enhanced macOS support
@@ -28,7 +28,7 @@ func NewClipboardService() *ClipboardService {
 	cs := &ClipboardService{
 		checkDuration: 30 * time.Second, // Cache availability for 30 seconds
 	}
-	
+
 	// Try to initialize golang.design/x/clipboard for better macOS support
 	if runtime.GOOS == "darwin" {
 		if err := designclipboard.Init(); err == nil {
@@ -36,7 +36,7 @@ func NewClipboardService() *ClipboardService {
 			cs.initialized = true
 		}
 	}
-	
+
 	return cs
 }
 
@@ -47,18 +47,18 @@ func (cs *ClipboardService) Copy(text string) error {
 		designclipboard.Write(designclipboard.FmtText, []byte(text))
 		return nil
 	}
-	
+
 	// Try atotto/clipboard
 	err := atottoclipboard.WriteAll(text)
 	if err == nil {
 		return nil
 	}
-	
+
 	// macOS fallback using pbcopy
 	if runtime.GOOS == "darwin" {
 		return cs.copyWithPbcopy(text)
 	}
-	
+
 	return err
 }
 
@@ -71,18 +71,18 @@ func (cs *ClipboardService) Paste() (string, error) {
 			return string(data), nil
 		}
 	}
-	
+
 	// Try atotto/clipboard
 	content, err := atottoclipboard.ReadAll()
 	if err == nil && content != "" {
 		return content, nil
 	}
-	
+
 	// macOS fallback using pbpaste
 	if runtime.GOOS == "darwin" {
 		return cs.pasteWithPbpaste()
 	}
-	
+
 	return content, err
 }
 
@@ -110,7 +110,7 @@ func (cs *ClipboardService) IsAvailable() bool {
 
 	// Perform the actual availability check using multiple methods
 	available := false
-	
+
 	// Test golang.design/x/clipboard if available
 	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
 		data := designclipboard.Read(designclipboard.FmtText)
@@ -118,13 +118,13 @@ func (cs *ClipboardService) IsAvailable() bool {
 			available = true
 		}
 	}
-	
+
 	// Test atotto/clipboard
 	if !available {
 		_, err := atottoclipboard.ReadAll()
 		available = err == nil
 	}
-	
+
 	// Test macOS pbpaste fallback
 	if !available && runtime.GOOS == "darwin" {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -164,7 +164,7 @@ func (cs *ClipboardService) GetDiagnosticInfo() map[string]interface{} {
 	info["useDesignClipboard"] = cs.useDesignClipboard
 	info["initialized"] = cs.initialized
 	info["isAvailable"] = cs.IsAvailable()
-	
+
 	// Test clipboard access methods
 	if runtime.GOOS == "darwin" {
 		// Test pbpaste availability
@@ -173,21 +173,21 @@ func (cs *ClipboardService) GetDiagnosticInfo() map[string]interface{} {
 		cmd2 := exec.CommandContext(ctx, "pbpaste")
 		_, err := cmd2.Output()
 		info["pbpasteAvailable"] = err == nil
-		
+
 		// Test pbcopy availability
 		cmd3 := exec.CommandContext(ctx, "pbcopy")
 		cmd3.Stdin = strings.NewReader("test")
 		err2 := cmd3.Run()
 		info["pbcopyAvailable"] = err2 == nil
 	}
-	
+
 	return info
 }
 
 // EnhancedPaste provides detailed error information for debugging
 func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	var lastErr error
-	
+
 	// Method 1: Try golang.design/x/clipboard on macOS
 	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
 		data := designclipboard.Read(designclipboard.FmtText)
@@ -196,7 +196,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 		}
 		lastErr = fmt.Errorf("golang.design/x/clipboard returned empty data")
 	}
-	
+
 	// Method 2: Try atotto/clipboard
 	content, err := atottoclipboard.ReadAll()
 	if err == nil && content != "" {
@@ -207,7 +207,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	} else {
 		lastErr = fmt.Errorf("atotto/clipboard returned empty content")
 	}
-	
+
 	// Method 3: macOS fallback using pbpaste
 	if runtime.GOOS == "darwin" {
 		content, err := cs.pasteWithPbpaste()
@@ -220,6 +220,6 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 			return "", fmt.Errorf("all clipboard methods failed - pbpaste returned empty, previous: %v", lastErr)
 		}
 	}
-	
+
 	return "", fmt.Errorf("clipboard access failed: %v", lastErr)
 }

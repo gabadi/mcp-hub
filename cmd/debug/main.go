@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"cc-mcp-manager/internal/ui/services"
+
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -28,7 +29,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		keyStr := msg.String()
 		m.keys = append(m.keys, keyStr)
-		
+
 		// Enhanced logging
 		f, err := os.OpenFile("key_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
@@ -36,13 +37,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Fprintf(f, "Terminal: %s\n", os.Getenv("TERM_PROGRAM"))
 			f.Close()
 		}
-		
+
 		// Test clipboard functionality when cmd+v or ctrl+v is pressed
 		if keyStr == "cmd+v" || keyStr == "ctrl+v" || keyStr == "⌘v" || keyStr == "command+v" {
 			// Test with enhanced clipboard service
 			clipboardService := services.NewClipboardService()
 			m.diagnosticInfo = clipboardService.GetDiagnosticInfo()
-			
+
 			content, clipErr := clipboardService.EnhancedPaste()
 			if clipErr != nil {
 				m.clipboardError = clipErr.Error()
@@ -53,7 +54,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.enhancedTesting = true
 		}
-		
+
 		// Test basic clipboard on 'c' key
 		if keyStr == "c" {
 			content, clipErr := clipboard.ReadAll()
@@ -66,11 +67,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.enhancedTesting = false
 		}
-		
+
 		if keyStr == "ctrl+c" || keyStr == "q" {
 			return m, tea.Quit
 		}
-		
+
 		// Keep only last 10 keys
 		if len(m.keys) > 10 {
 			m.keys = m.keys[len(m.keys)-10:]
@@ -87,12 +88,12 @@ func (m model) View() string {
 	s += fmt.Sprintf("• Terminal Version: %s\n", os.Getenv("TERM_PROGRAM_VERSION"))
 	s += fmt.Sprintf("• TERM: %s\n", os.Getenv("TERM"))
 	s += "\n"
-	
+
 	s += "Recent keys:\n"
 	for i, key := range m.keys {
 		s += fmt.Sprintf("%d: '%s'\n", i+1, key)
 	}
-	
+
 	s += "\n📋 Clipboard Test Results:\n"
 	if m.clipboardError != "" {
 		s += fmt.Sprintf("❌ Error: %s\n", m.clipboardError)
@@ -102,14 +103,14 @@ func (m model) View() string {
 		s += "⏳ Press Cmd+V or Ctrl+V to test enhanced clipboard\n"
 		s += "⏳ Press 'c' to test basic clipboard\n"
 	}
-	
+
 	if m.enhancedTesting && len(m.diagnosticInfo) > 0 {
 		s += "\n🔍 Enhanced Clipboard Diagnostics:\n"
 		for key, value := range m.diagnosticInfo {
 			s += fmt.Sprintf("• %s: %v\n", key, value)
 		}
 	}
-	
+
 	s += "\n📋 Test these keys:\n"
 	s += "• Ctrl+V (should show 'ctrl+v')\n"
 	s += "• Cmd+V (should show 'cmd+v' on macOS)\n"
