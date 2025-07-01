@@ -15,7 +15,7 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 	// Modal dimensions based on modal type
 	modalWidth := 60
 	modalHeight := 20
-	
+
 	// Adjust dimensions for different modal types
 	switch model.ActiveModal {
 	case types.AddJSONForm:
@@ -23,7 +23,7 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 	case types.AddCommandForm:
 		modalHeight = 22 // Slightly larger for 3 fields
 	}
-	
+
 	if modalWidth > width-10 {
 		modalWidth = width - 10
 	}
@@ -117,11 +117,11 @@ func renderTypeSelectionContent(model types.Model) string {
 	if selectedOption == 0 {
 		selectedOption = 1 // Default to first option
 	}
-	
+
 	var lines []string
 	lines = append(lines, "Choose the type of MCP to add:")
 	lines = append(lines, "")
-	
+
 	// Option 1 - Command/Binary
 	option1Style := lipgloss.NewStyle()
 	if selectedOption == 1 {
@@ -130,7 +130,7 @@ func renderTypeSelectionContent(model types.Model) string {
 	lines = append(lines, option1Style.Render("1. Command/Binary (most common)"))
 	lines = append(lines, "   Execute MCP as a command or binary")
 	lines = append(lines, "")
-	
+
 	// Option 2 - SSE Server
 	option2Style := lipgloss.NewStyle()
 	if selectedOption == 2 {
@@ -139,7 +139,7 @@ func renderTypeSelectionContent(model types.Model) string {
 	lines = append(lines, option2Style.Render("2. SSE Server (HTTP/WebSocket)"))
 	lines = append(lines, "   Connect to an SSE server endpoint")
 	lines = append(lines, "")
-	
+
 	// Option 3 - JSON Configuration
 	option3Style := lipgloss.NewStyle()
 	if selectedOption == 3 {
@@ -148,21 +148,21 @@ func renderTypeSelectionContent(model types.Model) string {
 	lines = append(lines, option3Style.Render("3. JSON Configuration"))
 	lines = append(lines, "   Add MCP with custom JSON configuration")
 	lines = append(lines, "")
-	
+
 	lines = append(lines, "Use number keys (1-3), arrow keys, or Enter to select.")
-	
+
 	return strings.Join(lines, "\n")
 }
 
 // renderCommandFormContent renders the Command/Binary MCP form
 func renderCommandFormContent(model types.Model) string {
 	var lines []string
-	
+
 	// Name field
 	nameLabel := "Name: (required)"
 	nameValue := model.FormData.Name
 	if model.FormData.ActiveField == 0 {
-		nameValue = nameValue + "_" // Show cursor
+		nameValue = nameValue + "_"  // Show cursor
 		nameLabel = "> " + nameLabel // Show focus
 	}
 	lines = append(lines, nameLabel)
@@ -171,7 +171,7 @@ func renderCommandFormContent(model types.Model) string {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	}
 	lines = append(lines, "")
-	
+
 	// Command field
 	commandLabel := "Command: (required)"
 	commandValue := model.FormData.Command
@@ -185,7 +185,7 @@ func renderCommandFormContent(model types.Model) string {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	}
 	lines = append(lines, "")
-	
+
 	// Args field
 	argsLabel := "Args: (optional)"
 	argsValue := model.FormData.Args
@@ -195,14 +195,14 @@ func renderCommandFormContent(model types.Model) string {
 	}
 	lines = append(lines, argsLabel)
 	lines = append(lines, fmt.Sprintf("[%s]", argsValue))
-	
+
 	return strings.Join(lines, "\n")
 }
 
 // renderSSEFormContent renders the SSE Server MCP form
 func renderSSEFormContent(model types.Model) string {
 	var lines []string
-	
+
 	// Name field
 	nameLabel := "Name: (required)"
 	nameValue := model.FormData.Name
@@ -216,7 +216,7 @@ func renderSSEFormContent(model types.Model) string {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	}
 	lines = append(lines, "")
-	
+
 	// URL field
 	urlLabel := "URL: (required)"
 	urlValue := model.FormData.URL
@@ -231,14 +231,14 @@ func renderSSEFormContent(model types.Model) string {
 	}
 	lines = append(lines, "")
 	lines = append(lines, "Enter a valid HTTP/HTTPS URL for the SSE server.")
-	
+
 	return strings.Join(lines, "\n")
 }
 
 // renderJSONFormContent renders the JSON Configuration MCP form
 func renderJSONFormContent(model types.Model) string {
 	var lines []string
-	
+
 	// Name field
 	nameLabel := "Name: (required)"
 	nameValue := model.FormData.Name
@@ -252,7 +252,7 @@ func renderJSONFormContent(model types.Model) string {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	}
 	lines = append(lines, "")
-	
+
 	// JSON Config field
 	jsonLabel := "JSON Configuration: (required)"
 	jsonValue := model.FormData.JSONConfig
@@ -261,19 +261,19 @@ func renderJSONFormContent(model types.Model) string {
 		jsonLabel = "> " + jsonLabel
 	}
 	lines = append(lines, jsonLabel)
-	
+
 	// Show JSON in a box with multiple lines
 	jsonLines := strings.Split(jsonValue, "\n")
 	for _, line := range jsonLines {
 		lines = append(lines, fmt.Sprintf("  %s", line))
 	}
-	
+
 	if err, exists := model.FormErrors["json"]; exists {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B")).Render("  Error: "+err))
 	} else if jsonValue != "" {
 		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("#51CF66")).Render("  ✓ Valid JSON"))
 	}
-	
+
 	return strings.Join(lines, "\n")
 }
 

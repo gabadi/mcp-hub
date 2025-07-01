@@ -55,7 +55,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.Model, cmd = handlers.HandleKeyPress(m.Model, msg)
 		return m, cmd
-		
+
 	case handlers.SuccessMsg:
 		m.Model.SuccessMessage = msg.Message
 	}

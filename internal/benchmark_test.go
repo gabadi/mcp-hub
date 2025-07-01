@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"cc-mcp-manager/internal/testutil"
 	"cc-mcp-manager/internal/ui"
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Benchmark tests for performance verification and regression prevention
@@ -18,7 +19,7 @@ func BenchmarkMCPService_FilterMCPs_SmallDataset(b *testing.B) {
 	// Small dataset (realistic for most users)
 	mcps := generateBenchmarkMCPDataset(50)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("github").Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
@@ -29,7 +30,7 @@ func BenchmarkMCPService_FilterMCPs_MediumDataset(b *testing.B) {
 	// Medium dataset (power users)
 	mcps := generateBenchmarkMCPDataset(200)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("mcp").Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
@@ -40,7 +41,7 @@ func BenchmarkMCPService_FilterMCPs_LargeDataset(b *testing.B) {
 	// Large dataset (stress test)
 	mcps := generateBenchmarkMCPDataset(1000)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("test").Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
@@ -51,7 +52,7 @@ func BenchmarkMCPService_FilterMCPs_NoMatches(b *testing.B) {
 	// Benchmark worst case: no matches found
 	mcps := generateBenchmarkMCPDataset(500)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("nonexistent-query").Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
@@ -62,7 +63,7 @@ func BenchmarkMCPService_FilterMCPs_EmptyQuery(b *testing.B) {
 	// Benchmark best case: empty query returns all
 	mcps := generateBenchmarkMCPDataset(500)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("").Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
@@ -71,10 +72,10 @@ func BenchmarkMCPService_FilterMCPs_EmptyQuery(b *testing.B) {
 
 func BenchmarkMCPService_ToggleMCPStatus(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		model := testutil.NewTestModel().WithMCPs(mcps).WithSelectedItem(i%len(mcps)).Build()
+		model := testutil.NewTestModel().WithMCPs(mcps).WithSelectedItem(i % len(mcps)).Build()
 		_ = services.ToggleMCPStatus(model)
 	}
 }
@@ -82,7 +83,7 @@ func BenchmarkMCPService_ToggleMCPStatus(b *testing.B) {
 func BenchmarkMCPService_GetActiveMCPCount(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(500)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetActiveMCPCount(model)
@@ -92,7 +93,7 @@ func BenchmarkMCPService_GetActiveMCPCount(b *testing.B) {
 func BenchmarkMCPService_GetSelectedMCP(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSelectedItem(50).Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.GetSelectedMCP(model)
@@ -127,9 +128,9 @@ func BenchmarkUI_ModelUpdate_Navigation(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(100)).
 			Build(),
 	}
-	
+
 	keyMsg := tea.KeyMsg{Type: tea.KeyRight}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		updatedModel, _ := model.Update(keyMsg)
@@ -146,9 +147,9 @@ func BenchmarkUI_ModelUpdate_Search(b *testing.B) {
 			WithSearchInputActive(true).
 			Build(),
 	}
-	
+
 	searchMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		updatedModel, _ := model.Update(searchMsg)
@@ -164,9 +165,9 @@ func BenchmarkUI_ModelUpdate_Toggle(b *testing.B) {
 			WithSelectedItem(50).
 			Build(),
 	}
-	
+
 	spaceMsg := tea.KeyMsg{Type: tea.KeySpace}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		updatedModel, _ := model.Update(spaceMsg)
@@ -181,7 +182,7 @@ func BenchmarkUI_View_Rendering_Small(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(50)).
 			Build(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = model.View()
@@ -195,7 +196,7 @@ func BenchmarkUI_View_Rendering_Medium(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(200)).
 			Build(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = model.View()
@@ -209,7 +210,7 @@ func BenchmarkUI_View_Rendering_Large(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(500)).
 			Build(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = model.View()
@@ -225,7 +226,7 @@ func BenchmarkUI_View_Rendering_Search(b *testing.B) {
 			WithSearchQuery("test").
 			Build(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = model.View()
@@ -239,31 +240,31 @@ func BenchmarkUI_CompleteWorkflow_SearchAndNavigate(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(100)).
 			Build(),
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		model := initialModel
-		
+
 		// Enter search mode
 		searchKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")}
 		updatedModel, _ := model.Update(searchKey)
 		model = updatedModel.(ui.Model)
-		
+
 		// Type search query
 		queryKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("mcp")}
 		updatedModel, _ = model.Update(queryKey)
 		model = updatedModel.(ui.Model)
-		
+
 		// Navigate
 		rightKey := tea.KeyMsg{Type: tea.KeyRight}
 		updatedModel, _ = model.Update(rightKey)
 		model = updatedModel.(ui.Model)
-		
+
 		// Exit search
 		escKey := tea.KeyMsg{Type: tea.KeyEsc}
 		updatedModel, _ = model.Update(escKey)
 		model = updatedModel.(ui.Model)
-		
+
 		// Render final state
 		_ = model.View()
 	}
@@ -272,7 +273,7 @@ func BenchmarkUI_CompleteWorkflow_SearchAndNavigate(b *testing.B) {
 func BenchmarkStorage_SaveInventory_Small(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(10)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Note: This will attempt to save to actual config directory
@@ -284,7 +285,7 @@ func BenchmarkStorage_SaveInventory_Small(b *testing.B) {
 func BenchmarkStorage_SaveInventory_Medium(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = services.SaveModelInventory(model)
@@ -300,7 +301,7 @@ func BenchmarkStorage_LoadInventory(b *testing.B) {
 
 func BenchmarkMemoryAllocations_ModelCreation(b *testing.B) {
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_ = testutil.NewTestModel().
 			WithWindowSize(120, 40).
@@ -312,10 +313,10 @@ func BenchmarkMemoryAllocations_ModelCreation(b *testing.B) {
 func BenchmarkMemoryAllocations_FilterOperation(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(200)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("test").Build()
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		_ = services.GetFilteredMCPs(model)
 	}
@@ -328,10 +329,10 @@ func BenchmarkMemoryAllocations_ViewRendering(b *testing.B) {
 			WithMCPs(generateBenchmarkMCPDataset(100)).
 			Build(),
 	}
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		_ = model.View()
 	}
@@ -341,7 +342,7 @@ func BenchmarkMemoryAllocations_ViewRendering(b *testing.B) {
 func BenchmarkConcurrent_FilterMCPs(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(200)
 	model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("mcp").Build()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -353,7 +354,7 @@ func BenchmarkConcurrent_FilterMCPs(b *testing.B) {
 func BenchmarkConcurrent_GetActiveMCPCount(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(300)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -367,11 +368,11 @@ func generateBenchmarkMCPDataset(count int) []types.MCPItem {
 	mcps := make([]types.MCPItem, count)
 	mcpTypes := []string{"CMD", "SSE", "JSON", "HTTP"}
 	prefixes := []string{"github", "docker", "context7", "filesystem", "mcp", "tool", "service", "test"}
-	
+
 	for i := 0; i < count; i++ {
 		typeIndex := i % len(mcpTypes)
 		prefixIndex := i % len(prefixes)
-		
+
 		mcps[i] = types.MCPItem{
 			Name:    fmt.Sprintf("%s-benchmark-%04d", prefixes[prefixIndex], i),
 			Type:    mcpTypes[typeIndex],
@@ -380,14 +381,14 @@ func generateBenchmarkMCPDataset(count int) []types.MCPItem {
 			Args:    fmt.Sprintf("--config=%04d", i),
 		}
 	}
-	
+
 	return mcps
 }
 
 // Benchmark comparison functions to track regression
 func BenchmarkComparison_OldVsNew_FilterMCPs(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
-	
+
 	b.Run("Current Implementation", func(b *testing.B) {
 		model := testutil.NewTestModel().WithMCPs(mcps).WithSearchQuery("mcp").Build()
 		b.ResetTimer()
@@ -395,7 +396,7 @@ func BenchmarkComparison_OldVsNew_FilterMCPs(b *testing.B) {
 			_ = services.GetFilteredMCPs(model)
 		}
 	})
-	
+
 	// Note: In future versions, add comparison with previous implementation
 	// b.Run("Previous Implementation", func(b *testing.B) { ... })
 }
@@ -404,7 +405,7 @@ func BenchmarkComparison_OldVsNew_FilterMCPs(b *testing.B) {
 func BenchmarkPerformanceThresholds_CriticalPath(b *testing.B) {
 	// This benchmark should complete within reasonable time limits
 	// Fail the test if performance degrades significantly
-	
+
 	mcps := generateBenchmarkMCPDataset(500)
 	model := ui.Model{
 		Model: testutil.NewTestModel().
@@ -412,10 +413,10 @@ func BenchmarkPerformanceThresholds_CriticalPath(b *testing.B) {
 			WithMCPs(mcps).
 			Build(),
 	}
-	
+
 	searchKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")}
 	queryKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("test")}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		updatedModel, _ := model.Update(searchKey)

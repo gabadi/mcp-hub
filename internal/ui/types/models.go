@@ -43,11 +43,11 @@ type Model struct {
 
 	// Modal state
 	ActiveModal ModalType
-	
+
 	// Form state for add MCP workflow
-	FormData    FormData
-	FormErrors  map[string]string
-	
+	FormData   FormData
+	FormErrors map[string]string
+
 	// Success message state
 	SuccessMessage string
 	SuccessTimer   int // Timer for auto-hiding success message
@@ -69,11 +69,11 @@ const (
 
 // FormData represents the current form data during MCP addition
 type FormData struct {
-	Name       string
-	Command    string
-	Args       string
-	URL        string
-	JSONConfig string
+	Name        string
+	Command     string
+	Args        string
+	URL         string
+	JSONConfig  string
 	ActiveField int // Track which field is currently focused for Tab navigation
 }
 

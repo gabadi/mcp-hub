@@ -23,7 +23,7 @@ func (m Model) View() string {
 
 	// Join components vertically without extra container
 	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
-	
+
 	// Add success message if present
 	if m.Model.SuccessMessage != "" {
 		successStyle := lipgloss.NewStyle().
@@ -32,7 +32,7 @@ func (m Model) View() string {
 			Bold(true).
 			Padding(0, 2).
 			MarginBottom(1)
-		
+
 		successBar := successStyle.Render(m.Model.SuccessMessage)
 		content = lipgloss.JoinVertical(lipgloss.Left, successBar, header, body, footer)
 	}
