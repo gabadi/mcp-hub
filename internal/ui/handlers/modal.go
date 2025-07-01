@@ -137,10 +137,10 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c":
+	case "ctrl+c", "cmd+c", "⌘c", "command+c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v":
+	case "ctrl+v", "cmd+v", "⌘v", "command+v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -192,10 +192,10 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c":
+	case "ctrl+c", "cmd+c", "⌘c", "command+c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v":
+	case "ctrl+v", "cmd+v", "⌘v", "command+v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -251,10 +251,10 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	case "backspace":
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c":
+	case "ctrl+c", "cmd+c", "⌘c", "command+c":
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v":
+	case "ctrl+v", "cmd+v", "⌘v", "command+v":
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -713,11 +713,12 @@ func copyActiveFieldToClipboard(model types.Model) types.Model {
 func pasteFromClipboardToActiveField(model types.Model) types.Model {
 	clipboardService := services.NewClipboardService()
 
-	content, err := clipboardService.Paste()
+	// Use enhanced paste for better error diagnostics
+	content, err := clipboardService.EnhancedPaste()
 	if err != nil {
-		// Add user feedback for clipboard paste failure
+		// Add user feedback for clipboard paste failure with enhanced error information
 		model.SuccessMessage = "Failed to paste from clipboard: " + err.Error()
-		model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
+		model.SuccessTimer = 240 // Show error message for 4 seconds to allow reading detailed error
 		return model
 	}
 
