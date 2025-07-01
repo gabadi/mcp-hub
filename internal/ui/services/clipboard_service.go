@@ -195,6 +195,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 			return string(data), nil
 		}
 		// Store error for fallback reporting
+		//nolint:staticcheck // SA4017: lastErr is used in final error reporting
 		lastErr = fmt.Errorf("golang.design/x/clipboard returned empty data")
 	}
 
