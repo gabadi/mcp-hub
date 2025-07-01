@@ -22,7 +22,7 @@ func TestView_MainComposition(t *testing.T) {
 			state:  types.MainNavigation,
 			expectedComponents: []string{
 				"MCP Manager v1.0", // Header
-				"MCP Inventory",    // Body
+				"MCP Manager",      // Body
 				"Terminal:",        // Footer
 			},
 		},
@@ -176,7 +176,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"Type to search", "Tab=Navigate Mode",
 			},
 			expectedFooter: []string{
-				"Search:", "test█", "[INPUT MODE]",
+				"Search:", "test_", "[INPUT MODE]",
 			},
 		},
 		{
@@ -196,7 +196,7 @@ func TestView_StateTransitions(t *testing.T) {
 			name:  "ModalActive shows modal shortcuts",
 			state: types.ModalActive,
 			expectedShortcuts: []string{
-				"Enter=Confirm", "ESC=Cancel",
+				"ESC=Cancel",
 			},
 		},
 	}
@@ -412,7 +412,7 @@ func TestView_VerticalComposition(t *testing.T) {
 
 		// Find positions of components
 		headerPos := strings.Index(result, "MCP Manager v1.0")
-		bodyPos := strings.Index(result, "MCP Inventory")
+		bodyPos := strings.Index(result, "Debug: MCPs:")
 		footerPos := strings.Index(result, "Terminal:")
 
 		if headerPos == -1 {

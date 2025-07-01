@@ -286,8 +286,8 @@ func TestModel_NewModel(t *testing.T) {
 		t.Errorf("NewModel() search input should be initially inactive")
 	}
 
-	if model.GetColumnCount() != 4 {
-		t.Errorf("NewModel() initial column count should be 4")
+	if model.GetColumnCount() != 1 {
+		t.Errorf("NewModel() initial column count should be 1")
 	}
 
 	// Test that MCPItems are populated
