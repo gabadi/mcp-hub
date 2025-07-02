@@ -572,6 +572,15 @@ func TestToggleResultStruct(t *testing.T) {
 	if result.Duration != 100*time.Millisecond {
 		t.Errorf("Expected Duration to be 100ms, got %v", result.Duration)
 	}
+	if result.ErrorType != "" {
+		t.Errorf("Expected ErrorType to be empty for successful result, got %s", result.ErrorType)
+	}
+	if result.ErrorMsg != "" {
+		t.Errorf("Expected ErrorMsg to be empty for successful result, got %s", result.ErrorMsg)
+	}
+	if result.Retryable {
+		t.Error("Expected Retryable to be false for successful result")
+	}
 }
 
 func TestErrorTypeConstants(t *testing.T) {

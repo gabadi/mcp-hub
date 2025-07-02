@@ -118,7 +118,7 @@ func getEnhancedStatusIndicator(model types.Model, item types.MCPItem) string {
 			return "✗" // Error indicator
 		}
 	}
-	
+
 	// Default status indicators
 	if item.Active {
 		return "●" // Active

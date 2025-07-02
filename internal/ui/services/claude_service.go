@@ -16,13 +16,13 @@ import (
 
 // ToggleResult represents the result of an MCP toggle operation
 type ToggleResult struct {
-	Success     bool
-	MCPName     string
-	NewState    string
-	ErrorType   string
-	ErrorMsg    string
-	Retryable   bool
-	Duration    time.Duration
+	Success   bool
+	MCPName   string
+	NewState  string
+	ErrorType string
+	ErrorMsg  string
+	Retryable bool
+	Duration  time.Duration
 }
 
 // Error type constants for toggle operations
@@ -322,12 +322,12 @@ func GetRefreshKeyHint(status types.ClaudeStatus) string {
 // ToggleMCPStatus toggles the active status of an MCP with enhanced error handling and retry logic
 func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, activate bool) (*ToggleResult, error) {
 	start := time.Now()
-	
+
 	result := &ToggleResult{
 		MCPName:  mcpName,
 		NewState: "deactivating",
 	}
-	
+
 	if activate {
 		result.NewState = "activating"
 	}
@@ -353,7 +353,7 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 		result.NewState = "active"
 	} else {
 		cmd = exec.CommandContext(timeoutCtx, "claude", "mcp", "disable", mcpName)
-		result.NewState = "inactive" 
+		result.NewState = "inactive"
 	}
 
 	output, err := cmd.CombinedOutput()
@@ -364,7 +364,7 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 		result.ErrorType = cs.classifyError(err, string(output))
 		result.ErrorMsg = ErrorMessages[result.ErrorType]
 		result.Retryable = (result.ErrorType == ErrorTypeNetworkTimeout)
-		
+
 		// If retryable and within time budget, try once more
 		if result.Retryable && result.Duration < 8*time.Second {
 			time.Sleep(2 * time.Second) // Brief delay before retry
@@ -375,7 +375,7 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 			// If retry also failed, update error message
 			result.ErrorMsg = "MCP toggle failed after retry. " + ErrorMessages[ErrorTypeUnknownError]
 		}
-		
+
 		return result, nil
 	}
 
@@ -389,7 +389,7 @@ func (cs *ClaudeService) retryToggleOperation(ctx context.Context, mcpName strin
 		MCPName:  mcpName,
 		NewState: "deactivating",
 	}
-	
+
 	if activate {
 		result.NewState = "activating"
 	}
@@ -436,25 +436,25 @@ func (cs *ClaudeService) retryToggleOperation(ctx context.Context, mcpName strin
 func (cs *ClaudeService) classifyError(err error, output string) string {
 	outputLower := strings.ToLower(output)
 	errMsg := strings.ToLower(err.Error())
-	
+
 	// Check for timeout errors
 	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "deadline exceeded") {
 		return ErrorTypeNetworkTimeout
 	}
-	
+
 	// Check for permission errors
-	if strings.Contains(outputLower, "permission denied") || 
-	   strings.Contains(outputLower, "unauthorized") ||
-	   strings.Contains(outputLower, "authentication") {
+	if strings.Contains(outputLower, "permission denied") ||
+		strings.Contains(outputLower, "unauthorized") ||
+		strings.Contains(outputLower, "authentication") {
 		return ErrorTypePermissionError
 	}
-	
+
 	// Check for Claude CLI availability issues
 	if strings.Contains(errMsg, "executable file not found") ||
-	   strings.Contains(outputLower, "command not found") ||
-	   strings.Contains(outputLower, "not recognized") {
+		strings.Contains(outputLower, "command not found") ||
+		strings.Contains(outputLower, "not recognized") {
 		return ErrorTypeClaudeUnavailable
 	}
-	
+
 	return ErrorTypeUnknownError
 }

@@ -87,12 +87,12 @@ func TestGetFilteredMCPs(t *testing.T) {
 func TestToggleMCPStatus(t *testing.T) {
 	// Note: Enhanced ToggleMCPStatus only sets loading state, doesn't actually toggle immediately
 	tests := []struct {
-		name             string
-		selectedItem     int
-		searchQuery      string
-		claudeAvailable  bool
-		expectedState    types.ToggleOperationState
-		expectedMCPName  string
+		name            string
+		selectedItem    int
+		searchQuery     string
+		claudeAvailable bool
+		expectedState   types.ToggleOperationState
+		expectedMCPName string
 	}{
 		{
 			name:            "Toggle with Claude available - should set loading state",
@@ -124,7 +124,7 @@ func TestToggleMCPStatus(t *testing.T) {
 			searchQuery:     "",
 			claudeAvailable: true,
 			expectedState:   types.ToggleIdle, // should remain idle
-			expectedMCPName: "", // no MCP selected
+			expectedMCPName: "",               // no MCP selected
 		},
 	}
 
@@ -308,7 +308,7 @@ func TestMCPServiceBoundaryConditions(t *testing.T) {
 		if result.ToggleState != types.ToggleLoading {
 			t.Errorf("ToggleMCPStatus() should set loading state at boundary")
 		}
-		
+
 		expectedMCPName := model.MCPItems[model.SelectedItem].Name
 		if result.ToggleMCPName != expectedMCPName {
 			t.Errorf("ToggleMCPStatus() should set correct MCP name at boundary")

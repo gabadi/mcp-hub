@@ -56,81 +56,117 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.Width = msg.Width
-		m.Height = msg.Height
-		m.Model = services.UpdateLayout(m.Model)
-
+		return m.handleWindowSizeMsg(msg), nil
 	case tea.KeyMsg:
-		var cmd tea.Cmd
-		m.Model, cmd = handlers.HandleKeyPress(m.Model, msg)
-		return m, cmd
-
+		return m.handleKeyMsg(msg)
 	case handlers.SuccessMsg:
-		m.Model.SuccessMessage = msg.Message
-
+		return m.handleSuccessMsg(msg), nil
 	case handlers.ClaudeStatusMsg:
-		// Update model with Claude status
-		m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
-		// Sync MCP status if Claude is available and has active MCPs
-		if msg.Status.Available && len(msg.Status.ActiveMCPs) > 0 {
-			m.Model = services.SyncMCPStatus(m.Model, msg.Status.ActiveMCPs)
-			// Save updated inventory after sync
-			if err := services.SaveModelInventory(m.Model); err != nil {
-				// Set error message but don't fail
-				m.Model.SuccessMessage = fmt.Sprintf("Claude status updated, but failed to save inventory: %v", err)
-				m.Model.SuccessTimer = 240 // Show error for 4 seconds
-			} else {
-				m.Model.SuccessMessage = "Claude status refreshed and MCPs synced"
-				m.Model.SuccessTimer = 120 // Show success for 2 seconds
-			}
-		} else if msg.Status.Available {
-			m.Model.SuccessMessage = "Claude status refreshed"
-			m.Model.SuccessTimer = 120
-		} else {
-			m.Model.SuccessMessage = "Claude CLI not available"
-			m.Model.SuccessTimer = 180 // Show message for 3 seconds
-		}
-
+		return m.handleClaudeStatusMsg(msg), nil
 	case handlers.ToggleResultMsg:
-		// Handle enhanced toggle operation results (Epic 2 Story 2)
-		if msg.Success {
-			// Update local MCP status and save
-			for i := range m.Model.MCPItems {
-				if m.Model.MCPItems[i].Name == msg.MCPName {
-					m.Model.MCPItems[i].Active = msg.Activate
-					break
-				}
-			}
-			
-			if err := services.SaveInventory(m.Model.MCPItems); err != nil {
-				m.Model.ToggleState = types.ToggleError
-				m.Model.ToggleError = "MCP toggled but failed to save to storage"
-			} else {
-				m.Model.ToggleState = types.ToggleSuccess
-				activationState := "deactivated"
-				if msg.Activate {
-					activationState = "activated"
-				}
-				m.Model.SuccessMessage = fmt.Sprintf("MCP '%s' %s successfully", msg.MCPName, activationState)
-				m.Model.SuccessTimer = 120
-			}
+		return m.handleToggleResultMsg(msg), nil
+	}
+	return m, nil
+}
+
+// handleWindowSizeMsg handles window resize messages
+func (m Model) handleWindowSizeMsg(msg tea.WindowSizeMsg) Model {
+	m.Model.Width = msg.Width
+	m.Model.Height = msg.Height
+	m.Model = services.UpdateLayout(m.Model)
+	return m
+}
+
+// handleKeyMsg handles keyboard input messages
+func (m Model) handleKeyMsg(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.Model, cmd = handlers.HandleKeyPress(m.Model, msg)
+	return m, cmd
+}
+
+// handleSuccessMsg handles success messages
+func (m Model) handleSuccessMsg(msg handlers.SuccessMsg) Model {
+	m.Model.SuccessMessage = msg.Message
+	return m
+}
+
+// handleClaudeStatusMsg handles Claude status update messages
+func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) Model {
+	// Update model with Claude status
+	m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
+	
+	// Sync MCP status if Claude is available and has active MCPs
+	if msg.Status.Available && len(msg.Status.ActiveMCPs) > 0 {
+		m.Model = services.SyncMCPStatus(m.Model, msg.Status.ActiveMCPs)
+		// Save updated inventory after sync
+		if err := services.SaveModelInventory(m.Model); err != nil {
+			// Set error message but don't fail
+			m.Model.SuccessMessage = fmt.Sprintf("Claude status updated, but failed to save inventory: %v", err)
+			m.Model.SuccessTimer = 240 // Show error for 4 seconds
 		} else {
-			// Handle toggle error
-			if msg.Retrying {
-				m.Model.ToggleState = types.ToggleRetrying
-				m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed, retrying: %s", msg.Error)
-				m.Model.SuccessTimer = 180
-			} else {
-				m.Model.ToggleState = types.ToggleError
-				m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed: %s", msg.Error)
-				m.Model.SuccessTimer = 240
-			}
-			m.Model.ToggleError = msg.Error
+			m.Model.SuccessMessage = "Claude status refreshed and MCPs synced"
+			m.Model.SuccessTimer = 120 // Show success for 2 seconds
 		}
-		m.Model.ToggleMCPName = msg.MCPName
+	} else if msg.Status.Available {
+		m.Model.SuccessMessage = "Claude status refreshed"
+		m.Model.SuccessTimer = 120
+	} else {
+		m.Model.SuccessMessage = "Claude CLI not available"
+		m.Model.SuccessTimer = 180 // Show message for 3 seconds
+	}
+	return m
+}
+
+// handleToggleResultMsg handles toggle operation result messages
+func (m Model) handleToggleResultMsg(msg handlers.ToggleResultMsg) Model {
+	// Handle enhanced toggle operation results (Epic 2 Story 2)
+	if msg.Success {
+		m = m.handleToggleSuccess(msg)
+	} else {
+		m = m.handleToggleError(msg)
+	}
+	m.Model.ToggleMCPName = msg.MCPName
+	return m
+}
+
+// handleToggleSuccess handles successful toggle operations
+func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) Model {
+	// Update local MCP status and save
+	for i := range m.Model.MCPItems {
+		if m.Model.MCPItems[i].Name == msg.MCPName {
+			m.Model.MCPItems[i].Active = msg.Activate
+			break
+		}
 	}
 
-	return m, nil
+	if err := services.SaveInventory(m.Model.MCPItems); err != nil {
+		m.Model.ToggleState = types.ToggleError
+		m.Model.ToggleError = "MCP toggled but failed to save to storage"
+	} else {
+		m.Model.ToggleState = types.ToggleSuccess
+		activationState := "deactivated"
+		if msg.Activate {
+			activationState = "activated"
+		}
+		m.Model.SuccessMessage = fmt.Sprintf("MCP '%s' %s successfully", msg.MCPName, activationState)
+		m.Model.SuccessTimer = 120
+	}
+	return m
+}
+
+// handleToggleError handles failed toggle operations
+func (m Model) handleToggleError(msg handlers.ToggleResultMsg) Model {
+	if msg.Retrying {
+		m.Model.ToggleState = types.ToggleRetrying
+		m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed, retrying: %s", msg.Error)
+		m.Model.SuccessTimer = 180
+	} else {
+		m.Model.ToggleState = types.ToggleError
+		m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed: %s", msg.Error)
+		m.Model.SuccessTimer = 240
+	}
+	m.Model.ToggleError = msg.Error
+	return m
 }
 
 // All key handling has been moved to handlers package

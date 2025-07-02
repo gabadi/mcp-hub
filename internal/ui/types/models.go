@@ -76,12 +76,12 @@ type Model struct {
 	ClaudeSyncError string
 
 	// Toggle operation state (Epic 2 Story 2)
-	ToggleState        ToggleOperationState
-	ToggleMCPName      string
-	ToggleError        string
-	ToggleRetrying     bool
-	LastToggleSync     time.Time
-	ToggleStartTime    time.Time
+	ToggleState     ToggleOperationState
+	ToggleMCPName   string
+	ToggleError     string
+	ToggleRetrying  bool
+	LastToggleSync  time.Time
+	ToggleStartTime time.Time
 }
 
 // ModalType represents the type of modal being displayed

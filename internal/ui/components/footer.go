@@ -74,28 +74,28 @@ func renderToggleStatus(model types.Model) string {
 		loadingStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
 			Bold(true)
-		return fmt.Sprintf("%s MCP '%s'... ⏳", 
+		return fmt.Sprintf("%s MCP '%s'... ⏳",
 			loadingStyle.Render("Toggling"), model.ToggleMCPName)
-			
+
 	case types.ToggleRetrying:
 		retryStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF8C00")).
 			Bold(true)
-		return fmt.Sprintf("%s MCP '%s'... 🔄", 
+		return fmt.Sprintf("%s MCP '%s'... 🔄",
 			retryStyle.Render("Retrying"), model.ToggleMCPName)
-			
+
 	case types.ToggleSuccess:
 		successStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#51CF66")).
 			Bold(true)
-		return fmt.Sprintf("%s MCP '%s' ✓", 
+		return fmt.Sprintf("%s MCP '%s' ✓",
 			successStyle.Render("Success:"), model.ToggleMCPName)
-			
+
 	case types.ToggleError:
 		errorStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FF6B6B")).
 			Bold(true)
-		return fmt.Sprintf("%s %s ✗", 
+		return fmt.Sprintf("%s %s ✗",
 			errorStyle.Render("Error:"), model.ToggleError)
 	}
 	return ""

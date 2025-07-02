@@ -86,16 +86,16 @@ func handleEnhancedToggleMCP(model types.Model) (types.Model, tea.Cmd, bool) {
 
 	// Set immediate loading state for visual feedback
 	updatedModel := services.ToggleMCPStatus(model)
-	
+
 	// If already in error state due to Claude unavailability, don't proceed
 	if updatedModel.ToggleState == types.ToggleError {
 		return updatedModel, nil, true
 	}
-	
+
 	// Create command to perform the actual toggle operation
 	activate := !selectedMCP.Active
 	cmd := EnhancedToggleMCPCmd(selectedMCP.Name, activate)
-	
+
 	return updatedModel, cmd, true
 }
 
@@ -444,7 +444,7 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool) tea.Cmd {
 		claudeService := services.NewClaudeService()
 		ctx := context.Background()
 		result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate)
-		
+
 		if err != nil {
 			return ToggleResultMsg{
 				MCPName:  mcpName,
@@ -454,7 +454,7 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool) tea.Cmd {
 				Retrying: false,
 			}
 		}
-		
+
 		return ToggleResultMsg{
 			MCPName:  mcpName,
 			Activate: activate,

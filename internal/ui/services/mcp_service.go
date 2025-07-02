@@ -54,7 +54,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 	// Create Claude service and perform toggle
 	claudeService := NewClaudeService()
 	ctx := context.Background()
-	
+
 	result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate)
 	if err != nil {
 		// Unexpected error from service
@@ -72,7 +72,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 				break
 			}
 		}
-		
+
 		// Save to storage
 		if err := SaveInventory(model.MCPItems); err != nil {
 			model.ToggleState = types.ToggleError
