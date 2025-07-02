@@ -94,7 +94,7 @@ func (m Model) handleSuccessMsg(msg handlers.SuccessMsg) Model {
 func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) Model {
 	// Update model with Claude status
 	m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
-	
+
 	// Sync MCP status if Claude is available and has active MCPs
 	if msg.Status.Available && len(msg.Status.ActiveMCPs) > 0 {
 		m.Model = services.SyncMCPStatus(m.Model, msg.Status.ActiveMCPs)
