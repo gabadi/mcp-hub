@@ -51,11 +51,20 @@ func ToggleMCPStatus(model types.Model) types.Model {
 
 // EnhancedToggleMCPStatus performs the actual enhanced toggle operation with Claude CLI
 func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) types.Model {
+	// Find the MCP configuration in the model
+	var mcpConfig *types.MCPItem
+	for i := range model.MCPItems {
+		if model.MCPItems[i].Name == mcpName {
+			mcpConfig = &model.MCPItems[i]
+			break
+		}
+	}
+
 	// Create Claude service and perform toggle
 	claudeService := NewClaudeService()
 	ctx := context.Background()
 
-	result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate)
+	result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate, mcpConfig)
 	if err != nil {
 		// Unexpected error from service
 		model.ToggleState = types.ToggleError

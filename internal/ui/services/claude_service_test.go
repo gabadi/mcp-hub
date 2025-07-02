@@ -731,7 +731,15 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 	ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
 	defer cancel()
 
-	result, err := service.ToggleMCPStatus(ctxShort, "test-mcp", true)
+	// Create test MCP config
+	testMCP := &types.MCPItem{
+		Name:    "test-mcp",
+		Type:    "CMD",
+		Command: "echo",
+		Args:    []string{"test"},
+	}
+
+	result, err := service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
 
 	// Should return result, not error
 	if err != nil {
@@ -771,7 +779,15 @@ func TestToggleMCPStatusSuccessCase(t *testing.T) {
 	ctx := context.Background()
 
 	// Test activation
-	result, err := service.ToggleMCPStatus(ctx, "test-mcp", true)
+	// Create test MCP config
+	testMCP := &types.MCPItem{
+		Name:    "test-mcp",
+		Type:    "CMD",
+		Command: "echo",
+		Args:    []string{"test"},
+	}
+
+	result, err := service.ToggleMCPStatus(ctx, "test-mcp", true, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
@@ -783,7 +799,7 @@ func TestToggleMCPStatusSuccessCase(t *testing.T) {
 	}
 
 	// Test deactivation
-	result2, err := service.ToggleMCPStatus(ctx, "test-mcp", false)
+	result2, err := service.ToggleMCPStatus(ctx, "test-mcp", false, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
@@ -801,7 +817,15 @@ func TestRetryToggleOperation(t *testing.T) {
 
 	// Test with already expired time budget
 	expiredStart := time.Now().Add(-25 * time.Second)
-	result, err := service.retryToggleOperation(ctx, "test-mcp", true, expiredStart)
+	// Create test MCP config
+	testMCP := &types.MCPItem{
+		Name:    "test-mcp",
+		Type:    "CMD",
+		Command: "echo",
+		Args:    []string{"test"},
+	}
+
+	result, err := service.retryToggleOperation(ctx, "test-mcp", true, testMCP, expiredStart)
 
 	if err == nil {
 		t.Error("Expected error when time budget exceeded")
@@ -828,7 +852,15 @@ func BenchmarkToggleMCPStatus(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// Use very short timeout to avoid actually calling Claude CLI
 		ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
-		_, _ = service.ToggleMCPStatus(ctxShort, "test-mcp", true)
+		// Create test MCP config
+		testMCP := &types.MCPItem{
+			Name:    "test-mcp",
+			Type:    "CMD",
+			Command: "echo",
+			Args:    []string{"test"},
+		}
+
+		_, _ = service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
 		cancel()
 	}
 }

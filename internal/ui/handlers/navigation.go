@@ -94,7 +94,7 @@ func handleEnhancedToggleMCP(model types.Model) (types.Model, tea.Cmd, bool) {
 
 	// Create command to perform the actual toggle operation
 	activate := !selectedMCP.Active
-	cmd := EnhancedToggleMCPCmd(selectedMCP.Name, activate)
+	cmd := EnhancedToggleMCPCmd(selectedMCP.Name, activate, selectedMCP)
 
 	return updatedModel, cmd, true
 }
@@ -439,11 +439,13 @@ func RefreshClaudeStatusCmd() tea.Cmd {
 }
 
 // EnhancedToggleMCPCmd creates a command to perform enhanced MCP toggle (Epic 2 Story 2)
-func EnhancedToggleMCPCmd(mcpName string, activate bool) tea.Cmd {
+func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPItem) tea.Cmd {
 	return func() tea.Msg {
 		claudeService := services.NewClaudeService()
 		ctx := context.Background()
-		result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate)
+		
+		// Pass the MCP configuration for add operations
+		result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate, mcpConfig)
 
 		if err != nil {
 			return ToggleResultMsg{
