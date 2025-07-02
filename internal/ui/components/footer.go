@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -50,8 +51,10 @@ func RenderFooter(model types.Model) string {
 		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
 			len(filteredMCPs), model.SearchQuery, model.Width, model.Height)
 	} else {
-		footerText = fmt.Sprintf("Terminal: %dx%d • Search: '%s' • Use arrow keys to navigate, Tab or / for search",
-			model.Width, model.Height, model.SearchQuery)
+		// Show Claude refresh hint and terminal info
+		refreshHint := services.GetRefreshKeyHint(model.ClaudeStatus)
+		footerText = fmt.Sprintf("Terminal: %dx%d • %s • Use arrow keys to navigate, Tab or / for search",
+			model.Width, model.Height, refreshHint)
 	}
 
 	return footerStyle.Render(footerText)

@@ -93,6 +93,12 @@ func handleTypeSelectionKeys(model types.Model, key string) (types.Model, tea.Cm
 			model.ActiveModal = types.AddJSONForm
 			model.FormData.ActiveField = 0
 		}
+	case "esc":
+		// Exit modal and return to main navigation
+		model.State = types.MainNavigation
+		model.ActiveModal = types.NoModal
+		model.FormData = types.FormData{}
+		model.FormErrors = make(map[string]string)
 	}
 	return model, nil
 }
@@ -444,9 +450,10 @@ func validateSSEForm(model types.Model) (types.Model, bool) {
 		model.FormErrors["url"] = "URL is required"
 		valid = false
 	} else {
-		// Validate URL format
-		if _, err := url.Parse(model.FormData.URL); err != nil {
-			model.FormErrors["url"] = "Invalid URL format"
+		// Validate URL format more strictly
+		parsedURL, err := url.Parse(model.FormData.URL)
+		if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+			model.FormErrors["url"] = "Invalid URL format - must include protocol (http:// or https://)"
 			valid = false
 		}
 	}

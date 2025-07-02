@@ -659,3 +659,37 @@ func TestNavigationBoundaryConditions(t *testing.T) {
 		}
 	})
 }
+
+func TestPasteToSearchQuery(t *testing.T) {
+	model := types.Model{
+		SearchQuery: "existing",
+	}
+
+	// Test paste functionality - this will depend on clipboard availability
+	result := pasteToSearchQuery(model)
+
+	// The function should handle errors gracefully and return a model
+	// We can't test actual clipboard content, but we can verify it doesn't crash
+	if result.SearchQuery == "" {
+		// If clipboard failed, original query should be preserved with error message
+		if result.SuccessMessage == "" {
+			t.Error("Expected error message when clipboard paste fails")
+		}
+		if result.SuccessTimer == 0 {
+			t.Error("Expected success timer to be set for error message")
+		}
+	}
+}
+
+func TestRefreshClaudeStatusCmdNavigation(t *testing.T) {
+	cmd := RefreshClaudeStatusCmd()
+	if cmd == nil {
+		t.Error("RefreshClaudeStatusCmd() should return a command")
+	}
+
+	// Execute the command and verify it returns a ClaudeStatusMsg
+	msg := cmd()
+	if _, ok := msg.(ClaudeStatusMsg); !ok {
+		t.Errorf("RefreshClaudeStatusCmd() should return ClaudeStatusMsg, got %T", msg)
+	}
+}

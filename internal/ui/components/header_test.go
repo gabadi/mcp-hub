@@ -19,7 +19,7 @@ func TestRenderHeader(t *testing.T) {
 		{
 			name:              "MainNavigation state shows main shortcuts",
 			state:             types.MainNavigation,
-			expectedShortcuts: "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • ESC=Exit • ↑↓←→=Navigate",
+			expectedShortcuts: "A=Add • D=Delete • E=Edit • /=Search • Tab=Focus Search • R=Refresh Claude • ESC=Exit • ↑↓←→=Navigate",
 		},
 		{
 			name:              "SearchMode state shows search shortcuts",
@@ -31,14 +31,14 @@ func TestRenderHeader(t *testing.T) {
 			state:             types.SearchActiveNavigation,
 			searchActive:      true,
 			searchInputActive: true,
-			expectedShortcuts: "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel",
+			expectedShortcuts: "Type to search • Tab=Navigate Mode • ↑↓←→=Navigate • Space=Toggle • R=Refresh • Enter=Apply • ESC=Cancel",
 		},
 		{
 			name:              "SearchActiveNavigation with input inactive shows navigation shortcuts",
 			state:             types.SearchActiveNavigation,
 			searchActive:      true,
 			searchInputActive: false,
-			expectedShortcuts: "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • Enter=Apply • ESC=Cancel",
+			expectedShortcuts: "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • R=Refresh • Enter=Apply • ESC=Cancel",
 		},
 		{
 			name:              "ModalActive state shows modal shortcuts",
