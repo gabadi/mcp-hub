@@ -13,18 +13,18 @@ import (
 // HandleMainNavigationKeys handles keyboard input in main navigation mode
 func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	// Handle navigation keys
-	if model, handled := handleNavigationKeys(model, key); handled {
-		return model, nil
+	if updatedModel, handled := handleNavigationKeys(model, key); handled {
+		return updatedModel, nil
 	}
 
 	// Handle search keys
-	if model, handled := handleSearchKeys(model, key); handled {
-		return model, nil
+	if updatedModel, handled := handleSearchKeys(model, key); handled {
+		return updatedModel, nil
 	}
 
 	// Handle action keys
-	if model, cmd, handled := handleActionKeys(model, key); handled {
-		return model, cmd
+	if updatedModel, cmd, handled := handleActionKeys(model, key); handled {
+		return updatedModel, cmd
 	}
 
 	return model, nil
@@ -99,7 +99,7 @@ func handleEditMCP(model types.Model) (types.Model, tea.Cmd, bool) {
 	model.FormErrors = make(map[string]string)
 	model.EditMode = true
 	model.EditMCPName = selectedMCP.Name
-	
+
 	return model, nil, true
 }
 

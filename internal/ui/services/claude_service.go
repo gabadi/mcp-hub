@@ -45,7 +45,7 @@ func (cs *ClaudeService) DetectClaudeCLI(ctx context.Context) types.ClaudeStatus
 	// Run with timeout
 	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
 	defer cancel()
-	// nolint:gosec // G204: Args are from a command we just created, not user input
+	//nolint:gosec // G204: Args are from a command we just created, not user input
 	cmd = exec.CommandContext(timeoutCtx, cmd.Args[0], cmd.Args[1:]...)
 
 	output, err := cmd.Output()
@@ -101,11 +101,12 @@ func (cs *ClaudeService) QueryActiveMCPs(ctx context.Context) ([]string, error) 
 	}
 
 	// Parse the output to extract active MCP names
-	return cs.parseActiveMCPs(string(output))
+	activeMCPs := cs.parseActiveMCPs(string(output))
+	return activeMCPs, nil
 }
 
 // parseActiveMCPs parses the output of 'claude mcp list' command
-func (cs *ClaudeService) parseActiveMCPs(output string) ([]string, error) {
+func (cs *ClaudeService) parseActiveMCPs(output string) []string {
 	var activeMCPs []string
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 
@@ -127,7 +128,7 @@ func (cs *ClaudeService) parseActiveMCPs(output string) ([]string, error) {
 		}
 	}
 
-	return activeMCPs, nil
+	return activeMCPs
 }
 
 // tryParseJSONLine attempts to parse a line as JSON and extract active MCPs

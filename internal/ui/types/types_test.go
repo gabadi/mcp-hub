@@ -170,6 +170,15 @@ func TestMCPItemTypes(t *testing.T) {
 	if cmdMCP.Name != "test-cmd" {
 		t.Error("CMD MCP name not set correctly")
 	}
+	if cmdMCP.Type != "CMD" {
+		t.Error("CMD MCP type not set correctly")
+	}
+	if !cmdMCP.Active {
+		t.Error("CMD MCP active not set correctly")
+	}
+	if cmdMCP.Command != "test-command" {
+		t.Error("CMD MCP command not set correctly")
+	}
 	if len(cmdMCP.Args) != 2 {
 		t.Error("CMD MCP args not set correctly")
 	}
@@ -177,6 +186,15 @@ func TestMCPItemTypes(t *testing.T) {
 		t.Error("CMD MCP environment not set correctly")
 	}
 
+	if sseMCP.Name != "test-sse" {
+		t.Error("SSE MCP name not set correctly")
+	}
+	if sseMCP.Type != "SSE" {
+		t.Error("SSE MCP type not set correctly")
+	}
+	if sseMCP.Active {
+		t.Error("SSE MCP active not set correctly")
+	}
 	if sseMCP.URL != "http://example.com" {
 		t.Error("SSE MCP URL not set correctly")
 	}
@@ -184,6 +202,15 @@ func TestMCPItemTypes(t *testing.T) {
 		t.Error("SSE MCP environment not set correctly")
 	}
 
+	if jsonMCP.Name != "test-json" {
+		t.Error("JSON MCP name not set correctly")
+	}
+	if jsonMCP.Type != "JSON" {
+		t.Error("JSON MCP type not set correctly")
+	}
+	if jsonMCP.Active {
+		t.Error("JSON MCP active not set correctly")
+	}
 	if jsonMCP.JSONConfig != `{"key": "value"}` {
 		t.Error("JSON MCP config not set correctly")
 	}

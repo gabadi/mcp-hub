@@ -202,11 +202,7 @@ func TestParseActiveMCPs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := service.parseActiveMCPs(tt.input)
-			if err != nil {
-				t.Errorf("parseActiveMCPs() error = %v", err)
-				return
-			}
+			result := service.parseActiveMCPs(tt.input)
 			// For empty cases, both nil and empty slice are acceptable
 			if len(tt.expected) == 0 && len(result) == 0 {
 				return // Both are empty, test passes
@@ -534,7 +530,7 @@ func BenchmarkParseActiveMCPs(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = service.parseActiveMCPs(input)
+		_ = service.parseActiveMCPs(input)
 	}
 }
 
