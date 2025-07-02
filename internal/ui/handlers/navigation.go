@@ -12,78 +12,116 @@ import (
 
 // HandleMainNavigationKeys handles keyboard input in main navigation mode
 func HandleMainNavigationKeys(model types.Model, key string) (types.Model, tea.Cmd) {
+	// Handle navigation keys
+	if model, handled := handleNavigationKeys(model, key); handled {
+		return model, nil
+	}
+
+	// Handle search keys
+	if model, handled := handleSearchKeys(model, key); handled {
+		return model, nil
+	}
+
+	// Handle action keys
+	if model, cmd, handled := handleActionKeys(model, key); handled {
+		return model, cmd
+	}
+
+	return model, nil
+}
+
+// handleNavigationKeys handles directional navigation keys
+func handleNavigationKeys(model types.Model, key string) (types.Model, bool) {
 	switch key {
 	case "up", "k":
-		model = NavigateUp(model)
+		return NavigateUp(model), true
 	case "down", "j":
-		model = NavigateDown(model)
+		return NavigateDown(model), true
 	case "left", "h":
-		model = NavigateLeft(model)
+		return NavigateLeft(model), true
 	case "right", "l":
-		model = NavigateRight(model)
-	case "tab":
-		// Jump to search field with navigation enabled
-		model.State = types.SearchActiveNavigation
-		model.SearchActive = true
-		model.SearchInputActive = true
-		model.SelectedItem = 0 // Reset selection to first item
-		model.FilteredSelectedIndex = 0
-	case "/":
+		return NavigateRight(model), true
+	}
+	return model, false
+}
+
+// handleSearchKeys handles search activation keys
+func handleSearchKeys(model types.Model, key string) (types.Model, bool) {
+	switch key {
+	case "tab", "/":
 		// Activate search mode with navigation enabled
 		model.State = types.SearchActiveNavigation
 		model.SearchActive = true
 		model.SearchInputActive = true
 		model.SelectedItem = 0 // Reset selection to first item
 		model.FilteredSelectedIndex = 0
-		// Don't add the "/" character to the search query
+		return model, true
+	}
+	return model, false
+}
+
+// handleActionKeys handles action keys (add, edit, delete, toggle, refresh)
+func handleActionKeys(model types.Model, key string) (types.Model, tea.Cmd, bool) {
+	switch key {
 	case "a":
-		// Add MCP - Start with type selection
-		model.State = types.ModalActive
-		model.ActiveModal = types.AddMCPTypeSelection
-		// Reset form data
-		model.FormData = types.FormData{}
-		model.FormErrors = make(map[string]string)
+		return handleAddMCP(model), nil, true
 	case "e":
-		// Edit MCP - Pre-populate form with selected MCP data
-		selectedMCP := services.GetSelectedMCP(model)
-		if selectedMCP == nil {
-			// No MCP selected, don't open edit modal
-			return model, nil
-		}
-
-		model.State = types.ModalActive
-		// Set the appropriate edit modal type based on MCP type
-		switch selectedMCP.Type {
-		case "CMD":
-			model.ActiveModal = types.AddCommandForm
-		case "SSE":
-			model.ActiveModal = types.AddSSEForm
-		case "JSON":
-			model.ActiveModal = types.AddJSONForm
-		default:
-			model.ActiveModal = types.AddCommandForm // Default fallback
-		}
-
-		// Pre-populate form data with existing MCP values
-		model.FormData = populateFormDataFromMCP(*selectedMCP)
-		model.FormErrors = make(map[string]string)
-
-		// Set edit mode state
-		model.EditMode = true
-		model.EditMCPName = selectedMCP.Name
+		return handleEditMCP(model)
 	case "d":
-		// Delete MCP (future functionality)
-		model.State = types.ModalActive
-		model.ActiveModal = types.DeleteModal
+		return handleDeleteMCP(model), nil, true
 	case " ", "space":
-		// Toggle MCP active status
-		model = services.ToggleMCPStatus(model)
+		return services.ToggleMCPStatus(model), nil, true
 	case "r", "R":
-		// Refresh Claude status
-		return model, RefreshClaudeStatusCmd()
+		return model, RefreshClaudeStatusCmd(), true
+	}
+	return model, nil, false
+}
+
+// handleAddMCP handles the add MCP action
+func handleAddMCP(model types.Model) types.Model {
+	model.State = types.ModalActive
+	model.ActiveModal = types.AddMCPTypeSelection
+	model.FormData = types.FormData{}
+	model.FormErrors = make(map[string]string)
+	return model
+}
+
+// handleEditMCP handles the edit MCP action
+func handleEditMCP(model types.Model) (types.Model, tea.Cmd, bool) {
+	selectedMCP := services.GetSelectedMCP(model)
+	if selectedMCP == nil {
+		return model, nil, true
 	}
 
-	return model, nil
+	model.State = types.ModalActive
+	model.ActiveModal = getEditModalType(selectedMCP.Type)
+	model.FormData = populateFormDataFromMCP(*selectedMCP)
+	model.FormErrors = make(map[string]string)
+	model.EditMode = true
+	model.EditMCPName = selectedMCP.Name
+	
+	return model, nil, true
+}
+
+// handleDeleteMCP handles the delete MCP action
+func handleDeleteMCP(model types.Model) types.Model {
+	model.State = types.ModalActive
+	model.ActiveModal = types.DeleteModal
+	return model
+}
+
+// getEditModalType returns the appropriate modal type for editing based on MCP type
+func getEditModalType(mcpType string) types.ModalType {
+	switch mcpType {
+	case "CMD":
+		return types.AddCommandForm
+	case "SSE":
+		return types.AddSSEForm
+	case "JSON":
+		return types.AddJSONForm
+	default:
+		return types.AddCommandForm // Default fallback
+	}
 }
 
 // HandleSearchNavigationKeys handles keyboard input in search + navigation mode

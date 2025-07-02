@@ -312,6 +312,9 @@ func TestClaudeStatus(t *testing.T) {
 	if status.InstallGuide != "Install guide text" {
 		t.Error("ClaudeStatus InstallGuide not set correctly")
 	}
+	if status.Error != "" {
+		t.Error("ClaudeStatus Error not set correctly")
+	}
 }
 
 func TestModelInit(t *testing.T) {
@@ -391,6 +394,15 @@ func TestMCPItemEnvironmentHandling(t *testing.T) {
 		Environment: nil,
 	}
 
+	if mcp1.Name != "test1" {
+		t.Error("MCP1 name not set correctly")
+	}
+	if mcp1.Type != "CMD" {
+		t.Error("MCP1 type not set correctly")
+	}
+	if mcp1.Command != "test" {
+		t.Error("MCP1 command not set correctly")
+	}
 	if mcp1.Environment != nil {
 		t.Error("Expected nil environment to remain nil")
 	}
@@ -403,6 +415,15 @@ func TestMCPItemEnvironmentHandling(t *testing.T) {
 		Environment: make(map[string]string),
 	}
 
+	if mcp2.Name != "test2" {
+		t.Error("MCP2 name not set correctly")
+	}
+	if mcp2.Type != "CMD" {
+		t.Error("MCP2 type not set correctly")
+	}
+	if mcp2.Command != "test" {
+		t.Error("MCP2 command not set correctly")
+	}
 	if mcp2.Environment == nil {
 		t.Error("Expected empty environment map to be preserved")
 	}
@@ -421,6 +442,15 @@ func TestMCPItemEnvironmentHandling(t *testing.T) {
 		},
 	}
 
+	if mcp3.Name != "test3" {
+		t.Error("MCP3 name not set correctly")
+	}
+	if mcp3.Type != "CMD" {
+		t.Error("MCP3 type not set correctly")
+	}
+	if mcp3.Command != "test" {
+		t.Error("MCP3 command not set correctly")
+	}
 	if len(mcp3.Environment) != 2 {
 		t.Error("Expected environment to have 2 variables")
 	}

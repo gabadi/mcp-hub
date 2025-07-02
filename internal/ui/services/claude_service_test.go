@@ -486,17 +486,17 @@ func TestClaudeServiceEdgeCases(t *testing.T) {
 	service := NewClaudeService()
 	ctx := context.Background()
 
-	// Test with cancelled context
+	// Test with canceled context
 	cancelCtx, cancel := context.WithCancel(ctx)
 	cancel() // Cancel immediately
 
 	status := service.DetectClaudeCLI(cancelCtx)
 	if status.Available {
-		t.Log("Claude detected even with cancelled context - very fast system")
+		t.Log("Claude detected even with canceled context - very fast system")
 	}
 	// Should handle cancellation gracefully
 	if !status.LastCheck.IsZero() {
-		t.Log("LastCheck was set even with cancelled context")
+		t.Log("LastCheck was set even with canceled context")
 	}
 }
 

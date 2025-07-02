@@ -45,6 +45,7 @@ func (cs *ClaudeService) DetectClaudeCLI(ctx context.Context) types.ClaudeStatus
 	// Run with timeout
 	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
 	defer cancel()
+	// nolint:gosec // G204: Args are from a command we just created, not user input
 	cmd = exec.CommandContext(timeoutCtx, cmd.Args[0], cmd.Args[1:]...)
 
 	output, err := cmd.Output()
@@ -106,8 +107,6 @@ func (cs *ClaudeService) QueryActiveMCPs(ctx context.Context) ([]string, error) 
 // parseActiveMCPs parses the output of 'claude mcp list' command
 func (cs *ClaudeService) parseActiveMCPs(output string) ([]string, error) {
 	var activeMCPs []string
-
-	// Handle different output formats
 	lines := strings.Split(strings.TrimSpace(output), "\n")
 
 	for _, line := range lines {
@@ -116,42 +115,88 @@ func (cs *ClaudeService) parseActiveMCPs(output string) ([]string, error) {
 			continue
 		}
 
-		// Try to parse as JSON first (if Claude outputs JSON)
-		if strings.HasPrefix(line, "{") || strings.HasPrefix(line, "[") {
-			var jsonMCPs []map[string]interface{}
-			if err := json.Unmarshal([]byte(line), &jsonMCPs); err == nil {
-				for _, mcp := range jsonMCPs {
-					if name, ok := mcp["name"].(string); ok {
-						// Check if MCP is active
-						if active, exists := mcp["active"]; exists {
-							if isActive, ok := active.(bool); ok && isActive {
-								activeMCPs = append(activeMCPs, name)
-							}
-						} else {
-							// If no active field, assume it's listed because it's active
-							activeMCPs = append(activeMCPs, name)
-						}
-					}
-				}
-				continue
-			}
+		// Try JSON parsing first
+		if jsonMCPs := cs.tryParseJSONLine(line); jsonMCPs != nil {
+			activeMCPs = append(activeMCPs, jsonMCPs...)
+			continue
 		}
 
 		// Parse as plain text format
-		// Look for patterns like "✓ mcp-name" or "* mcp-name" or just "mcp-name"
-		if strings.Contains(line, "✓") || strings.Contains(line, "*") || strings.Contains(line, "•") {
-			// Extract MCP name after the indicator
-			parts := strings.Fields(line)
-			if len(parts) >= 2 {
-				activeMCPs = append(activeMCPs, parts[1])
-			}
-		} else if !strings.Contains(line, "No MCPs") && !strings.Contains(line, "Available") {
-			// Treat the line as an MCP name if it doesn't contain exclusion patterns
-			activeMCPs = append(activeMCPs, line)
+		if mcpName := cs.parsePlainTextLine(line); mcpName != "" {
+			activeMCPs = append(activeMCPs, mcpName)
 		}
 	}
 
 	return activeMCPs, nil
+}
+
+// tryParseJSONLine attempts to parse a line as JSON and extract active MCPs
+func (cs *ClaudeService) tryParseJSONLine(line string) []string {
+	if !strings.HasPrefix(line, "{") && !strings.HasPrefix(line, "[") {
+		return nil
+	}
+
+	var jsonMCPs []map[string]interface{}
+	if err := json.Unmarshal([]byte(line), &jsonMCPs); err != nil {
+		return nil
+	}
+
+	var activeMCPs []string
+	for _, mcp := range jsonMCPs {
+		if name := cs.extractMCPNameFromJSON(mcp); name != "" {
+			activeMCPs = append(activeMCPs, name)
+		}
+	}
+
+	return activeMCPs
+}
+
+// extractMCPNameFromJSON extracts MCP name from JSON object if it's active
+func (cs *ClaudeService) extractMCPNameFromJSON(mcp map[string]interface{}) string {
+	name, ok := mcp["name"].(string)
+	if !ok {
+		return ""
+	}
+
+	// Check if MCP is active
+	if active, exists := mcp["active"]; exists {
+		if isActive, ok := active.(bool); ok && isActive {
+			return name
+		}
+		return ""
+	}
+
+	// If no active field, assume it's listed because it's active
+	return name
+}
+
+// parsePlainTextLine parses a plain text line to extract MCP name
+func (cs *ClaudeService) parsePlainTextLine(line string) string {
+	// Look for patterns like "✓ mcp-name" or "* mcp-name" or just "mcp-name"
+	if cs.hasActiveIndicator(line) {
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
+			return parts[1]
+		}
+		return ""
+	}
+
+	// Treat the line as an MCP name if it doesn't contain exclusion patterns
+	if cs.shouldExcludeLine(line) {
+		return ""
+	}
+
+	return line
+}
+
+// hasActiveIndicator checks if line has an active MCP indicator
+func (cs *ClaudeService) hasActiveIndicator(line string) bool {
+	return strings.Contains(line, "✓") || strings.Contains(line, "*") || strings.Contains(line, "•")
+}
+
+// shouldExcludeLine checks if line should be excluded from parsing
+func (cs *ClaudeService) shouldExcludeLine(line string) bool {
+	return strings.Contains(line, "No MCPs") || strings.Contains(line, "Available")
 }
 
 // RefreshClaudeStatus performs a complete refresh of Claude status
