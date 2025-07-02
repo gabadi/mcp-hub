@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// RenderFooter creates the application footer with status information
+// RenderFooter creates the application footer with status information including toggle operations
 func RenderFooter(model types.Model) string {
 	footerStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#CCCCCC")).
@@ -20,8 +20,14 @@ func RenderFooter(model types.Model) string {
 
 	var footerText string
 
-	if model.SearchActive {
-		// Show search input with cursor and mode indicator
+	// Priority 1: Show toggle operation status if active
+	if model.ToggleState != types.ToggleIdle {
+		toggleStatus := renderToggleStatus(model)
+		if toggleStatus != "" {
+			footerText = toggleStatus
+		}
+	} else if model.SearchActive {
+		// Priority 2: Show search input with cursor and mode indicator
 		searchStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#000000")).
 			Background(lipgloss.Color("#FFFFFF")).
@@ -46,18 +52,53 @@ func RenderFooter(model types.Model) string {
 		}
 		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(searchDisplay), modeIndicator)
 	} else if model.SearchQuery != "" {
-		// Show search results info when not actively searching but have a query
+		// Priority 3: Show search results info when not actively searching but have a query
 		filteredMCPs := GetFilteredMCPs(model)
 		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
 			len(filteredMCPs), model.SearchQuery, model.Width, model.Height)
 	} else {
-		// Show Claude refresh hint and terminal info
+		// Priority 4: Show Claude status and default info
+		claudeStatusText := services.FormatClaudeStatusForDisplay(model.ClaudeStatus)
 		refreshHint := services.GetRefreshKeyHint(model.ClaudeStatus)
-		footerText = fmt.Sprintf("Terminal: %dx%d • %s • Use arrow keys to navigate, Tab or / for search",
-			model.Width, model.Height, refreshHint)
+		footerText = fmt.Sprintf("%s • %s • Terminal: %dx%d",
+			claudeStatusText, refreshHint, model.Width, model.Height)
 	}
 
 	return footerStyle.Render(footerText)
+}
+
+// renderToggleStatus renders the current toggle operation status with visual indicators
+func renderToggleStatus(model types.Model) string {
+	switch model.ToggleState {
+	case types.ToggleLoading:
+		loadingStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFD700")).
+			Bold(true)
+		return fmt.Sprintf("%s MCP '%s'... ⏳", 
+			loadingStyle.Render("Toggling"), model.ToggleMCPName)
+			
+	case types.ToggleRetrying:
+		retryStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF8C00")).
+			Bold(true)
+		return fmt.Sprintf("%s MCP '%s'... 🔄", 
+			retryStyle.Render("Retrying"), model.ToggleMCPName)
+			
+	case types.ToggleSuccess:
+		successStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#51CF66")).
+			Bold(true)
+		return fmt.Sprintf("%s MCP '%s' ✓", 
+			successStyle.Render("Success:"), model.ToggleMCPName)
+			
+	case types.ToggleError:
+		errorStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FF6B6B")).
+			Bold(true)
+		return fmt.Sprintf("%s %s ✗", 
+			errorStyle.Render("Error:"), model.ToggleError)
+	}
+	return ""
 }
 
 // GetFilteredMCPs returns MCPs filtered by search query

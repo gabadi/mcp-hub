@@ -546,3 +546,291 @@ func BenchmarkFormatClaudeStatusForDisplay(b *testing.B) {
 		_ = FormatClaudeStatusForDisplay(status)
 	}
 }
+
+// Epic 2 Story 2 Tests - Enhanced Toggle Functionality
+
+func TestToggleResultStruct(t *testing.T) {
+	result := &ToggleResult{
+		Success:   true,
+		MCPName:   "test-mcp",
+		NewState:  "active",
+		ErrorType: "",
+		ErrorMsg:  "",
+		Retryable: false,
+		Duration:  100 * time.Millisecond,
+	}
+
+	if !result.Success {
+		t.Error("Expected Success to be true")
+	}
+	if result.MCPName != "test-mcp" {
+		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
+	}
+	if result.NewState != "active" {
+		t.Errorf("Expected NewState to be 'active', got %s", result.NewState)
+	}
+	if result.Duration != 100*time.Millisecond {
+		t.Errorf("Expected Duration to be 100ms, got %v", result.Duration)
+	}
+}
+
+func TestErrorTypeConstants(t *testing.T) {
+	expectedConstants := map[string]string{
+		ErrorTypeClaudeUnavailable: "CLAUDE_UNAVAILABLE",
+		ErrorTypeNetworkTimeout:    "NETWORK_TIMEOUT",
+		ErrorTypePermissionError:   "PERMISSION_ERROR",
+		ErrorTypeUnknownError:      "UNKNOWN_ERROR",
+	}
+
+	for constant, expected := range expectedConstants {
+		if constant != expected {
+			t.Errorf("Expected constant %s to equal %s", constant, expected)
+		}
+	}
+}
+
+func TestErrorMessages(t *testing.T) {
+	// Test that all error types have corresponding messages
+	expectedErrorTypes := []string{
+		ErrorTypeClaudeUnavailable,
+		ErrorTypeNetworkTimeout,
+		ErrorTypePermissionError,
+		ErrorTypeUnknownError,
+	}
+
+	for _, errorType := range expectedErrorTypes {
+		message, exists := ErrorMessages[errorType]
+		if !exists {
+			t.Errorf("Error message not found for error type: %s", errorType)
+		}
+		if message == "" {
+			t.Errorf("Error message is empty for error type: %s", errorType)
+		}
+		if len(message) < 10 {
+			t.Errorf("Error message too short for error type %s: %s", errorType, message)
+		}
+	}
+
+	// Test specific message content
+	claudeMsg := ErrorMessages[ErrorTypeClaudeUnavailable]
+	if !contains(claudeMsg, "Claude CLI") {
+		t.Error("Claude unavailable message should mention Claude CLI")
+	}
+
+	timeoutMsg := ErrorMessages[ErrorTypeNetworkTimeout]
+	if !contains(timeoutMsg, "timed out") || !contains(timeoutMsg, "Retrying") {
+		t.Error("Timeout message should mention timed out and retrying")
+	}
+
+	permMsg := ErrorMessages[ErrorTypePermissionError]
+	if !contains(permMsg, "Permission") || !contains(permMsg, "authentication") {
+		t.Error("Permission message should mention permission and authentication")
+	}
+}
+
+func TestClassifyError(t *testing.T) {
+	service := NewClaudeService()
+
+	testCases := []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
+		{
+			name:     "timeout error",
+			errMsg:   "context deadline exceeded",
+			output:   "",
+			expected: ErrorTypeNetworkTimeout,
+		},
+		{
+			name:     "command timeout",
+			errMsg:   "operation timeout",
+			output:   "",
+			expected: ErrorTypeNetworkTimeout,
+		},
+		{
+			name:     "permission denied in output",
+			errMsg:   "exit status 1",
+			output:   "permission denied",
+			expected: ErrorTypePermissionError,
+		},
+		{
+			name:     "unauthorized in output",
+			errMsg:   "exit status 1",
+			output:   "unauthorized access",
+			expected: ErrorTypePermissionError,
+		},
+		{
+			name:     "authentication error",
+			errMsg:   "exit status 1",
+			output:   "authentication failed",
+			expected: ErrorTypePermissionError,
+		},
+		{
+			name:     "executable not found",
+			errMsg:   "executable file not found in $PATH",
+			output:   "",
+			expected: ErrorTypeClaudeUnavailable,
+		},
+		{
+			name:     "command not found in output",
+			errMsg:   "exit status 127",
+			output:   "command not found",
+			expected: ErrorTypeClaudeUnavailable,
+		},
+		{
+			name:     "not recognized in output",
+			errMsg:   "exit status 1",
+			output:   "'claude' is not recognized as an internal or external command",
+			expected: ErrorTypeClaudeUnavailable,
+		},
+		{
+			name:     "unknown error",
+			errMsg:   "some other error",
+			output:   "unexpected output",
+			expected: ErrorTypeUnknownError,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a mock error
+			mockErr := &mockError{msg: tc.errMsg}
+			result := service.classifyError(mockErr, tc.output)
+			if result != tc.expected {
+				t.Errorf("classifyError() = %s, expected %s", result, tc.expected)
+			}
+		})
+	}
+}
+
+// Mock error type for testing
+type mockError struct {
+	msg string
+}
+
+func (m *mockError) Error() string {
+	return m.msg
+}
+
+func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
+	service := NewClaudeService()
+	ctx := context.Background()
+
+	// Create a very short timeout context to simulate unavailable Claude
+	ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+	defer cancel()
+
+	result, err := service.ToggleMCPStatus(ctxShort, "test-mcp", true)
+
+	// Should return result, not error
+	if err != nil {
+		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
+	}
+
+	if result == nil {
+		t.Fatal("ToggleMCPStatus should return result")
+	}
+
+	if result.Success {
+		t.Log("Toggle succeeded despite short timeout - very fast system")
+	} else {
+		// Expected behavior with short timeout
+		if result.ErrorType != ErrorTypeClaudeUnavailable && result.ErrorType != ErrorTypeNetworkTimeout {
+			t.Errorf("Expected error type CLAUDE_UNAVAILABLE or NETWORK_TIMEOUT, got %s", result.ErrorType)
+		}
+
+		if result.ErrorMsg == "" {
+			t.Error("Error message should not be empty when toggle fails")
+		}
+
+		if result.MCPName != "test-mcp" {
+			t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
+		}
+	}
+
+	if result.Duration == 0 {
+		t.Error("Duration should be set")
+	}
+}
+
+func TestToggleMCPStatusSuccessCase(t *testing.T) {
+	// This test can't easily test success without mocking the exec.Command
+	// So we test the structure and error paths
+	service := NewClaudeService()
+	ctx := context.Background()
+
+	// Test activation
+	result, err := service.ToggleMCPStatus(ctx, "test-mcp", true)
+	if err != nil {
+		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
+	}
+	if result == nil {
+		t.Fatal("ToggleMCPStatus should return result")
+	}
+	if result.MCPName != "test-mcp" {
+		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
+	}
+
+	// Test deactivation
+	result2, err := service.ToggleMCPStatus(ctx, "test-mcp", false)
+	if err != nil {
+		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
+	}
+	if result2 == nil {
+		t.Fatal("ToggleMCPStatus should return result")
+	}
+	if result2.MCPName != "test-mcp" {
+		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result2.MCPName)
+	}
+}
+
+func TestRetryToggleOperation(t *testing.T) {
+	service := NewClaudeService()
+	ctx := context.Background()
+
+	// Test with already expired time budget
+	expiredStart := time.Now().Add(-25 * time.Second)
+	result, err := service.retryToggleOperation(ctx, "test-mcp", true, expiredStart)
+
+	if err == nil {
+		t.Error("Expected error when time budget exceeded")
+	}
+
+	if result == nil {
+		t.Fatal("Should return result even on error")
+	}
+
+	if result.Success {
+		t.Error("Should not succeed when time budget exceeded")
+	}
+
+	if result.ErrorType != ErrorTypeNetworkTimeout {
+		t.Errorf("Expected NETWORK_TIMEOUT error, got %s", result.ErrorType)
+	}
+}
+
+func BenchmarkToggleMCPStatus(b *testing.B) {
+	service := NewClaudeService()
+	ctx := context.Background()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Use very short timeout to avoid actually calling Claude CLI
+		ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
+		_, _ = service.ToggleMCPStatus(ctxShort, "test-mcp", true)
+		cancel()
+	}
+}
+
+func BenchmarkClassifyError(b *testing.B) {
+	service := NewClaudeService()
+	mockErr := &mockError{msg: "context deadline exceeded"}
+	output := "some command output"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = service.classifyError(mockErr, output)
+	}
+}

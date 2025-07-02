@@ -73,15 +73,14 @@ func TestRenderFooter(t *testing.T) {
 			},
 		},
 		{
-			name:         "No search shows default footer",
+			name:         "No search shows default footer with Claude status",
 			searchActive: false,
 			searchQuery:  "",
 			width:        100,
 			height:       30,
 			expectedContains: []string{
 				"Terminal: 100x30",
-				"Use arrow keys to navigate",
-				"Tab or / for search",
+				"Claude CLI:",
 			},
 		},
 	}

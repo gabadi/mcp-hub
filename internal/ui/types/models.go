@@ -16,6 +16,17 @@ const (
 	ModalActive
 )
 
+// ToggleOperationState represents the current toggle operation state
+type ToggleOperationState int
+
+const (
+	ToggleIdle ToggleOperationState = iota
+	ToggleLoading
+	ToggleSuccess
+	ToggleError
+	ToggleRetrying
+)
+
 // Model represents the main application model
 type Model struct {
 	// Window dimensions
@@ -63,6 +74,14 @@ type Model struct {
 	ClaudeStatus    ClaudeStatus
 	LastClaudeSync  time.Time
 	ClaudeSyncError string
+
+	// Toggle operation state (Epic 2 Story 2)
+	ToggleState        ToggleOperationState
+	ToggleMCPName      string
+	ToggleError        string
+	ToggleRetrying     bool
+	LastToggleSync     time.Time
+	ToggleStartTime    time.Time
 }
 
 // ModalType represents the type of modal being displayed

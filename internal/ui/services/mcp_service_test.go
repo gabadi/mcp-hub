@@ -85,40 +85,46 @@ func TestGetFilteredMCPs(t *testing.T) {
 }
 
 func TestToggleMCPStatus(t *testing.T) {
+	// Note: Enhanced ToggleMCPStatus only sets loading state, doesn't actually toggle immediately
 	tests := []struct {
-		name            string
-		selectedItem    int
-		searchQuery     string
-		expectedActive  bool
-		expectedChanged string
+		name             string
+		selectedItem     int
+		searchQuery      string
+		claudeAvailable  bool
+		expectedState    types.ToggleOperationState
+		expectedMCPName  string
 	}{
 		{
-			name:            "Toggle active MCP to inactive",
+			name:            "Toggle with Claude available - should set loading state",
 			selectedItem:    0, // context7 (active)
 			searchQuery:     "",
-			expectedActive:  false,
-			expectedChanged: "context7",
+			claudeAvailable: true,
+			expectedState:   types.ToggleLoading,
+			expectedMCPName: "context7",
 		},
 		{
-			name:            "Toggle inactive MCP to active",
+			name:            "Toggle with Claude unavailable - should error",
 			selectedItem:    2, // ht-mcp (inactive)
 			searchQuery:     "",
-			expectedActive:  true,
-			expectedChanged: "ht-mcp",
+			claudeAvailable: false,
+			expectedState:   types.ToggleError,
+			expectedMCPName: "ht-mcp",
 		},
 		{
 			name:            "Toggle with filtered results",
 			selectedItem:    0, // first in filtered results
 			searchQuery:     "github",
-			expectedActive:  false, // github-mcp starts active
-			expectedChanged: "github-mcp",
+			claudeAvailable: true,
+			expectedState:   types.ToggleLoading,
+			expectedMCPName: "github-mcp",
 		},
 		{
 			name:            "Toggle with out of bounds selection",
 			selectedItem:    10, // beyond array bounds
 			searchQuery:     "",
-			expectedActive:  true, // context7 should remain unchanged
-			expectedChanged: "context7",
+			claudeAvailable: true,
+			expectedState:   types.ToggleIdle, // should remain idle
+			expectedMCPName: "", // no MCP selected
 		},
 	}
 
@@ -127,38 +133,17 @@ func TestToggleMCPStatus(t *testing.T) {
 			model := createTestModel()
 			model.SelectedItem = tt.selectedItem
 			model.SearchQuery = tt.searchQuery
-
-			// Store original state for comparison
-			originalStates := make(map[string]bool)
-			for _, item := range model.MCPItems {
-				originalStates[item.Name] = item.Active
-			}
+			model.ClaudeAvailable = tt.claudeAvailable
+			model.ToggleState = types.ToggleIdle // Start with idle state
 
 			updatedModel := ToggleMCPStatus(model)
 
-			// Find the expected changed item
-			var changedItem *types.MCPItem
-			for i := range updatedModel.MCPItems {
-				if updatedModel.MCPItems[i].Name == tt.expectedChanged {
-					changedItem = &updatedModel.MCPItems[i]
-					break
-				}
+			if updatedModel.ToggleState != tt.expectedState {
+				t.Errorf("ToggleMCPStatus() state = %v, expected %v", updatedModel.ToggleState, tt.expectedState)
 			}
 
-			if changedItem == nil {
-				t.Fatalf("Could not find expected changed item: %s", tt.expectedChanged)
-			}
-
-			// For out of bounds test, verify no change occurred
-			if tt.selectedItem >= len(GetFilteredMCPs(model)) {
-				if changedItem.Active != originalStates[tt.expectedChanged] {
-					t.Errorf("ToggleMCPStatus() with out of bounds selection should not change status")
-				}
-			} else {
-				if changedItem.Active != tt.expectedActive {
-					t.Errorf("ToggleMCPStatus() changed %s to %v, expected %v",
-						tt.expectedChanged, changedItem.Active, tt.expectedActive)
-				}
+			if updatedModel.ToggleMCPName != tt.expectedMCPName {
+				t.Errorf("ToggleMCPStatus() MCPName = %q, expected %q", updatedModel.ToggleMCPName, tt.expectedMCPName)
 			}
 		})
 	}
@@ -314,12 +299,19 @@ func TestMCPServiceBoundaryConditions(t *testing.T) {
 	t.Run("ToggleMCPStatus at exact boundary", func(t *testing.T) {
 		model := createTestModel()
 		model.SelectedItem = len(model.MCPItems) - 1 // exactly at last valid index
+		model.ClaudeAvailable = true
+		model.ToggleState = types.ToggleIdle
 
-		originalActive := model.MCPItems[model.SelectedItem].Active
 		result := ToggleMCPStatus(model)
 
-		if result.MCPItems[model.SelectedItem].Active == originalActive {
-			t.Errorf("ToggleMCPStatus() should toggle status at boundary")
+		// Enhanced toggle should set loading state, not immediately toggle
+		if result.ToggleState != types.ToggleLoading {
+			t.Errorf("ToggleMCPStatus() should set loading state at boundary")
+		}
+		
+		expectedMCPName := model.MCPItems[model.SelectedItem].Name
+		if result.ToggleMCPName != expectedMCPName {
+			t.Errorf("ToggleMCPStatus() should set correct MCP name at boundary")
 		}
 	})
 
@@ -333,4 +325,170 @@ func TestMCPServiceBoundaryConditions(t *testing.T) {
 			t.Errorf("GetSelectedMCP() should return valid item at boundary")
 		}
 	})
+}
+
+// Epic 2 Story 2 Tests - Enhanced Toggle Functionality
+
+func createTestModelWithClaudeStatus(claudeAvailable bool) types.Model {
+	model := createTestModel()
+	model.ClaudeAvailable = claudeAvailable
+	model.ToggleState = types.ToggleIdle
+	return model
+}
+
+func TestToggleMCPStatusEnhanced(t *testing.T) {
+	tests := []struct {
+		name            string
+		claudeAvailable bool
+		selectedItem    int
+		expectedState   types.ToggleOperationState
+		expectError     bool
+	}{
+		{
+			name:            "Claude available - should start loading",
+			claudeAvailable: true,
+			selectedItem:    0,
+			expectedState:   types.ToggleLoading,
+			expectError:     false,
+		},
+		{
+			name:            "Claude unavailable - should error immediately",
+			claudeAvailable: false,
+			selectedItem:    0,
+			expectedState:   types.ToggleError,
+			expectError:     true,
+		},
+		{
+			name:            "No MCP selected - no change",
+			claudeAvailable: true,
+			selectedItem:    -1,
+			expectedState:   types.ToggleIdle,
+			expectError:     false,
+		},
+		{
+			name:            "Out of bounds selection - no change",
+			claudeAvailable: true,
+			selectedItem:    100,
+			expectedState:   types.ToggleIdle,
+			expectError:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := createTestModelWithClaudeStatus(tt.claudeAvailable)
+			model.SelectedItem = tt.selectedItem
+
+			result := ToggleMCPStatus(model)
+
+			if result.ToggleState != tt.expectedState {
+				t.Errorf("ToggleMCPStatus() state = %v, expected %v", result.ToggleState, tt.expectedState)
+			}
+
+			if tt.expectError && result.ToggleError == "" {
+				t.Error("ToggleMCPStatus() should set error message when Claude unavailable")
+			}
+
+			if !tt.expectError && result.ToggleError != "" && result.ToggleState != types.ToggleIdle {
+				t.Errorf("ToggleMCPStatus() should not set error when Claude available, got: %s", result.ToggleError)
+			}
+
+			// Check MCP name is set when appropriate
+			if tt.expectedState == types.ToggleLoading || tt.expectedState == types.ToggleError {
+				if tt.selectedItem >= 0 && tt.selectedItem < len(model.MCPItems) {
+					expectedMCPName := model.MCPItems[tt.selectedItem].Name
+					if result.ToggleMCPName != expectedMCPName {
+						t.Errorf("ToggleMCPStatus() MCPName = %s, expected %s", result.ToggleMCPName, expectedMCPName)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestEnhancedToggleMCPStatus(t *testing.T) {
+	tests := []struct {
+		name     string
+		mcpName  string
+		activate bool
+	}{
+		{
+			name:     "Activate MCP",
+			mcpName:  "test-mcp",
+			activate: true,
+		},
+		{
+			name:     "Deactivate MCP",
+			mcpName:  "test-mcp",
+			activate: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := createTestModelWithClaudeStatus(true)
+			// Add the test MCP to the model
+			model.MCPItems = append(model.MCPItems, types.MCPItem{
+				Name:   tt.mcpName,
+				Active: !tt.activate, // Set opposite of what we want to test toggle
+			})
+
+			result := EnhancedToggleMCPStatus(model, tt.mcpName, tt.activate)
+
+			// The result depends on whether Claude CLI is actually available
+			// Since we can't easily mock exec.Command, we check the structure
+			if result.ToggleMCPName != tt.mcpName {
+				t.Errorf("EnhancedToggleMCPStatus() MCPName = %s, expected %s", result.ToggleMCPName, tt.mcpName)
+			}
+
+			// Toggle state should be success, error, or retrying
+			validStates := []types.ToggleOperationState{
+				types.ToggleSuccess,
+				types.ToggleError,
+				types.ToggleRetrying,
+			}
+			stateValid := false
+			for _, state := range validStates {
+				if result.ToggleState == state {
+					stateValid = true
+					break
+				}
+			}
+			if !stateValid {
+				t.Errorf("EnhancedToggleMCPStatus() state = %v, expected one of %v", result.ToggleState, validStates)
+			}
+		})
+	}
+}
+
+func TestLegacyToggleMCPStatus(t *testing.T) {
+	// Test that legacy function still works for backward compatibility
+	model := createTestModel()
+	originalActive := model.MCPItems[0].Active
+
+	result := LegacyToggleMCPStatus(model)
+
+	// Should toggle the first MCP
+	if result.MCPItems[0].Active == originalActive {
+		t.Error("LegacyToggleMCPStatus() should toggle MCP status")
+	}
+}
+
+// Benchmark tests for enhanced functionality
+func BenchmarkToggleMCPStatusEnhanced(b *testing.B) {
+	model := createTestModelWithClaudeStatus(true)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ToggleMCPStatus(model)
+	}
+}
+
+func BenchmarkEnhancedToggleMCPStatus(b *testing.B) {
+	model := createTestModelWithClaudeStatus(true)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = EnhancedToggleMCPStatus(model, "test-mcp", true)
+	}
 }

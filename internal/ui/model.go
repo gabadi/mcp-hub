@@ -90,6 +90,44 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Model.SuccessMessage = "Claude CLI not available"
 			m.Model.SuccessTimer = 180 // Show message for 3 seconds
 		}
+
+	case handlers.ToggleResultMsg:
+		// Handle enhanced toggle operation results (Epic 2 Story 2)
+		if msg.Success {
+			// Update local MCP status and save
+			for i := range m.Model.MCPItems {
+				if m.Model.MCPItems[i].Name == msg.MCPName {
+					m.Model.MCPItems[i].Active = msg.Activate
+					break
+				}
+			}
+			
+			if err := services.SaveInventory(m.Model.MCPItems); err != nil {
+				m.Model.ToggleState = types.ToggleError
+				m.Model.ToggleError = "MCP toggled but failed to save to storage"
+			} else {
+				m.Model.ToggleState = types.ToggleSuccess
+				activationState := "deactivated"
+				if msg.Activate {
+					activationState = "activated"
+				}
+				m.Model.SuccessMessage = fmt.Sprintf("MCP '%s' %s successfully", msg.MCPName, activationState)
+				m.Model.SuccessTimer = 120
+			}
+		} else {
+			// Handle toggle error
+			if msg.Retrying {
+				m.Model.ToggleState = types.ToggleRetrying
+				m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed, retrying: %s", msg.Error)
+				m.Model.SuccessTimer = 180
+			} else {
+				m.Model.ToggleState = types.ToggleError
+				m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed: %s", msg.Error)
+				m.Model.SuccessTimer = 240
+			}
+			m.Model.ToggleError = msg.Error
+		}
+		m.Model.ToggleMCPName = msg.MCPName
 	}
 
 	return m, nil

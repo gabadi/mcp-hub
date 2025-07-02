@@ -156,7 +156,7 @@ func TestView_StateTransitions(t *testing.T) {
 				"A=Add", "D=Delete", "E=Edit", "/=Search", "ESC=Exit",
 			},
 			expectedFooter: []string{
-				"Use arrow keys to navigate",
+				"Claude CLI:",
 			},
 		},
 		{
