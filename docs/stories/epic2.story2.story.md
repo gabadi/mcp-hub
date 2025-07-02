@@ -1,6 +1,8 @@
 # Story 2.2: MCP Activation Toggle with Enhanced Error Handling
 
-## Status: Complete
+## Status: Complete - Delivered
+
+**PR Created:** https://github.com/gabadi/cc-mcp-manager/pull/11
 
 ## Implementation Completed
 
