@@ -50,7 +50,7 @@ func NewModel() Model {
 func (m Model) Init() tea.Cmd {
 	// Start startup loading overlay
 	m.Model.StartLoadingOverlay(types.LoadingStartup)
-	
+
 	// Return batch of commands for startup
 	return tea.Batch(
 		handlers.StartupLoadingCmd(),
@@ -256,11 +256,11 @@ func (m Model) handleLoadingSpinnerMsg(msg types.LoadingSpinnerMsg) (tea.Model, 
 	if m.Model.IsLoadingOverlayActive() {
 		// Advance spinner animation
 		m.Model.AdvanceSpinner()
-		
+
 		// Continue spinner animation
 		return m, handlers.LoadingSpinnerCmd(msg.Type)
 	}
-	
+
 	return m, nil
 }
 

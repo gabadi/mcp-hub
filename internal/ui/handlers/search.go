@@ -12,7 +12,7 @@ func HandleEscKey(model types.Model) (types.Model, tea.Cmd) {
 	if model.IsLoadingOverlayActive() {
 		return handleLoadingCancellation(model)
 	}
-	
+
 	switch model.State {
 	case types.SearchMode:
 		// Clear search and return to main navigation
@@ -63,10 +63,10 @@ func handleLoadingCancellation(model types.Model) (types.Model, tea.Cmd) {
 
 	// For now, we'll implement simple cancellation without confirmation prompt
 	// This can be enhanced later to show "Cancel operation? [Y/N]" prompt
-	
+
 	loadingType := model.LoadingOverlay.Type
 	model.StopLoadingOverlay()
-	
+
 	switch loadingType {
 	case types.LoadingStartup:
 		// For startup cancellation, exit the application

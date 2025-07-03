@@ -138,7 +138,7 @@ func handleDeleteMCP(model types.Model) types.Model {
 func handleRefreshAction(model types.Model) (types.Model, tea.Cmd) {
 	// Start refresh loading overlay
 	model.StartLoadingOverlay(types.LoadingRefresh)
-	
+
 	// Return batch of commands for refresh
 	return model, tea.Batch(
 		RefreshLoadingCmd(),
@@ -504,11 +504,11 @@ func StartupLoadingProgressCmd(step int) tea.Cmd {
 		"Detecting Claude CLI...",
 		"Ready!",
 	}
-	
+
 	if step >= len(messages) {
 		step = len(messages) - 1
 	}
-	
+
 	// Return immediate message for current step
 	return func() tea.Msg {
 		return types.LoadingProgressMsg{
@@ -543,11 +543,11 @@ func RefreshLoadingProgressCmd(step int) tea.Cmd {
 		"Updating display...",
 		"Complete!",
 	}
-	
+
 	if step >= len(messages) {
 		step = len(messages) - 1
 	}
-	
+
 	// Return immediate message for current step
 	return func() tea.Msg {
 		return types.LoadingProgressMsg{

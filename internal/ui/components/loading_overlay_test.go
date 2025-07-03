@@ -14,7 +14,7 @@ func TestRenderLoadingOverlay(t *testing.T) {
 	}
 	baseContent := "Base Content"
 	result := RenderLoadingOverlay(model, 80, 24, baseContent)
-	
+
 	if result != baseContent {
 		t.Errorf("Expected base content when no loading overlay, got: %s", result)
 	}
@@ -24,7 +24,7 @@ func TestRenderLoadingOverlay(t *testing.T) {
 		Active: false,
 	}
 	result = RenderLoadingOverlay(model, 80, 24, baseContent)
-	
+
 	if result != baseContent {
 		t.Errorf("Expected base content when loading overlay inactive, got: %s", result)
 	}
@@ -38,11 +38,11 @@ func TestRenderLoadingOverlay(t *testing.T) {
 		Type:        types.LoadingStartup,
 	}
 	result = RenderLoadingOverlay(model, 80, 24, baseContent)
-	
+
 	if result == baseContent {
 		t.Error("Expected modified content when loading overlay active")
 	}
-	
+
 	// Check that the result contains the loading message
 	if !strings.Contains(result, "Test loading message") {
 		t.Error("Expected loading message to be present in result")
@@ -64,7 +64,7 @@ func TestRenderLoadingDialog(t *testing.T) {
 	if !strings.Contains(result, "Test message") {
 		t.Error("Expected dialog to contain message")
 	}
-	
+
 	if !strings.Contains(result, "ESC to cancel") {
 		t.Error("Expected dialog to contain cancel instruction")
 	}
@@ -85,11 +85,11 @@ func TestGetLoadingMessages(t *testing.T) {
 		"Detecting Claude CLI...",
 		"Ready!",
 	}
-	
+
 	if len(startupMessages) != len(expectedStartup) {
 		t.Errorf("Expected %d startup messages, got %d", len(expectedStartup), len(startupMessages))
 	}
-	
+
 	for i, expected := range expectedStartup {
 		if startupMessages[i] != expected {
 			t.Errorf("Expected startup message %d to be '%s', got '%s'", i, expected, startupMessages[i])
@@ -104,11 +104,11 @@ func TestGetLoadingMessages(t *testing.T) {
 		"Updating display...",
 		"Complete!",
 	}
-	
+
 	if len(refreshMessages) != len(expectedRefresh) {
 		t.Errorf("Expected %d refresh messages, got %d", len(expectedRefresh), len(refreshMessages))
 	}
-	
+
 	for i, expected := range expectedRefresh {
 		if refreshMessages[i] != expected {
 			t.Errorf("Expected refresh message %d to be '%s', got '%s'", i, expected, refreshMessages[i])
@@ -146,3 +146,4 @@ func TestSpinnerStateGetSpinnerChar(t *testing.T) {
 		t.Error("Expected default spinner state to return '◐'")
 	}
 }
+
