@@ -48,8 +48,14 @@ func NewModel() Model {
 
 // Init initializes the application and returns initial commands
 func (m Model) Init() tea.Cmd {
-	// Initialize Claude status on startup
-	return handlers.RefreshClaudeStatusCmd()
+	// Start startup loading overlay
+	m.Model.StartLoadingOverlay(types.LoadingStartup)
+	
+	// Return batch of commands for startup
+	return tea.Batch(
+		handlers.StartupLoadingCmd(),
+		handlers.LoadingSpinnerCmd(types.LoadingStartup),
+	)
 }
 
 // Update handles messages and updates the model
@@ -67,6 +73,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleToggleResultMsg(msg)
 	case types.TimerTickMsg:
 		return m.handleTimerTickMsg(msg)
+	case types.LoadingProgressMsg:
+		return m.handleLoadingProgressMsg(msg)
+	case types.LoadingSpinnerMsg:
+		return m.handleLoadingSpinnerMsg(msg)
 	}
 	return m, nil
 }
@@ -203,6 +213,32 @@ func (m Model) handleTimerTickMsg(msg types.TimerTickMsg) (tea.Model, tea.Cmd) {
 		return m, handlers.TimerCmd("success_timer")
 	}
 
+	return m, nil
+}
+
+// handleLoadingProgressMsg handles loading progress messages
+func (m Model) handleLoadingProgressMsg(msg types.LoadingProgressMsg) (tea.Model, tea.Cmd) {
+	if msg.Done {
+		// Loading is complete
+		m.Model.StopLoadingOverlay()
+		return m, nil
+	}
+
+	// Update loading message
+	m.Model.UpdateLoadingMessage(msg.Message)
+	return m, nil
+}
+
+// handleLoadingSpinnerMsg handles loading spinner animation messages
+func (m Model) handleLoadingSpinnerMsg(msg types.LoadingSpinnerMsg) (tea.Model, tea.Cmd) {
+	if m.Model.IsLoadingOverlayActive() {
+		// Advance spinner animation
+		m.Model.AdvanceSpinner()
+		
+		// Continue spinner animation
+		return m, handlers.LoadingSpinnerCmd(msg.Type)
+	}
+	
 	return m, nil
 }
 

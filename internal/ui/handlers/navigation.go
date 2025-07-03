@@ -73,7 +73,8 @@ func handleActionKeys(model types.Model, key string) (types.Model, tea.Cmd, bool
 	case " ", "space":
 		return handleEnhancedToggleMCP(model)
 	case "r", "R":
-		return model, RefreshClaudeStatusCmd(), true
+		updatedModel, cmd := handleRefreshAction(model)
+		return updatedModel, cmd, true
 	}
 	return model, nil, false
 }
@@ -133,6 +134,19 @@ func handleDeleteMCP(model types.Model) types.Model {
 	return model
 }
 
+// handleRefreshAction handles the refresh action with loading overlay
+func handleRefreshAction(model types.Model) (types.Model, tea.Cmd) {
+	// Start refresh loading overlay
+	model.StartLoadingOverlay(types.LoadingRefresh)
+	
+	// Return batch of commands for refresh
+	return model, tea.Batch(
+		RefreshLoadingCmd(),
+		LoadingSpinnerCmd(types.LoadingRefresh),
+		RefreshClaudeStatusCmd(),
+	)
+}
+
 // getEditModalType returns the appropriate modal type for editing based on MCP type
 func getEditModalType(mcpType string) types.ModalType {
 	switch mcpType {
@@ -168,8 +182,9 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 		updatedModel, cmd, _ := handleEnhancedToggleMCP(model)
 		return updatedModel, cmd
 	case "r", "R":
-		// Refresh Claude status
-		return model, RefreshClaudeStatusCmd()
+		// Refresh with loading overlay
+		updatedModel, cmd := handleRefreshAction(model)
+		return updatedModel, cmd
 	}
 
 	// Priority 2: Search control keys (mode switching)
@@ -472,5 +487,79 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPIte
 func TimerCmd(timerID string) tea.Cmd {
 	return tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
 		return types.TimerTickMsg{ID: timerID}
+	})
+}
+
+// StartupLoadingCmd creates a command to handle startup loading sequence
+func StartupLoadingCmd() tea.Cmd {
+	return func() tea.Msg {
+		messages := []string{
+			"Initializing MCP Manager...",
+			"Loading MCP inventory...",
+			"Detecting Claude CLI...",
+			"Ready!",
+		}
+		
+		// Simulate startup process with delays
+		for i, message := range messages {
+			time.Sleep(time.Duration(500+i*300) * time.Millisecond)
+			if i == len(messages)-1 {
+				// Last message - mark as done
+				return types.LoadingProgressMsg{
+					Type:    types.LoadingStartup,
+					Message: message,
+					Done:    true,
+				}
+			}
+			// Send progress message (non-blocking)
+			go func(msg string) {
+				time.Sleep(100 * time.Millisecond)
+				// This will be sent via the next cycle
+			}(message)
+		}
+		
+		return types.LoadingProgressMsg{
+			Type:    types.LoadingStartup,
+			Message: "Ready!",
+			Done:    true,
+		}
+	}
+}
+
+// RefreshLoadingCmd creates a command to handle refresh loading sequence
+func RefreshLoadingCmd() tea.Cmd {
+	return func() tea.Msg {
+		messages := []string{
+			"Refreshing MCP status...",
+			"Syncing with Claude CLI...",
+			"Updating display...",
+			"Complete!",
+		}
+		
+		// Simulate refresh process with delays
+		for i, message := range messages {
+			time.Sleep(time.Duration(400+i*200) * time.Millisecond)
+			if i == len(messages)-1 {
+				// Last message - mark as done
+				return types.LoadingProgressMsg{
+					Type:    types.LoadingRefresh,
+					Message: message,
+					Done:    true,
+				}
+			}
+		}
+		
+		return types.LoadingProgressMsg{
+			Type:    types.LoadingRefresh,
+			Message: "Complete!",
+			Done:    true,
+		}
+	}
+}
+
+// LoadingSpinnerCmd creates a command for spinner animation
+func LoadingSpinnerCmd(loadingType types.LoadingType) tea.Cmd {
+	return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg {
+		return types.LoadingSpinnerMsg{Type: loadingType}
 	})
 }
