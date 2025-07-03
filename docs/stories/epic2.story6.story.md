@@ -1,4 +1,4 @@
-# Story 2.6: Enhanced Loading State Feedback System
+# Story 2.6: App Startup and Refresh Loading Feedback
 
 ## Status: Ready for Development
 
@@ -14,463 +14,242 @@
 ## Story
 
 As a developer using the MCP Manager CLI,
-I want clear, comprehensive feedback during all loading and background operations,
-so that I understand system status, can respond appropriately to delays or issues, and maintain confidence in the application's responsiveness.
+I want clear feedback during app startup and refresh ('R') operations,
+so that I know the app is working and not frozen during these critical loading moments.
 
 ## Business Context
 
-This story addresses the critical UX gap in operation feedback identified in Epic 2 user testing. Based on developer feedback analysis, 65% of perceived "application freezing" issues stem from lack of loading state visibility, 25% from unclear operation status, and 15% from inability to cancel long-running operations. This comprehensive loading system will eliminate user uncertainty and provide professional-grade feedback across all operations.
+This story addresses the specific user pain points identified in Epic 2 user testing: confusion during app startup and refresh operations. Users report uncertainty about whether the app is working or frozen during these 3-10+ second operations. This focused loading system will provide clear feedback for these two critical scenarios only.
 
 **Epic Context:** Epic 2 - Enhanced MCP Management & Claude Integration  
 **Prerequisites:** Stories 2.1 (Claude Detection) & 2.2 (MCP Toggle) - COMPLETED  
-**Timeline:** 6-8 days (MVP scope with embedded UX specifications)  
-**Strategic Value:** Eliminates user confusion and perceived application reliability issues
+**Timeline:** 6-7 hours (Focused scope - startup and refresh only)  
+**Strategic Value:** Eliminates user confusion during app startup and refresh operations while preserving the well-functioning individual toggle UX from Story 2.2
 
-## Acceptance Criteria (MVP Focus)
+## Acceptance Criteria (Focused Scope)
 
-### AC1: Progressive Application Startup Loading
+### AC1: Application Startup Loading Overlay
 - **Given** the application is launched
-- **When** startup operations are performed
-- **Then** a loading overlay shows progressive status messages:
-  - Phase 1: "Initializing MCP Manager..." (0-500ms)
-  - Phase 2: "Loading MCP inventory..." (500ms-1.5s)
-  - Phase 3: "Detecting Claude CLI..." (1.5s-3s)
-  - Phase 4: "Synchronizing MCP status..." (3s-5s)
-- **And** each phase shows completion checkmark (✓) before proceeding
-- **And** total startup loading does not exceed 6 seconds
-- **And** if any phase fails, specific error message replaces loading
+- **When** startup operations are performed (typically 3-6 seconds)
+- **Then** a loading overlay appears with simple progress messages:
+  - "Initializing MCP Manager..."
+  - "Loading MCP inventory..."
+  - "Detecting Claude CLI..."
+  - "Ready!"
+- **And** messages progress automatically without specific timing
+- **And** overlay disappears when startup completes
+- **And** if startup fails, clear error message is shown
 
-### AC2: MCP Operation Loading States
-- **Given** user initiates MCP operations (toggle, add, edit, delete)
-- **When** operation is in progress
-- **Then** targeted loading indicator appears over affected MCP item
-- **And** loading message describes specific operation:
-  - "Activating [MCP-name]..." / "Deactivating [MCP-name]..."
-  - "Adding [MCP-name] to inventory..." 
-  - "Updating [MCP-name] configuration..."
-  - "Removing [MCP-name] from inventory..."
-- **And** loading spinner animates smoothly beside operation text
-- **And** operation completes with success (✓) or error (✗) indicator
-- **And** loading state clears within 2 seconds of completion
+### AC2: Refresh ('R') Operation Loading Overlay
+- **Given** user presses 'R' to refresh
+- **When** refresh operation is in progress (typically 5-15 seconds)
+- **Then** a loading overlay appears with progress messages:
+  - "Refreshing MCP status..."
+  - "Syncing with Claude CLI..."
+  - "Updating display..."
+  - "Complete!"
+- **And** messages show the refresh is working, not frozen
+- **And** overlay disappears when refresh completes
+- **And** if refresh fails, clear error message with retry option is shown
 
-### AC3: Background Sync Progress Indicators
-- **Given** background Claude CLI sync operations occur
-- **When** sync is in progress
-- **Then** unobtrusive progress indicator appears in status bar
-- **And** status shows "Syncing with Claude..." with animated dots
-- **And** sync completion updates status bar with "Last sync: [timestamp]"
-- **And** sync errors show persistent warning indicator until resolved
-- **And** manual refresh (R key) triggers visible sync with same indicators
-
-### AC4: Long-Running Operation Feedback
-- **Given** any operation exceeds 3 seconds duration
-- **When** operation is still in progress
-- **Then** loading message updates with estimated time or progress detail:
-  - "Still working on [operation]... (3s elapsed)"
-  - "This may take a moment due to [reason]..."
-- **And** progress indicator shows extended operation state
-- **And** if operation exceeds 10 seconds, timeout warning appears
-- **And** if operation exceeds 15 seconds, automatic cancellation occurs
-
-### AC5: Universal Loading Cancellation
-- **Given** any loading operation is in progress
+### AC3: ESC Cancellation Support
+- **Given** startup or refresh loading overlay is active
 - **When** user presses ESC key
 - **Then** cancellation prompt appears: "Cancel operation? [Y/N]"
-- **And** confirming cancellation (Y) stops operation and shows "Operation cancelled"
-- **And** declining cancellation (N) returns to loading state
-- **And** application returns to stable previous state after cancellation
-- **And** critical operations (save/delete) warn before allowing cancellation
+- **And** confirming cancellation (Y) stops operation and returns to previous state
+- **And** declining cancellation (N) continues the loading operation
+- **And** startup cancellation exits the application safely
+- **And** refresh cancellation returns to the current MCP state
 
-### AC6: Loading State Visual Integration
-- **Given** loading operations are active
-- **When** user views the interface
-- **Then** loading overlays integrate seamlessly with existing UI:
-  - Dim background content during full-screen loading
-  - Preserve visual hierarchy and component structure
-  - Use consistent typography and color scheme
-  - Maintain accessibility with clear contrast ratios
-- **And** loading animations are smooth and non-distracting
-- **And** multiple concurrent loading states stack properly
-- **And** loading overlays never obscure critical navigation elements
+### AC4: Smooth Visual Integration
+- **Given** loading overlays are displayed
+- **When** user sees the interface
+- **Then** overlays integrate cleanly with existing UI:
+  - Semi-transparent background dims main content
+  - Loading dialog is centered and clearly visible
+  - Messages use consistent app typography and colors
+  - Smooth transitions when appearing/disappearing
+- **And** overlay never interferes with existing toggle UX from Story 2.2
+- **And** individual MCP loading states (⏳ → ✅/◦ → ●/○) remain unchanged
 
-## Embedded UX Specifications
+## Simplified UX Specifications
 
 ### Loading Overlay Visual Design
 
-#### Full-Screen Startup Loading Overlay
+#### Startup and Refresh Loading Overlay
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                                                                     │
-│                        MCP Manager Loading                          │
+│                        MCP Manager                                  │
 │                                                                     │
-│              ◐ Initializing MCP Manager...                         │
-│              ✓ Loading MCP inventory... (1.2s)                     │
-│              ◐ Detecting Claude CLI...                             │
-│              ○ Synchronizing MCP status...                         │
+│                    ◐ Initializing MCP Manager...                   │
 │                                                                     │
-│                     Press ESC to cancel startup                    │
+│                     Press ESC to cancel                            │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 **Visual Specifications:**
 - **Background**: Semi-transparent dark overlay (80% opacity) over main interface
-- **Dialog Box**: Centered modal with rounded corners and subtle drop shadow
-- **Dimensions**: 70 columns × 12 rows (responsive scaling)
-- **Typography**: Bold title, regular body text, consistent with app theme
-- **Colors**: Primary blue for active operations, green for completed, gray for pending
+- **Dialog Box**: Centered modal with clean, simple design
+- **Messages**: Single line showing current operation with animated spinner
+- **Typography**: Consistent with existing app theme
+- **Colors**: Simple blue spinner, standard text colors
+- **NO CHANGES**: Individual toggle UX (⏳ → ✅/◦ → ●/○) remains exactly as implemented in Story 2.2
 
-#### Item-Level Loading Indicator
-```
-┌─── MCP Manager ──────────────────────────────────────────────────────┐
-│ [A]dd [E]dit [D]elete [Space]Toggle [R]efresh [Q]uit │ 3/30 active    │
-├─────────────────────────────────────────────────────────────────────┤
-│ ● context7      ◐ github-mcp   ○ docker-mcp    ○ redis-mcp           │
-│   [CMD]           Activating... [CMD]           [CMD]                │
-│ ● ht-mcp        ○ jira-mcp      ○ aws-mcp       ○ k8s-mcp            │
-│   [CMD]           [CMD]          [JSON]         [CMD]                │
-└─────────────────────────────────────────────────────────────────────┘
-```
+### Simple Loading Messages
 
-**Visual Specifications:**
-- **Spinner**: Rotating character sequence ◐◓◑◒ (4-frame animation, 200ms intervals)
-- **Operation Text**: Appears below MCP name in smaller, dimmed font
-- **Status Integration**: Replaces normal status indicator during operation
-- **Color Coding**: Blue spinner, gray operation text, maintains accessibility
+#### Startup Messages (3-6 seconds total)
+1. "Initializing MCP Manager..."
+2. "Loading MCP inventory..."
+3. "Detecting Claude CLI..."
+4. "Ready!"
 
-### Progressive Loading Phases
+#### Refresh Messages (5-15 seconds total)
+1. "Refreshing MCP status..."
+2. "Syncing with Claude CLI..."
+3. "Updating display..."
+4. "Complete!"
 
-#### Phase 1: Application Initialization (0-500ms)
-- **Message**: "Initializing MCP Manager..."
-- **Description**: Core application setup, configuration loading
-- **Visual**: Animated spinner, progress: 0-25%
-- **Error Fallback**: "Failed to initialize. Check permissions and try again."
+**Implementation Notes:**
+- Messages progress automatically based on actual operations
+- No complex timing or percentage calculations
+- Simple animated spinner (◐◓◑◒) beside current message
+- Clear error messages if operations fail
 
-#### Phase 2: MCP Inventory Loading (500ms-1.5s)
-- **Message**: "Loading MCP inventory..."
-- **Description**: Reading local JSON storage, parsing configurations
-- **Visual**: Animated spinner, progress: 25-50%
-- **Error Fallback**: "Could not load MCP inventory. Creating new inventory..."
+### Visual Indicators
 
-#### Phase 3: Claude CLI Detection (1.5s-3s)
-- **Message**: "Detecting Claude CLI..."
-- **Description**: System path search, CLI availability check
-- **Visual**: Animated spinner, progress: 50-75%
-- **Error Fallback**: "Claude CLI not found. Some features will be limited."
+#### Spinner Animation
+- **Loading Spinner**: ◐◓◑◒ (4-frame rotation, 200ms intervals)
+- **Used only for**: Current operation in loading overlay
 
-#### Phase 4: MCP Status Synchronization (3s-5s)
-- **Message**: "Synchronizing MCP status..."
-- **Description**: Query active MCPs, update status indicators
-- **Visual**: Animated spinner, progress: 75-100%
-- **Error Fallback**: "Sync failed. Using cached status. Press R to retry."
+#### Typography
+- **Title**: "MCP Manager" (consistent with app)
+- **Messages**: Regular text, same as existing UI
+- **Errors**: Clear, actionable error messages
 
-### Loading Message Hierarchy
+### Simple Cancellation UX
 
-#### System-Level Operations (High Priority)
-- Application startup and shutdown
-- Configuration loading and saving
-- Critical error recovery
+#### ESC Key Interaction
+1. **User presses ESC** during startup or refresh loading
+2. **Simple prompt**: "Cancel operation? [Y/N]"
+3. **User confirms (Y)** → Stop operation, exit app (startup) or return to current state (refresh)
+4. **User declines (N)** → Continue loading operation
+5. **No complex warnings** → These are safe operations to cancel
 
-**Message Format**: "[System Action]..."
-**Examples**: "Initializing MCP Manager...", "Saving configuration...", "Recovering from error..."
+### Simplified User Flows
 
-#### User-Initiated Operations (Medium Priority)
-- MCP activation/deactivation
-- Adding/editing/deleting MCPs
-- Manual refresh operations
+#### Startup Flow
+1. App launches → Show loading overlay
+2. Progress through startup messages
+3. Complete → Hide overlay, show main UI
+4. Error → Show error message with retry option
+5. ESC pressed → Cancel startup, exit app
 
-**Message Format**: "[Action] [Target]..."
-**Examples**: "Activating github-mcp...", "Adding new MCP...", "Refreshing status..."
+#### Refresh Flow
+1. User presses 'R' → Show loading overlay
+2. Progress through refresh messages
+3. Complete → Hide overlay, show updated UI
+4. Error → Show error message with retry option
+5. ESC pressed → Cancel refresh, return to current state
 
-#### Background Operations (Low Priority)
-- Automatic sync operations
-- Cache updates
-- Status polling
+## Simplified Technical Implementation
 
-**Message Format**: "[Background Action]..."
-**Examples**: "Syncing with Claude...", "Updating cache...", "Checking status..."
-
-### Visual Loading Indicators
-
-#### Spinner Animations
-- **Primary Spinner**: ◐◓◑◒ (4-frame rotation, 200ms intervals)
-- **Small Spinner**: ·∘○● (4-frame pulse, 150ms intervals)
-- **Status Dots**: . .. ... (3-frame ellipsis, 500ms intervals)
-
-#### Progress States
-- **Pending**: ○ (empty circle, gray)
-- **Active**: ◐ (spinner animation, blue)
-- **Complete**: ✓ (checkmark, green)
-- **Error**: ✗ (X mark, red)
-- **Warning**: ⚠ (triangle, yellow)
-
-#### Typography Specifications
-```
-┌─ Loading Message Typography ─┐
-│ Title: Bold, 14pt equivalent  │
-│ Message: Regular, 12pt equiv  │
-│ Detail: Light, 10pt equiv     │
-│ Error: Bold, 12pt equiv       │
-└───────────────────────────────┘
-```
-
-### Cancellation UX Patterns
-
-#### ESC Key Interaction Flow
-1. **User presses ESC** during any loading operation
-2. **Cancellation prompt appears**: Overlay modal with clear options
-3. **User confirms (Y)** → Operation stops, return to stable state
-4. **User declines (N)** → Return to loading state, continue operation
-5. **Timeout handling**: Auto-decline after 10 seconds of no input
-
-#### Critical Operation Protection
-```
-┌─── Cancel Operation? ────────────────────────────────────────────────┐
-│                                                                     │
-│  ⚠ Warning: This will interrupt MCP deletion                       │
-│                                                                     │
-│     Cancelling now may leave the system in an inconsistent state   │
-│                                                                     │
-│     Continue cancellation? [Y/N]                                   │
-│                                                                     │
-│     Y - Cancel anyway    N - Continue operation    ESC - Go back    │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### User Interaction Flows
-
-#### Startup Loading Flow
-```mermaid
-graph TD
-    Start[Application Launch] --> Init[Show Loading Overlay]
-    Init --> P1[Phase 1: Initialize]
-    P1 --> P1Check{Success?}
-    P1Check -->|Yes| P2[Phase 2: Load Inventory]
-    P1Check -->|No| P1Error[Show Error, Retry Option]
-    P2 --> P2Check{Success?}
-    P2Check -->|Yes| P3[Phase 3: Detect Claude]
-    P2Check -->|No| P2Error[Show Warning, Continue]
-    P3 --> P3Check{Success?}
-    P3Check -->|Yes| P4[Phase 4: Sync Status]
-    P3Check -->|No| P3Error[Show Warning, Continue]
-    P4 --> P4Check{Success?}
-    P4Check -->|Yes| Complete[Hide Overlay, Show Main UI]
-    P4Check -->|No| P4Error[Show Warning, Continue]
-    
-    P1Error --> Retry{User Retries?}
-    Retry -->|Yes| P1
-    Retry -->|No| Exit[Exit Application]
-```
-
-#### MCP Operation Loading Flow
-```mermaid
-graph TD
-    UserAction[User Triggers MCP Operation] --> ShowLoading[Show Item Loading State]
-    ShowLoading --> StartOp[Begin Operation]
-    StartOp --> CheckTime{Duration > 3s?}
-    CheckTime -->|No| CheckSuccess{Success?}
-    CheckTime -->|Yes| ShowExtended[Show Extended Loading Message]
-    ShowExtended --> CheckTimeout{Duration > 10s?}
-    CheckTimeout -->|No| CheckSuccess
-    CheckTimeout -->|Yes| ShowWarning[Show Timeout Warning]
-    ShowWarning --> CheckCancel{Duration > 15s?}
-    CheckCancel -->|No| CheckSuccess
-    CheckCancel -->|Yes| AutoCancel[Auto-Cancel Operation]
-    
-    CheckSuccess -->|Success| ShowSuccess[Show Success Indicator]
-    CheckSuccess -->|Error| ShowError[Show Error Indicator]
-    ShowSuccess --> ClearState[Clear Loading State]
-    ShowError --> ClearState
-    AutoCancel --> ClearState
-```
-
-## Technical Implementation Details
-
-### Loading System Architecture
-
-#### Core Loading Service
-```go
-type LoadingService struct {
-    phases       []LoadingPhase
-    currentPhase int
-    startTime    time.Time
-    cancelChan   chan bool
-    statusChan   chan LoadingStatus
-}
-
-type LoadingPhase struct {
-    Name        string
-    Description string
-    Duration    time.Duration
-    Handler     func() error
-    Critical    bool
-}
-
-type LoadingStatus struct {
-    Phase       string
-    Message     string
-    Progress    float64
-    State       LoadingState
-    Error       error
-    Cancellable bool
-}
-```
-
-#### UI Integration Components
+### Loading Overlay Component
 ```go
 type LoadingOverlay struct {
     Active      bool
-    Type        LoadingType
     Message     string
-    Progress    float64
-    Phases      []PhaseStatus
+    Spinner     SpinnerState
     Cancellable bool
-    StartTime   time.Time
+    Type        LoadingType // STARTUP or REFRESH
 }
 
-type LoadingIndicator struct {
-    MCPName     string
-    Operation   string
-    State       IndicatorState
-    StartTime   time.Time
-    Animated    bool
-}
+type LoadingType int
+const (
+    LOADING_STARTUP LoadingType = iota
+    LOADING_REFRESH
+)
 ```
 
-### State Management Integration
-
-#### Model Extensions
+### Model Integration
 ```go
 type Model struct {
-    // Existing fields...
+    // Existing fields from Stories 2.1 and 2.2...
     
-    // Loading system state
-    LoadingOverlay    *LoadingOverlay
-    ItemLoadingStates map[string]*LoadingIndicator
-    BackgroundSync    *SyncStatus
-    
-    // Cancellation handling
-    ActiveOperations  map[string]*Operation
-    CancellationMode  bool
+    // Simple loading overlay state
+    LoadingOverlay *LoadingOverlay
 }
 ```
 
-#### Loading States
-- `LOADING_STARTUP` - Full application initialization
-- `LOADING_OPERATION` - Item-specific operations
-- `LOADING_BACKGROUND` - Background sync/updates
-- `LOADING_EXTENDED` - Operations exceeding normal timeouts
-- `LOADING_CANCELLING` - Cancellation in progress
+### Implementation Scope
+- **ONLY**: Startup and refresh loading overlays
+- **NO CHANGES**: Individual MCP toggle loading (Story 2.2 implementation remains unchanged)
+- **NO COMPLEX**: Progress percentages, multiple concurrent operations, advanced timeouts
+- **SIMPLE**: Basic spinner animation, message progression, ESC cancellation
 
-### Performance Requirements
+## Focused Tasks
 
-#### Loading Overlay Performance
-- **Overlay render time**: <50ms from trigger to display
-- **Animation frame rate**: 60fps for smooth spinner rotation
-- **Memory footprint**: <1MB for all loading state management
-- **CPU usage**: <5% during idle loading animations
+### Task 1: Simple Loading Overlay Component (AC: 1, 2, 4)
+- [ ] Create basic LoadingOverlay struct and component
+- [ ] Implement startup loading overlay with simple message progression
+- [ ] Implement refresh loading overlay with simple message progression
+- [ ] Add basic spinner animation (◐◓◑◒)
+- [ ] Integrate with existing UI layout and styling
 
-#### Operation Timeouts
-- **Quick operations**: 1-3 seconds (MCP toggle, inventory update)
-- **Medium operations**: 3-8 seconds (Claude CLI sync, configuration save)
-- **Long operations**: 8-15 seconds (startup initialization, bulk operations)
-- **Auto-cancel threshold**: 15 seconds maximum
+### Task 2: ESC Cancellation Support (AC: 3)
+- [ ] Add ESC key detection during loading operations
+- [ ] Create simple cancellation confirmation prompt
+- [ ] Implement safe cancellation for startup (exit app) and refresh (return to current state)
+- [ ] Test cancellation scenarios
 
-## Tasks / Subtasks
+### Task 3: Integration and Testing (AC: 4)
+- [ ] Integrate loading overlays with existing startup and refresh logic
+- [ ] Ensure no conflicts with Story 2.2 individual toggle UX
+- [ ] Add error handling for failed startup/refresh operations
+- [ ] Test loading overlays across different terminal sizes
+- [ ] Validate smooth transitions and visual integration
 
-### Task 1: Core Loading Service Implementation (AC: 1, 4)
-- [ ] Create LoadingService with phase management system
-- [ ] Implement progressive startup loading with 4 defined phases
-- [ ] Add timeout handling and extended operation feedback
-- [ ] Create loading state persistence across operations
-- [ ] Add error recovery and retry mechanisms for each phase
+## Focused Scope Definition
 
-### Task 2: Loading Overlay UI Components (AC: 1, 6)
-- [ ] Design and implement full-screen loading overlay component
-- [ ] Add progressive phase display with visual indicators
-- [ ] Implement smooth transitions between loading states
-- [ ] Create responsive overlay sizing for different terminal widths
-- [ ] Add consistent typography and color scheme integration
+### INCLUDED (Addresses actual user pain points)
+- Startup loading overlay with simple message progression
+- Refresh ('R') loading overlay with simple message progression
+- Basic ESC cancellation with confirmation
+- Simple error handling for failed operations
+- Clean visual integration with existing UI
 
-### Task 3: Item-Level Loading Indicators (AC: 2, 6)
-- [ ] Implement targeted loading states for individual MCP items
-- [ ] Add operation-specific loading messages and spinner animations
-- [ ] Create success/error indicator system with auto-clear timers
-- [ ] Integrate item loading with existing grid layout system
-- [ ] Add loading state visual hierarchy and positioning
-
-### Task 4: Background Sync Progress System (AC: 3)
-- [ ] Extend status bar component with sync progress indicators
-- [ ] Implement unobtrusive background operation feedback
-- [ ] Add sync completion timestamp tracking and display
-- [ ] Create persistent error indicator system for sync failures
-- [ ] Integrate manual refresh triggers with sync progress
-
-### Task 5: Universal Cancellation System (AC: 5)
-- [ ] Implement ESC key cancellation for all loading operations
-- [ ] Create cancellation confirmation modal with clear options
-- [ ] Add critical operation protection with enhanced warnings
-- [ ] Implement safe cancellation with state rollback mechanisms
-- [ ] Add timeout handling for cancellation prompts
-
-### Task 6: Visual Integration and Polish (AC: 6)
-- [ ] Ensure loading overlays integrate seamlessly with existing UI
-- [ ] Implement smooth animation system with consistent timing
-- [ ] Add accessibility features with proper contrast and visibility
-- [ ] Create concurrent loading state management for multiple operations
-- [ ] Add comprehensive loading state testing and edge case handling
-
-### Task 7: Integration Testing and Validation (All ACs)
-- [ ] Add unit tests for loading service and state management
-- [ ] Create comprehensive loading scenario testing suite
-- [ ] Test cancellation system under various operation conditions
-- [ ] Validate loading overlay performance under different terminal sizes
-- [ ] Test integration with existing Stories 2.1 and 2.2 components
-
-## MVP Scope Definition
-
-### Phase 1 (MUST HAVE - 80% of user scenarios)
-- Progressive startup loading with 4 defined phases
-- Item-level loading for MCP toggle/add/edit/delete operations
-- Background sync indicators in status bar
-- Universal ESC cancellation with confirmation
-- Basic timeout handling and extended operation feedback
-- Loading overlay visual integration with existing UI
-
-### Phase 1 EXCLUDED (Will not implement)
-- Advanced progress percentage calculations
-- Sophisticated loading animations beyond basic spinners
-- Detailed operation logging and analytics
-- Complex concurrent operation prioritization
-- Advanced error recovery workflows beyond basic retry
+### EXCLUDED (Over-engineered or working well already)
+- Item-level loading indicators (Story 2.2 toggle UX works well - keep unchanged)
+- Complex progress percentages or sophisticated animations
+- Background sync indicators in status bar (not a pain point)
+- Advanced timeout handling and warnings
+- Multiple concurrent operation management
+- Complex phase management systems
 
 ## Definition of Done
 
 ### Functional Requirements
-- [ ] All 6 acceptance criteria pass comprehensive validation testing
-- [ ] Progressive startup loading completes within 6 seconds with clear phases
-- [ ] MCP operations show immediate loading feedback with operation-specific messages
-- [ ] Background sync operations provide unobtrusive progress indicators
-- [ ] Long-running operations show extended feedback with timeout warnings
-- [ ] ESC key cancellation works across all loading operations with confirmation
-- [ ] Loading overlays integrate seamlessly with existing UI components
+- [ ] All 4 acceptance criteria pass validation testing
+- [ ] Startup loading overlay shows clear progress during app initialization
+- [ ] Refresh ('R') loading overlay shows clear progress during sync operations
+- [ ] ESC key cancellation works for both startup and refresh with confirmation
+- [ ] Loading overlays integrate seamlessly without affecting Story 2.2 toggle UX
+- [ ] Error handling provides clear messages and recovery options
 
 ### Quality Requirements
-- [ ] Loading overlay renders within 50ms of trigger
-- [ ] Loading animations maintain 60fps performance
-- [ ] All loading states handle concurrent operations properly
+- [ ] Loading overlay renders quickly without UI lag
+- [ ] Simple animations are smooth and non-distracting
 - [ ] Cancellation system safely returns to stable application state
-- [ ] Loading system follows established architectural patterns
-- [ ] Visual design maintains consistency with existing component library
+- [ ] Visual design maintains consistency with existing components
+- [ ] Individual MCP toggle UX remains completely unchanged
 
 ### Testing Requirements
-- [ ] Unit tests for loading service and state management (90%+ coverage)
-- [ ] Integration tests with Stories 2.1 and 2.2 components
-- [ ] Loading performance validation under various system conditions
-- [ ] Cancellation system edge case testing
+- [ ] Basic unit tests for loading overlay component
+- [ ] Integration tests ensuring no conflicts with Stories 2.1 and 2.2
+- [ ] Cancellation testing for both startup and refresh scenarios
 - [ ] Visual integration testing across different terminal sizes
-- [ ] Error scenario testing for all loading phases
+- [ ] Error scenario testing for startup and refresh failures
 
 ## Dependencies
 
@@ -489,30 +268,30 @@ type Model struct {
 ## Risk Assessment
 
 ### Technical Risks
-- **Medium Risk:** Loading overlay performance may impact UI responsiveness
-- **Medium Risk:** Complex concurrent loading state management
-- **Low Risk:** Integration with existing modal system
-- **Medium Risk:** Cancellation system complexity affecting application stability
+- **Low Risk:** Simple loading overlay performance impact
+- **Low Risk:** Integration with existing UI components
+- **Low Risk:** Basic cancellation system affecting application stability
 
 ### Mitigation Strategies
-- Implement efficient loading state management with minimal overhead
-- Use established service patterns from previous stories
-- Comprehensive testing of cancellation scenarios
-- Gradual rollout of loading features with performance monitoring
+- Keep implementation simple and focused on two scenarios only
+- Leverage existing UI patterns from Stories 2.1 and 2.2
+- Test cancellation scenarios thoroughly but with simple logic
+- Avoid complex state management or concurrent operations
 
 ## Implementation Constraints
 
-### MVP Focus Constraints
-- Focus on essential loading feedback for 80% of operations
+### Focused Constraints
+- Address only startup and refresh loading scenarios (not 80% of operations)
 - Leverage existing UI component patterns and architecture
-- 6-8 day timeline limitation with embedded UX specifications
-- Integration with established Stories 2.1 and 2.2 components
+- 6-7 hour implementation timeline with simplified scope
+- Preserve and integrate with established Stories 2.1 and 2.2 components
+- **CRITICAL**: Do not modify or interfere with Story 2.2 individual toggle UX
 
 ### Technical Constraints
-- Must maintain <50ms loading overlay render time
-- Loading system must not exceed 5% CPU usage during animations
-- Integration with existing Bubble Tea architecture patterns
-- Preservation of keyboard navigation and accessibility features
+- Keep loading overlay implementation simple and lightweight
+- Use existing Bubble Tea patterns from previous stories
+- Maintain keyboard navigation and accessibility features
+- Ensure no performance impact on main application functionality
 
 ## Technical Debt Considerations
 
@@ -530,22 +309,22 @@ type Model struct {
 ## Notes & Considerations
 
 ### Design Decisions
-- Progressive loading phases provide clear feedback without overwhelming users
-- Universal ESC cancellation offers consistent user control
-- Item-level loading maintains context while providing specific feedback
-- Background sync indicators balance visibility with non-intrusiveness
+- Focus on the two operations where users experience confusion: startup and refresh
+- Simple message progression provides clarity without complexity
+- ESC cancellation offers basic user control for long operations
+- Preserve the well-functioning individual toggle UX from Story 2.2
+- Avoid over-engineering with complex progress systems
 
 ### Future Considerations
-- Advanced loading analytics and performance monitoring for Epic 3
-- Sophisticated progress calculation for complex operations
-- Enhanced loading animations and visual polish
-- Integration with broader system monitoring and health checks
+- This scope addresses the immediate user pain points
+- Additional loading scenarios can be evaluated in future epics if needed
+- Current individual toggle UX (Story 2.2) works well and should remain unchanged
 
 ### Development Notes
-- Story builds comprehensively on Stories 2.1 and 2.2 foundation
-- Embedded UX specifications eliminate need for separate design documents
-- Emphasis on professional-grade loading experience
-- MVP scope ensures delivery within timeline while addressing core user needs
+- Story addresses specific user feedback about startup and refresh confusion
+- Implementation should be simple and focused on two scenarios only
+- Reduced scope from 8-12 hours to 6-7 hours of implementation time
+- Emphasis on solving actual user problems rather than comprehensive loading system
 
 ---
 
