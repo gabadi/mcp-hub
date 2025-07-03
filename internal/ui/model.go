@@ -54,6 +54,7 @@ func (m Model) Init() tea.Cmd {
 	// Return batch of commands for startup
 	return tea.Batch(
 		handlers.StartupLoadingCmd(),
+		handlers.StartupLoadingTimerCmd(0),
 		handlers.LoadingSpinnerCmd(types.LoadingStartup),
 	)
 }
@@ -75,6 +76,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleTimerTickMsg(msg)
 	case types.LoadingProgressMsg:
 		return m.handleLoadingProgressMsg(msg)
+	case types.LoadingStepMsg:
+		return m.handleLoadingStepMsg(msg)
 	case types.LoadingSpinnerMsg:
 		return m.handleLoadingSpinnerMsg(msg)
 	}
@@ -226,6 +229,25 @@ func (m Model) handleLoadingProgressMsg(msg types.LoadingProgressMsg) (tea.Model
 
 	// Update loading message
 	m.Model.UpdateLoadingMessage(msg.Message)
+	return m, nil
+}
+
+// handleLoadingStepMsg handles loading step progression messages
+func (m Model) handleLoadingStepMsg(msg types.LoadingStepMsg) (tea.Model, tea.Cmd) {
+	switch msg.Type {
+	case types.LoadingStartup:
+		// Progress to next step and set timer for next progression
+		return m, tea.Batch(
+			handlers.StartupLoadingProgressCmd(msg.Step),
+			handlers.StartupLoadingTimerCmd(msg.Step),
+		)
+	case types.LoadingRefresh:
+		// Progress to next step and set timer for next progression
+		return m, tea.Batch(
+			handlers.RefreshLoadingProgressCmd(msg.Step),
+			handlers.RefreshLoadingTimerCmd(msg.Step),
+		)
+	}
 	return m, nil
 }
 

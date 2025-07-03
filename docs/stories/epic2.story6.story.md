@@ -1,6 +1,6 @@
 # Story 2.6: App Startup and Refresh Loading Feedback
 
-## Status: Completed
+## Status: Review
 
 ## Story Approved for Development
 

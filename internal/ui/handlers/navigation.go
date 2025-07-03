@@ -142,6 +142,7 @@ func handleRefreshAction(model types.Model) (types.Model, tea.Cmd) {
 	// Return batch of commands for refresh
 	return model, tea.Batch(
 		RefreshLoadingCmd(),
+		RefreshLoadingTimerCmd(0),
 		LoadingSpinnerCmd(types.LoadingRefresh),
 		RefreshClaudeStatusCmd(),
 	)
@@ -492,69 +493,80 @@ func TimerCmd(timerID string) tea.Cmd {
 
 // StartupLoadingCmd creates a command to handle startup loading sequence
 func StartupLoadingCmd() tea.Cmd {
+	return StartupLoadingProgressCmd(0)
+}
+
+// StartupLoadingProgressCmd creates a command for the startup loading sequence with step progression
+func StartupLoadingProgressCmd(step int) tea.Cmd {
+	messages := []string{
+		"Initializing MCP Manager...",
+		"Loading MCP inventory...",
+		"Detecting Claude CLI...",
+		"Ready!",
+	}
+	
+	if step >= len(messages) {
+		step = len(messages) - 1
+	}
+	
+	// Return immediate message for current step
 	return func() tea.Msg {
-		messages := []string{
-			"Initializing MCP Manager...",
-			"Loading MCP inventory...",
-			"Detecting Claude CLI...",
-			"Ready!",
-		}
-		
-		// Simulate startup process with delays
-		for i, message := range messages {
-			time.Sleep(time.Duration(500+i*300) * time.Millisecond)
-			if i == len(messages)-1 {
-				// Last message - mark as done
-				return types.LoadingProgressMsg{
-					Type:    types.LoadingStartup,
-					Message: message,
-					Done:    true,
-				}
-			}
-			// Send progress message (non-blocking)
-			go func(msg string) {
-				time.Sleep(100 * time.Millisecond)
-				// This will be sent via the next cycle
-			}(message)
-		}
-		
 		return types.LoadingProgressMsg{
 			Type:    types.LoadingStartup,
-			Message: "Ready!",
-			Done:    true,
+			Message: messages[step],
+			Done:    step == len(messages)-1,
 		}
 	}
 }
 
+// StartupLoadingTimerCmd creates a command for progressing through startup loading steps
+func StartupLoadingTimerCmd(step int) tea.Cmd {
+	delay := time.Duration(500+step*300) * time.Millisecond
+	return tea.Tick(delay, func(time.Time) tea.Msg {
+		return types.LoadingStepMsg{
+			Type: types.LoadingStartup,
+			Step: step + 1,
+		}
+	})
+}
+
 // RefreshLoadingCmd creates a command to handle refresh loading sequence
 func RefreshLoadingCmd() tea.Cmd {
+	return RefreshLoadingProgressCmd(0)
+}
+
+// RefreshLoadingProgressCmd creates a command for the refresh loading sequence with step progression
+func RefreshLoadingProgressCmd(step int) tea.Cmd {
+	messages := []string{
+		"Refreshing MCP status...",
+		"Syncing with Claude CLI...",
+		"Updating display...",
+		"Complete!",
+	}
+	
+	if step >= len(messages) {
+		step = len(messages) - 1
+	}
+	
+	// Return immediate message for current step
 	return func() tea.Msg {
-		messages := []string{
-			"Refreshing MCP status...",
-			"Syncing with Claude CLI...",
-			"Updating display...",
-			"Complete!",
-		}
-		
-		// Simulate refresh process with delays
-		for i, message := range messages {
-			time.Sleep(time.Duration(400+i*200) * time.Millisecond)
-			if i == len(messages)-1 {
-				// Last message - mark as done
-				return types.LoadingProgressMsg{
-					Type:    types.LoadingRefresh,
-					Message: message,
-					Done:    true,
-				}
-			}
-		}
-		
 		return types.LoadingProgressMsg{
 			Type:    types.LoadingRefresh,
-			Message: "Complete!",
-			Done:    true,
+			Message: messages[step],
+			Done:    step == len(messages)-1,
 		}
 	}
+}
+
+// RefreshLoadingTimerCmd creates a command for progressing through refresh loading steps
+func RefreshLoadingTimerCmd(step int) tea.Cmd {
+	delay := time.Duration(400+step*200) * time.Millisecond
+	return tea.Tick(delay, func(time.Time) tea.Msg {
+		return types.LoadingStepMsg{
+			Type: types.LoadingRefresh,
+			Step: step + 1,
+		}
+	})
 }
 
 // LoadingSpinnerCmd creates a command for spinner animation

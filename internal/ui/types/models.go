@@ -201,6 +201,12 @@ type LoadingSpinnerMsg struct {
 	Type LoadingType
 }
 
+// LoadingStepMsg represents a loading step progression message
+type LoadingStepMsg struct {
+	Type LoadingType
+	Step int
+}
+
 // getDefaultMCPs returns the default MCP items for fallback
 func getDefaultMCPs() []MCPItem {
 	return []MCPItem{
