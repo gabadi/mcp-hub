@@ -16,6 +16,17 @@ const (
 	ModalActive
 )
 
+// ToggleOperationState represents the current toggle operation state
+type ToggleOperationState int
+
+const (
+	ToggleIdle ToggleOperationState = iota
+	ToggleLoading
+	ToggleSuccess
+	ToggleError
+	ToggleRetrying
+)
+
 // Model represents the main application model
 type Model struct {
 	// Window dimensions
@@ -63,6 +74,14 @@ type Model struct {
 	ClaudeStatus    ClaudeStatus
 	LastClaudeSync  time.Time
 	ClaudeSyncError string
+
+	// Toggle operation state (Epic 2 Story 2)
+	ToggleState     ToggleOperationState
+	ToggleMCPName   string
+	ToggleError     string
+	ToggleRetrying  bool
+	LastToggleSync  time.Time
+	ToggleStartTime time.Time
 }
 
 // ModalType represents the type of modal being displayed
@@ -117,6 +136,11 @@ type ClaudeStatus struct {
 	LastCheck    time.Time `json:"last_check"`
 	Error        string    `json:"error,omitempty"`
 	InstallGuide string    `json:"install_guide,omitempty"`
+}
+
+// TimerTickMsg represents a timer tick message for countdown functionality
+type TimerTickMsg struct {
+	ID string // Unique identifier for the timer
 }
 
 // getDefaultMCPs returns the default MCP items for fallback

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
@@ -70,11 +71,33 @@ func handleActionKeys(model types.Model, key string) (types.Model, tea.Cmd, bool
 	case "d":
 		return handleDeleteMCP(model), nil, true
 	case " ", "space":
-		return services.ToggleMCPStatus(model), nil, true
+		return handleEnhancedToggleMCP(model)
 	case "r", "R":
 		return model, RefreshClaudeStatusCmd(), true
 	}
 	return model, nil, false
+}
+
+// handleEnhancedToggleMCP handles the enhanced MCP toggle operation (Epic 2 Story 2)
+func handleEnhancedToggleMCP(model types.Model) (types.Model, tea.Cmd, bool) {
+	selectedMCP := services.GetSelectedMCP(model)
+	if selectedMCP == nil {
+		return model, nil, true
+	}
+
+	// Set immediate loading state for visual feedback
+	updatedModel := services.ToggleMCPStatus(model)
+
+	// If already in error state due to Claude unavailability, don't proceed
+	if updatedModel.ToggleState == types.ToggleError {
+		return updatedModel, nil, true
+	}
+
+	// Create command to perform the actual toggle operation
+	activate := !selectedMCP.Active
+	cmd := EnhancedToggleMCPCmd(selectedMCP.Name, activate, selectedMCP)
+
+	return updatedModel, cmd, true
 }
 
 // handleAddMCP handles the add MCP action
@@ -141,9 +164,9 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 		model = NavigateRight(model)
 		return model, nil
 	case " ", "space":
-		// Toggle MCP active status
-		model = services.ToggleMCPStatus(model)
-		return model, nil
+		// Enhanced toggle MCP active status
+		updatedModel, cmd, _ := handleEnhancedToggleMCP(model)
+		return updatedModel, cmd
 	case "r", "R":
 		// Refresh Claude status
 		return model, RefreshClaudeStatusCmd()
@@ -397,6 +420,15 @@ type ClaudeStatusMsg struct {
 	Status types.ClaudeStatus
 }
 
+// ToggleResultMsg represents a toggle operation result message (Epic 2 Story 2)
+type ToggleResultMsg struct {
+	MCPName  string
+	Activate bool
+	Success  bool
+	Error    string
+	Retrying bool
+}
+
 // RefreshClaudeStatusCmd creates a command to refresh Claude status (Epic 2 Story 1)
 func RefreshClaudeStatusCmd() tea.Cmd {
 	return func() tea.Msg {
@@ -405,4 +437,40 @@ func RefreshClaudeStatusCmd() tea.Cmd {
 		status := claudeService.RefreshClaudeStatus(ctx)
 		return ClaudeStatusMsg{Status: status}
 	}
+}
+
+// EnhancedToggleMCPCmd creates a command to perform enhanced MCP toggle (Epic 2 Story 2)
+func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPItem) tea.Cmd {
+	return func() tea.Msg {
+		claudeService := services.NewClaudeService()
+		ctx := context.Background()
+
+		// Pass the MCP configuration for add operations
+		result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate, mcpConfig)
+
+		if err != nil {
+			return ToggleResultMsg{
+				MCPName:  mcpName,
+				Activate: activate,
+				Success:  false,
+				Error:    "Internal error during MCP toggle operation",
+				Retrying: false,
+			}
+		}
+
+		return ToggleResultMsg{
+			MCPName:  mcpName,
+			Activate: activate,
+			Success:  result.Success,
+			Error:    result.ErrorMsg,
+			Retrying: result.Retryable && !result.Success,
+		}
+	}
+}
+
+// TimerCmd creates a command that sends timer tick messages every ~50ms
+func TimerCmd(timerID string) tea.Cmd {
+	return tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
+		return types.TimerTickMsg{ID: timerID}
+	})
 }

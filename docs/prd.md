@@ -289,6 +289,21 @@ so that I know which project's MCPs I'm managing.
 - 4: Project context updates when changing directories
 - 5: Clear indication when out of sync with Claude Code
 
+### Story 2.6: Enhanced Loading State Feedback System
+
+As a developer,
+I want clear feedback during all loading and background operations,
+so that I understand system status and can respond appropriately to delays or issues.
+
+#### Acceptance Criteria
+
+- 1: Application startup shows progressive loading messages with current operation status
+- 2: MCP activation/deactivation operations display loading spinners with operation descriptions
+- 3: Long-running operations provide periodic progress updates and estimated time remaining
+- 4: All loading states can be cancelled with ESC key, returning to previous stable state
+- 5: Background sync operations show unobtrusive progress indicators in status bar
+- 6: Loading state transitions are smooth with clear visual feedback for completion or failure
+
 ## Checklist Results Report
 
 [To be populated after checklist execution]

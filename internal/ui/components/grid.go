@@ -42,11 +42,8 @@ func RenderFourColumnGrid(model types.Model) string {
 			if mcpIndex < len(filteredMCPs) {
 				item := filteredMCPs[mcpIndex]
 
-				// Status indicator
-				status := "○"
-				if item.Active {
-					status = "●"
-				}
+				// Enhanced status indicator with toggle state
+				status := getEnhancedStatusIndicator(model, item)
 
 				// Highlight selected item by comparing index directly
 				// Use FilteredSelectedIndex when search is active
@@ -102,6 +99,33 @@ func RenderFourColumnGrid(model types.Model) string {
 	return gridStyle.Render(fmt.Sprintf("MCP Inventory\n\n%s", strings.Join(gridLines, "\n")))
 }
 
+// getEnhancedStatusIndicator returns the appropriate status indicator with toggle operation state
+func getEnhancedStatusIndicator(model types.Model, item types.MCPItem) string {
+	// Check if this MCP is currently being toggled
+	if model.ToggleMCPName == item.Name {
+		switch model.ToggleState {
+		case types.ToggleLoading:
+			return "⏳" // Loading spinner
+		case types.ToggleRetrying:
+			return "🔄" // Retry indicator
+		case types.ToggleSuccess:
+			// Show success briefly, then return to normal
+			if item.Active {
+				return "✅" // Success - MCP activated
+			}
+			return "◦" // Success - MCP deactivated (removed)
+		case types.ToggleError:
+			return "✗" // Error indicator
+		}
+	}
+
+	// Default status indicators
+	if item.Active {
+		return "●" // Active
+	}
+	return "○" // Inactive
+}
+
 // RenderMCPList renders a simple list of MCPs for other layouts
 func RenderMCPList(model types.Model) string {
 	filteredMCPs := services.GetFilteredMCPs(model)
@@ -126,11 +150,8 @@ func RenderMCPList(model types.Model) string {
 				Bold(true)
 		}
 
-		// Status indicator
-		status := "○"
-		if item.Active {
-			status = "●"
-		}
+		// Enhanced status indicator with toggle state
+		status := getEnhancedStatusIndicator(model, item)
 
 		itemText := fmt.Sprintf("%s %s", status, item.Name)
 		items = append(items, style.Render(itemText))
