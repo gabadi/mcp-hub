@@ -31,14 +31,59 @@ func RenderLoadingOverlay(model types.Model, width, height int, baseContent stri
 	// Apply the dialog style to the content
 	styledDialog := dialogStyle.Render(dialogContent)
 
-	// Position the dialog in the top-right corner to be less invasive
-	positionedDialog := lipgloss.Place(
-		width, height,
-		lipgloss.Right, lipgloss.Top,
-		styledDialog,
-	)
+	// Overlay the dialog centered on top of existing content without replacing background
+	lines := strings.Split(baseContent, "\n")
+	
+	// Ensure we have enough lines for the screen height
+	for len(lines) < height {
+		lines = append(lines, strings.Repeat(" ", width))
+	}
+	
+	// Calculate center position for the dialog
+	dialogLines := strings.Split(styledDialog, "\n")
+	dialogHeight := len(dialogLines)
+	
+	// Position dialog in the center
+	startY := (height - dialogHeight) / 2
+	if startY < 0 {
+		startY = 0
+	}
+	
+	// Overlay the dialog on top of existing content
+	for i, dialogLine := range dialogLines {
+		lineIndex := startY + i
+		if lineIndex >= 0 && lineIndex < len(lines) && lineIndex < height {
+			// Center the dialog line horizontally
+			dialogLineWidth := lipgloss.Width(dialogLine)
+			startX := (width - dialogLineWidth) / 2
+			if startX < 0 {
+				startX = 0
+			}
+			
+			// Get the original line and ensure it's at least as wide as needed
+			originalLine := lines[lineIndex]
+			if len(originalLine) < width {
+				originalLine += strings.Repeat(" ", width-len(originalLine))
+			}
+			
+			// Replace only the dialog area, preserving surrounding content
+			endX := startX + dialogLineWidth
+			if endX > len(originalLine) {
+				endX = len(originalLine)
+			}
+			
+			// Create new line with dialog overlaid
+			var newLine strings.Builder
+			newLine.WriteString(originalLine[:startX])
+			newLine.WriteString(dialogLine)
+			if endX < len(originalLine) {
+				newLine.WriteString(originalLine[endX:])
+			}
+			lines[lineIndex] = newLine.String()
+		}
+	}
 
-	return positionedDialog
+	return strings.Join(lines, "\n")
 }
 
 // renderLoadingDialog creates the content for the loading dialog
