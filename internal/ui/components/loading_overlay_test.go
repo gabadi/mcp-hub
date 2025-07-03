@@ -146,5 +146,3 @@ func TestSpinnerStateGetSpinnerChar(t *testing.T) {
 		t.Error("Expected default spinner state to return '◐'")
 	}
 }
-
-

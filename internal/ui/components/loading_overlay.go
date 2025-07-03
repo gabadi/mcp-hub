@@ -126,5 +126,3 @@ func GetLoadingMessages(loadingType types.LoadingType) []string {
 		return []string{"Loading..."}
 	}
 }
-
-

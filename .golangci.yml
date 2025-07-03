@@ -1,10 +1,12 @@
+version: 2
+
 run:
   timeout: 5m
   tests: true
 
 output:
   formats:
-    - format: colored-line-number
+    colored-line-number: stdout
   print-issued-lines: true
   print-linter-name: true
 
@@ -15,12 +17,6 @@ linters-settings:
   
   gocyclo:
     min-complexity: 15
-  
-  gofmt:
-    simplify: true
-  
-  goimports:
-    local-prefixes: cc-mcp-manager
   
   revive:
     confidence: 0.8
@@ -61,13 +57,10 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
     - revive
     # - gomnd  # Deprecated since v1.58.0, replaced by mnd
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -77,12 +70,16 @@ linters:
     - nolintlint
     - rowserrcheck
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
+
+formatters:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: cc-mcp-manager
 
 issues:
   exclude-dirs:
@@ -98,7 +95,6 @@ issues:
         - dupl
         - gosec
         - funlen
-        - typecheck  # Skip typecheck for test files while fixing field access patterns
     
     # Exclude unused warnings for UI view methods that are part of the interface
     - path: internal/ui/view\.go
@@ -160,9 +156,6 @@ issues:
     - linters:
         - govet
       text: "nilness:"
-    - linters:
-        - stylecheck
-      text: "ST1003:"  # ALL_CAPS naming
     - linters:
         - staticcheck
       text: "SA4006:"  # unused assignment
