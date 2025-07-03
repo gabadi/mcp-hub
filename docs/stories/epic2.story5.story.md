@@ -1,6 +1,6 @@
 # Story 2.5: Project Context Display
 
-## Status: Review
+## Status: Changes Committed
 
 ## Story Approved for Development
 
@@ -154,5 +154,5 @@ BMAD story-simple workflow with Dev agent implementation and ht-mcp validation
 - Directory monitoring optimized for performance with 5-second polling
 - Seamless integration with existing Claude CLI workflows
 
-### Story Status: Ready for Review
-All tasks completed, tests passing, and implementation validated with ht-mcp integration.
+### Story Status: Changes Committed
+All tasks completed, tests passing, implementation validated with ht-mcp integration, and changes committed for PR preparation.
