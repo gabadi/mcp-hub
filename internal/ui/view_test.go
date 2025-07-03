@@ -50,12 +50,12 @@ func TestView_MainComposition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
-			model.Width = tt.width
-			model.Height = tt.height
-			model.State = tt.state
+			model.Model.Width = tt.width
+			model.Model.Height = tt.height
+			model.Model.State = tt.state
 			if tt.state == types.SearchActiveNavigation {
-				model.SearchActive = true
-				model.SearchInputActive = true
+				model.Model.SearchActive = true
+				model.Model.SearchInputActive = true
 			}
 
 			result := model.View()
@@ -110,16 +110,16 @@ func TestView_LayoutSwitching(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
-			model.Width = tt.width
-			model.Height = tt.height
+			model.Model.Width = tt.width
+			model.Model.Height = tt.height
 
 			// Update layout based on width (simulating layout service)
 			if tt.width >= types.WIDE_LAYOUT_MIN {
-				model.ColumnCount = 4
+				model.Model.ColumnCount = 4
 			} else if tt.width >= types.MEDIUM_LAYOUT_MIN {
-				model.ColumnCount = 2
+				model.Model.ColumnCount = 2
 			} else {
-				model.ColumnCount = 1
+				model.Model.ColumnCount = 1
 			}
 
 			result := model.View()
@@ -204,12 +204,12 @@ func TestView_StateTransitions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
-			model.Width = 120
-			model.Height = 40
-			model.State = tt.state
-			model.SearchActive = tt.searchActive
-			model.SearchInputActive = tt.searchInputActive
-			model.SearchQuery = tt.searchQuery
+			model.Model.Width = 120
+			model.Model.Height = 40
+			model.Model.State = tt.state
+			model.Model.SearchActive = tt.searchActive
+			model.Model.SearchInputActive = tt.searchInputActive
+			model.Model.SearchQuery = tt.searchQuery
 
 			result := model.View()
 
@@ -233,11 +233,11 @@ func TestView_StateTransitions(t *testing.T) {
 func TestView_ComponentIntegration(t *testing.T) {
 	t.Run("Header shows correct MCP count", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
+		model.Model.Width = 120
+		model.Model.Height = 40
 
 		// Set specific MCPs with known active states
-		model.MCPItems = []types.MCPItem{
+		model.Model.MCPItems = []types.MCPItem{
 			{Name: "active1", Active: true},
 			{Name: "inactive1", Active: false},
 			{Name: "active2", Active: true},
@@ -252,12 +252,12 @@ func TestView_ComponentIntegration(t *testing.T) {
 
 	t.Run("Footer shows search results count", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
-		model.SearchQuery = "active"
-		model.SearchActive = false // Not actively searching, but has query
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.SearchQuery = "active"
+		model.Model.SearchActive = false // Not actively searching, but has query
 
-		model.MCPItems = []types.MCPItem{
+		model.Model.MCPItems = []types.MCPItem{
 			{Name: "active1", Active: true},
 			{Name: "inactive1", Active: false},
 			{Name: "active2", Active: true},
@@ -272,12 +272,12 @@ func TestView_ComponentIntegration(t *testing.T) {
 
 	t.Run("Body shows filtered MCPs", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
-		model.ColumnCount = 4 // Grid layout
-		model.SearchQuery = "github"
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.ColumnCount = 4 // Grid layout
+		model.Model.SearchQuery = "github"
 
-		model.MCPItems = []types.MCPItem{
+		model.Model.MCPItems = []types.MCPItem{
 			{Name: "github-mcp", Active: true},
 			{Name: "docker-mcp", Active: false},
 			{Name: "github-api", Active: true},
@@ -333,9 +333,9 @@ func TestView_ResponsiveLayout(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
-			model.Width = tt.width
-			model.Height = tt.height
-			model.ColumnCount = tt.columnCount
+			model.Model.Width = tt.width
+			model.Model.Height = tt.height
+			model.Model.ColumnCount = tt.columnCount
 
 			result := model.View()
 
@@ -350,8 +350,8 @@ func TestView_ResponsiveLayout(t *testing.T) {
 func TestView_EdgeCases(t *testing.T) {
 	t.Run("Zero dimensions shows loading", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 0
-		model.Height = 0
+		model.Model.Width = 0
+		model.Model.Height = 0
 
 		result := model.View()
 
@@ -362,9 +362,9 @@ func TestView_EdgeCases(t *testing.T) {
 
 	t.Run("Empty MCP list", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
-		model.MCPItems = []types.MCPItem{} // Empty list
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.MCPItems = []types.MCPItem{} // Empty list
 
 		result := model.View()
 
@@ -375,9 +375,9 @@ func TestView_EdgeCases(t *testing.T) {
 
 	t.Run("Very small dimensions", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 10
-		model.Height = 5
-		model.ColumnCount = 1
+		model.Model.Width = 10
+		model.Model.Height = 5
+		model.Model.ColumnCount = 1
 
 		result := model.View()
 
@@ -389,9 +389,9 @@ func TestView_EdgeCases(t *testing.T) {
 
 	t.Run("Large dimensions", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 200
-		model.Height = 80
-		model.ColumnCount = 4
+		model.Model.Width = 200
+		model.Model.Height = 80
+		model.Model.ColumnCount = 4
 
 		result := model.View()
 
@@ -405,8 +405,8 @@ func TestView_EdgeCases(t *testing.T) {
 func TestView_VerticalComposition(t *testing.T) {
 	t.Run("Components appear in correct order", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
+		model.Model.Width = 120
+		model.Model.Height = 40
 
 		result := model.View()
 

@@ -24,7 +24,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.ColumnCount = tt.columnCount
+				model.Model.ColumnCount = tt.columnCount
 
 				result := model.GetColumnCount()
 
@@ -49,7 +49,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.ActiveColumn = tt.activeColumn
+				model.Model.ActiveColumn = tt.activeColumn
 
 				result := model.GetActiveColumn()
 
@@ -73,7 +73,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.SelectedItem = tt.selectedItem
+				model.Model.SelectedItem = tt.selectedItem
 
 				result := model.GetSelectedItem()
 
@@ -98,7 +98,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.State = tt.state
+				model.Model.State = tt.state
 
 				result := model.GetState()
 
@@ -123,7 +123,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.SearchQuery = tt.searchQuery
+				model.Model.SearchQuery = tt.searchQuery
 
 				result := model.GetSearchQuery()
 
@@ -146,7 +146,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.SearchActive = tt.searchActive
+				model.Model.SearchActive = tt.searchActive
 
 				result := model.GetSearchActive()
 
@@ -169,7 +169,7 @@ func TestModel_GetterMethods(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				model := NewModel()
-				model.SearchInputActive = tt.searchInputActive
+				model.Model.SearchInputActive = tt.searchInputActive
 
 				result := model.GetSearchInputActive()
 
@@ -235,8 +235,8 @@ func TestModel_GetFilteredMCPs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
-			model.MCPItems = tt.mcpItems
-			model.SearchQuery = tt.searchQuery
+			model.Model.MCPItems = tt.mcpItems
+			model.Model.SearchQuery = tt.searchQuery
 
 			result := model.GetFilteredMCPs()
 
@@ -291,7 +291,7 @@ func TestModel_NewModel(t *testing.T) {
 	}
 
 	// Test that MCPItems are populated
-	if len(model.MCPItems) == 0 {
+	if len(model.Model.MCPItems) == 0 {
 		t.Errorf("NewModel() should have populated MCPItems")
 	}
 }
@@ -308,12 +308,12 @@ func TestModel_Update(t *testing.T) {
 		updatedModel, cmd := model.Update(msg)
 		m := updatedModel.(Model)
 
-		if m.Width != 120 {
-			t.Errorf("Update() should set width to 120, got %d", m.Width)
+		if m.Model.Width != 120 {
+			t.Errorf("Update() should set width to 120, got %d", m.Model.Width)
 		}
 
-		if m.Height != 40 {
-			t.Errorf("Update() should set height to 40, got %d", m.Height)
+		if m.Model.Height != 40 {
+			t.Errorf("Update() should set height to 40, got %d", m.Model.Height)
 		}
 
 		if cmd != nil {
@@ -323,8 +323,8 @@ func TestModel_Update(t *testing.T) {
 
 	t.Run("KeyMsg delegates to handlers", func(t *testing.T) {
 		model := NewModel()
-		model.Width = 120
-		model.Height = 40
+		model.Model.Width = 120
+		model.Model.Height = 40
 
 		// Test a key that should change state
 		msg := tea.KeyMsg{
@@ -415,7 +415,7 @@ func TestModel_Integration(t *testing.T) {
 		uiModel := Model{Model: baseModel}
 
 		// Test that all properties are accessible
-		if uiModel.Width != 150 || uiModel.Height != 50 {
+		if uiModel.Model.Width != 150 || uiModel.Model.Height != 50 {
 			t.Errorf("Model should preserve window dimensions")
 		}
 
@@ -435,13 +435,13 @@ func TestModel_Integration(t *testing.T) {
 		model := Model{Model: defaultModel}
 
 		// Default model should have substantial MCP data (>= 10 items from getDefaultMCPs)
-		if len(model.MCPItems) < 10 {
-			t.Errorf("Default model should have substantial MCP data, got %d items", len(model.MCPItems))
+		if len(model.Model.MCPItems) < 10 {
+			t.Errorf("Default model should have substantial MCP data, got %d items", len(model.Model.MCPItems))
 		}
 
 		// Should have some active MCPs by default
 		activeCount := 0
-		for _, item := range model.MCPItems {
+		for _, item := range model.Model.MCPItems {
 			if item.Active {
 				activeCount++
 			}
@@ -452,7 +452,7 @@ func TestModel_Integration(t *testing.T) {
 		}
 
 		// Test filtering with realistic data
-		model.SearchQuery = "github"
+		model.Model.SearchQuery = "github"
 		filtered := model.GetFilteredMCPs()
 
 		if len(filtered) == 0 {

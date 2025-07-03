@@ -43,11 +43,11 @@ func TestModelUpdateWindowSize(t *testing.T) {
 	newModel, cmd := model.Update(windowMsg)
 
 	updatedModel := newModel.(Model)
-	if updatedModel.Width != 120 {
-		t.Errorf("Expected width 120, got %d", updatedModel.Width)
+	if updatedModel.Model.Width != 120 {
+		t.Errorf("Expected width 120, got %d", updatedModel.Model.Width)
 	}
-	if updatedModel.Height != 40 {
-		t.Errorf("Expected height 40, got %d", updatedModel.Height)
+	if updatedModel.Model.Height != 40 {
+		t.Errorf("Expected height 40, got %d", updatedModel.Model.Height)
 	}
 
 	// Command should be nil for window resize
@@ -163,8 +163,8 @@ func TestGetFilteredMCPs(t *testing.T) {
 
 func TestViewRendering(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 
 	result := model.View()
 
@@ -181,8 +181,8 @@ func TestViewRendering(t *testing.T) {
 
 func TestViewZeroDimensions(t *testing.T) {
 	model := NewModel()
-	model.Width = 0
-	model.Height = 0
+	model.Model.Width = 0
+	model.Model.Height = 0
 
 	result := model.View()
 
@@ -193,8 +193,8 @@ func TestViewZeroDimensions(t *testing.T) {
 
 func TestViewWithModal(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 	model.Model.State = types.ModalActive
 	model.Model.ActiveModal = types.AddCommandForm
 
@@ -208,8 +208,8 @@ func TestViewWithModal(t *testing.T) {
 
 func TestRenderHeaderDifferentStates(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 
 	tests := []struct {
 		state    types.AppState
@@ -236,8 +236,8 @@ func TestRenderHeaderDifferentStates(t *testing.T) {
 
 func TestRenderBodyDifferentLayouts(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 
 	// Test different column counts
 	testCases := []struct {
@@ -261,8 +261,8 @@ func TestRenderBodyDifferentLayouts(t *testing.T) {
 
 func TestRenderStatusColumn(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 	model.Model.ColumnCount = 2 // Ensure we're in a layout that shows status
 	model.Model.ClaudeStatus = types.ClaudeStatus{
 		Available:  true,
@@ -282,8 +282,8 @@ func TestRenderStatusColumn(t *testing.T) {
 
 func TestRenderDetailsColumn(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 	model.Model.ColumnCount = 2 // Multi-column layout
 	model.Model.MCPItems = []types.MCPItem{
 		{Name: "test-mcp", Type: "CMD", Command: "test-cmd", Active: true},
@@ -305,8 +305,8 @@ func TestRenderDetailsColumn(t *testing.T) {
 
 func TestRenderFooterDifferentStates(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 
 	// Test search active state
 	model.Model.State = types.SearchActiveNavigation
@@ -322,8 +322,8 @@ func TestRenderFooterDifferentStates(t *testing.T) {
 
 func TestGetLayoutName(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 
 	// Test different column counts
 	testCases := []struct {
@@ -350,8 +350,8 @@ func TestGetLayoutName(t *testing.T) {
 
 func TestModelWithDifferentMCPTypes(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 	model.Model.MCPItems = []types.MCPItem{
 		{Name: "cmd-mcp", Type: "CMD", Command: "cmd", Active: true},
 		{Name: "sse-mcp", Type: "SSE", URL: "http://example.com", Active: false},
@@ -422,8 +422,8 @@ func TestModelWithEmptyMCPList(t *testing.T) {
 
 func TestModelSuccessMessage(t *testing.T) {
 	model := NewModel()
-	model.Width = 120
-	model.Height = 40
+	model.Model.Width = 120
+	model.Model.Height = 40
 	model.Model.SuccessMessage = "Test success message"
 	model.Model.SuccessTimer = 120
 
@@ -458,8 +458,8 @@ func TestModelUpdateUnknownMessage(t *testing.T) {
 
 func TestModelLargeWindow(t *testing.T) {
 	model := NewModel()
-	model.Width = 200
-	model.Height = 60
+	model.Model.Width = 200
+	model.Model.Height = 60
 
 	result := model.View()
 
@@ -471,8 +471,8 @@ func TestModelLargeWindow(t *testing.T) {
 
 func TestModelSmallWindow(t *testing.T) {
 	model := NewModel()
-	model.Width = 40
-	model.Height = 10
+	model.Model.Width = 40
+	model.Model.Height = 10
 
 	result := model.View()
 
