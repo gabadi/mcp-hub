@@ -73,7 +73,7 @@ func handleLoadingCancellation(model types.Model) (types.Model, tea.Cmd) {
 		return model, tea.Quit
 	case types.LoadingRefresh:
 		// For refresh cancellation, return to current state
-		model.SuccessMessage = "Refresh operation cancelled"
+		model.SuccessMessage = "Refresh operation canceled"
 		model.SuccessTimer = 120
 		return model, TimerCmd("success_timer")
 	default:

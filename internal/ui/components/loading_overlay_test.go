@@ -147,3 +147,4 @@ func TestSpinnerStateGetSpinnerChar(t *testing.T) {
 	}
 }
 
+
