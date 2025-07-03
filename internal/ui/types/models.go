@@ -27,6 +27,49 @@ const (
 	ToggleRetrying
 )
 
+// LoadingType represents the type of loading operation
+type LoadingType int
+
+const (
+	LoadingStartup LoadingType = iota
+	LoadingRefresh
+)
+
+// SpinnerState represents the current spinner animation frame
+type SpinnerState int
+
+const (
+	SpinnerFrame1 SpinnerState = iota
+	SpinnerFrame2
+	SpinnerFrame3
+	SpinnerFrame4
+)
+
+// LoadingOverlay represents the loading overlay state
+type LoadingOverlay struct {
+	Active      bool
+	Message     string
+	Spinner     SpinnerState
+	Cancellable bool
+	Type        LoadingType
+}
+
+// GetSpinnerChar returns the character for the current spinner state
+func (s SpinnerState) GetSpinnerChar() string {
+	switch s {
+	case SpinnerFrame1:
+		return "◐"
+	case SpinnerFrame2:
+		return "◓"
+	case SpinnerFrame3:
+		return "◑"
+	case SpinnerFrame4:
+		return "◒"
+	default:
+		return "◐"
+	}
+}
+
 // Model represents the main application model
 type Model struct {
 	// Window dimensions
@@ -82,6 +125,9 @@ type Model struct {
 	ToggleRetrying  bool
 	LastToggleSync  time.Time
 	ToggleStartTime time.Time
+
+	// Loading overlay state (Epic 2 Story 6)
+	LoadingOverlay *LoadingOverlay
 }
 
 // ModalType represents the type of modal being displayed
@@ -141,6 +187,24 @@ type ClaudeStatus struct {
 // TimerTickMsg represents a timer tick message for countdown functionality
 type TimerTickMsg struct {
 	ID string // Unique identifier for the timer
+}
+
+// LoadingProgressMsg represents a loading progress message
+type LoadingProgressMsg struct {
+	Type    LoadingType
+	Message string
+	Done    bool
+}
+
+// LoadingSpinnerMsg represents a spinner animation tick message
+type LoadingSpinnerMsg struct {
+	Type LoadingType
+}
+
+// LoadingStepMsg represents a loading step progression message
+type LoadingStepMsg struct {
+	Type LoadingType
+	Step int
 }
 
 // getDefaultMCPs returns the default MCP items for fallback
@@ -206,6 +270,56 @@ func NewModelWithMCPs(mcpItems []MCPItem) Model {
 	model.MCPItems = mcpItems
 	model.FormErrors = make(map[string]string)
 	return model
+}
+
+// StartLoadingOverlay starts a loading overlay with the given type
+func (m *Model) StartLoadingOverlay(loadingType LoadingType) {
+	m.LoadingOverlay = &LoadingOverlay{
+		Active:      true,
+		Message:     getInitialLoadingMessage(loadingType),
+		Spinner:     SpinnerFrame1,
+		Cancellable: true,
+		Type:        loadingType,
+	}
+}
+
+// UpdateLoadingMessage updates the loading overlay message
+func (m *Model) UpdateLoadingMessage(message string) {
+	if m.LoadingOverlay != nil && m.LoadingOverlay.Active {
+		m.LoadingOverlay.Message = message
+	}
+}
+
+// StopLoadingOverlay stops the loading overlay
+func (m *Model) StopLoadingOverlay() {
+	if m.LoadingOverlay != nil {
+		m.LoadingOverlay.Active = false
+		m.LoadingOverlay = nil
+	}
+}
+
+// AdvanceSpinner advances the spinner to the next frame
+func (m *Model) AdvanceSpinner() {
+	if m.LoadingOverlay != nil && m.LoadingOverlay.Active {
+		m.LoadingOverlay.Spinner = (m.LoadingOverlay.Spinner + 1) % 4
+	}
+}
+
+// IsLoadingOverlayActive returns true if loading overlay is active
+func (m *Model) IsLoadingOverlayActive() bool {
+	return m.LoadingOverlay != nil && m.LoadingOverlay.Active
+}
+
+// getInitialLoadingMessage returns the initial message for the loading type
+func getInitialLoadingMessage(loadingType LoadingType) string {
+	switch loadingType {
+	case LoadingStartup:
+		return "Initializing MCP Manager..."
+	case LoadingRefresh:
+		return "Refreshing MCP status..."
+	default:
+		return "Loading..."
+	}
 }
 
 // Init initializes the application

@@ -73,7 +73,8 @@ func handleActionKeys(model types.Model, key string) (types.Model, tea.Cmd, bool
 	case " ", "space":
 		return handleEnhancedToggleMCP(model)
 	case "r", "R":
-		return model, RefreshClaudeStatusCmd(), true
+		updatedModel, cmd := handleRefreshAction(model)
+		return updatedModel, cmd, true
 	}
 	return model, nil, false
 }
@@ -133,6 +134,20 @@ func handleDeleteMCP(model types.Model) types.Model {
 	return model
 }
 
+// handleRefreshAction handles the refresh action with loading overlay
+func handleRefreshAction(model types.Model) (types.Model, tea.Cmd) {
+	// Start refresh loading overlay
+	model.StartLoadingOverlay(types.LoadingRefresh)
+
+	// Return batch of commands for refresh
+	return model, tea.Batch(
+		RefreshLoadingCmd(),
+		RefreshLoadingTimerCmd(0),
+		LoadingSpinnerCmd(types.LoadingRefresh),
+		RefreshClaudeStatusCmd(),
+	)
+}
+
 // getEditModalType returns the appropriate modal type for editing based on MCP type
 func getEditModalType(mcpType string) types.ModalType {
 	switch mcpType {
@@ -168,8 +183,9 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 		updatedModel, cmd, _ := handleEnhancedToggleMCP(model)
 		return updatedModel, cmd
 	case "r", "R":
-		// Refresh Claude status
-		return model, RefreshClaudeStatusCmd()
+		// Refresh with loading overlay
+		updatedModel, cmd := handleRefreshAction(model)
+		return updatedModel, cmd
 	}
 
 	// Priority 2: Search control keys (mode switching)
@@ -472,5 +488,90 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPIte
 func TimerCmd(timerID string) tea.Cmd {
 	return tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
 		return types.TimerTickMsg{ID: timerID}
+	})
+}
+
+// StartupLoadingCmd creates a command to handle startup loading sequence
+func StartupLoadingCmd() tea.Cmd {
+	return StartupLoadingProgressCmd(0)
+}
+
+// StartupLoadingProgressCmd creates a command for the startup loading sequence with step progression
+func StartupLoadingProgressCmd(step int) tea.Cmd {
+	messages := []string{
+		"Initializing MCP Manager...",
+		"Loading MCP inventory...",
+		"Detecting Claude CLI...",
+		"Ready!",
+	}
+
+	if step >= len(messages) {
+		step = len(messages) - 1
+	}
+
+	// Return immediate message for current step
+	return func() tea.Msg {
+		return types.LoadingProgressMsg{
+			Type:    types.LoadingStartup,
+			Message: messages[step],
+			Done:    step == len(messages)-1,
+		}
+	}
+}
+
+// StartupLoadingTimerCmd creates a command for progressing through startup loading steps
+func StartupLoadingTimerCmd(step int) tea.Cmd {
+	delay := time.Duration(500+step*300) * time.Millisecond
+	return tea.Tick(delay, func(time.Time) tea.Msg {
+		return types.LoadingStepMsg{
+			Type: types.LoadingStartup,
+			Step: step + 1,
+		}
+	})
+}
+
+// RefreshLoadingCmd creates a command to handle refresh loading sequence
+func RefreshLoadingCmd() tea.Cmd {
+	return RefreshLoadingProgressCmd(0)
+}
+
+// RefreshLoadingProgressCmd creates a command for the refresh loading sequence with step progression
+func RefreshLoadingProgressCmd(step int) tea.Cmd {
+	messages := []string{
+		"Refreshing MCP status...",
+		"Syncing with Claude CLI...",
+		"Updating display...",
+		"Complete!",
+	}
+
+	if step >= len(messages) {
+		step = len(messages) - 1
+	}
+
+	// Return immediate message for current step
+	return func() tea.Msg {
+		return types.LoadingProgressMsg{
+			Type:    types.LoadingRefresh,
+			Message: messages[step],
+			Done:    step == len(messages)-1,
+		}
+	}
+}
+
+// RefreshLoadingTimerCmd creates a command for progressing through refresh loading steps
+func RefreshLoadingTimerCmd(step int) tea.Cmd {
+	delay := time.Duration(400+step*200) * time.Millisecond
+	return tea.Tick(delay, func(time.Time) tea.Msg {
+		return types.LoadingStepMsg{
+			Type: types.LoadingRefresh,
+			Step: step + 1,
+		}
+	})
+}
+
+// LoadingSpinnerCmd creates a command for spinner animation
+func LoadingSpinnerCmd(loadingType types.LoadingType) tea.Cmd {
+	return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg {
+		return types.LoadingSpinnerMsg{Type: loadingType}
 	})
 }

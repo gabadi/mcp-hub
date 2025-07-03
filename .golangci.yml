@@ -78,7 +78,6 @@ linters:
     - rowserrcheck
     - staticcheck
     - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
@@ -98,7 +97,6 @@ issues:
         - dupl
         - gosec
         - funlen
-        - typecheck  # Skip typecheck for test files while fixing field access patterns
     
     # Exclude unused warnings for UI view methods that are part of the interface
     - path: internal/ui/view\.go

@@ -30,6 +30,11 @@ func (m Model) View() string {
 		content = components.RenderAlertOverlay(m.Model.SuccessMessage, m.Model.Width, m.Model.Height, content)
 	}
 
+	// Apply loading overlay if present (Epic 2 Story 6)
+	if m.Model.LoadingOverlay != nil && m.Model.LoadingOverlay.Active {
+		content = components.RenderLoadingOverlay(m.Model, m.Model.Width, m.Model.Height, content)
+	}
+
 	// If a modal is active, render it on top
 	if m.Model.State == types.ModalActive {
 		// Render the modal overlay on top of the main content

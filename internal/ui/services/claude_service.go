@@ -22,6 +22,7 @@ type ToggleResult struct {
 	ErrorType string
 	ErrorMsg  string
 	Retryable bool
+	Retrying  bool
 	Duration  time.Duration
 }
 
@@ -394,15 +395,11 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 		result.ErrorMsg = ErrorMessages[result.ErrorType]
 		result.Retryable = (result.ErrorType == ErrorTypeNetworkTimeout)
 
-		// If retryable and within time budget, try once more
+		// If retryable and within time budget, mark as retrying
+		// The actual retry will be handled by the UI layer with proper delay
 		if result.Retryable && result.Duration < 8*time.Second {
-			time.Sleep(2 * time.Second) // Brief delay before retry
-			retryResult, retryErr := cs.retryToggleOperation(ctx, mcpName, activate, mcpConfig, start)
-			if retryErr == nil {
-				return retryResult, nil
-			}
-			// If retry also failed, update error message
-			result.ErrorMsg = "MCP toggle failed after retry. " + ErrorMessages[ErrorTypeUnknownError]
+			result.Retrying = true
+			result.ErrorMsg = "MCP toggle timed out. Retrying..."
 		}
 
 		return result, nil
