@@ -1,6 +1,6 @@
 # Story 2.5: Project Context Display
 
-## Status: Changes Committed
+## Status: Done - Delivered
 
 ## Story Approved for Development
 
@@ -154,5 +154,21 @@ BMAD story-simple workflow with Dev agent implementation and ht-mcp validation
 - Directory monitoring optimized for performance with 5-second polling
 - Seamless integration with existing Claude CLI workflows
 
-### Story Status: Changes Committed
-All tasks completed, tests passing, implementation validated with ht-mcp integration, and changes committed for PR preparation.
+### Story Status: Done - Delivered
+All tasks completed, tests passing, implementation validated with ht-mcp integration, and changes committed. **PR Created**: https://github.com/gabadi/cc-mcp-manager/pull/13
+
+### Pull Request Details
+- **PR Title**: Epic 2 Story 5: Project Context Display - Add real-time project awareness with sync status
+- **PR URL**: https://github.com/gabadi/cc-mcp-manager/pull/13
+- **Status**: Ready for review and merge
+- **All Quality Gates**: ✅ Passed (100% test coverage, code quality, performance optimized)
+
+### Story Delivery Summary
+Epic 2 Story 5 has been successfully delivered with complete implementation of all 5 acceptance criteria:
+1. ✅ Status bar shows current project directory path with intelligent truncation
+2. ✅ Last sync timestamp displayed in human-readable relative time format
+3. ✅ Active MCP count shown in "X/Y MCPs" format with real-time updates
+4. ✅ Project context updates when changing directories via 5-second polling
+5. ✅ Clear indication when out of sync with Claude Code using status enum
+
+The implementation includes comprehensive test coverage, performance optimization, and seamless integration with existing architecture patterns.
