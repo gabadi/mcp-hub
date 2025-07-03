@@ -17,13 +17,13 @@ func RenderLoadingOverlay(model types.Model, width, height int, baseContent stri
 	// Create the loading dialog box
 	dialogContent := renderLoadingDialog(model.LoadingOverlay)
 
-	// Create dialog box style
-	dialogWidth := 60 // Width of the dialog box
+	// Create dialog box style - less invasive design
+	dialogWidth := 40 // Width of the dialog box (reduced from 60)
 	dialogStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#7C3AED")).
-		Background(lipgloss.Color("#1E1E2E")).
-		Foreground(lipgloss.Color("#FFFFFF")).
+		Border(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("#6B7280")).
+		Background(lipgloss.Color("#1F2937")).
+		Foreground(lipgloss.Color("#F3F4F6")).
 		Padding(1, 2).
 		Width(dialogWidth).
 		Align(lipgloss.Center)
@@ -31,13 +31,13 @@ func RenderLoadingOverlay(model types.Model, width, height int, baseContent stri
 	// Apply the dialog style to the content
 	styledDialog := dialogStyle.Render(dialogContent)
 
-	// Position the dialog in the center of the screen
+	// Position the dialog in the center of the screen with semi-transparent background
 	positionedDialog := lipgloss.Place(
 		width, height,
 		lipgloss.Center, lipgloss.Center,
 		styledDialog,
-		lipgloss.WithWhitespaceBackground(lipgloss.Color("0")),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("0")),
+		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1E1E2E")),
+		lipgloss.WithWhitespaceForeground(lipgloss.Color("#6B7280")),
 	)
 
 	return positionedDialog
@@ -48,15 +48,12 @@ func renderLoadingDialog(overlay *types.LoadingOverlay) string {
 	// Get spinner character
 	spinnerChar := overlay.Spinner.GetSpinnerChar()
 
-	// Create the dialog content
-	title := "MCP Manager"
+	// Create the dialog content - simplified and less prominent
 	message := spinnerChar + " " + overlay.Message
-	instruction := "Press ESC to cancel"
+	instruction := "ESC to cancel"
 
-	// Join content with proper spacing
+	// Join content with minimal spacing
 	content := strings.Join([]string{
-		title,
-		"",
 		message,
 		"",
 		instruction,

@@ -60,16 +60,12 @@ func TestRenderLoadingDialog(t *testing.T) {
 
 	result := renderLoadingDialog(overlay)
 
-	// Check that the dialog contains expected elements
-	if !strings.Contains(result, "MCP Manager") {
-		t.Error("Expected dialog to contain title")
-	}
-	
+	// Check that the dialog contains expected elements (updated for simplified UX)
 	if !strings.Contains(result, "Test message") {
 		t.Error("Expected dialog to contain message")
 	}
 	
-	if !strings.Contains(result, "Press ESC to cancel") {
+	if !strings.Contains(result, "ESC to cancel") {
 		t.Error("Expected dialog to contain cancel instruction")
 	}
 
