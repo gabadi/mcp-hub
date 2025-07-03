@@ -14,30 +14,28 @@ func RenderLoadingOverlay(model types.Model, width, height int, baseContent stri
 		return baseContent
 	}
 
-	// Create the loading dialog box
+	// Create the loading dialog box - minimal, non-invasive design
 	dialogContent := renderLoadingDialog(model.LoadingOverlay)
 
-	// Create dialog box style - less invasive design
-	dialogWidth := 40 // Width of the dialog box (reduced from 60)
+	// Create a compact dialog style with subtle appearance
+	dialogWidth := 32 // Even smaller for minimal footprint
 	dialogStyle := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("#6B7280")).
-		Background(lipgloss.Color("#1F2937")).
-		Foreground(lipgloss.Color("#F3F4F6")).
-		Padding(1, 2).
+		BorderForeground(lipgloss.Color("#4B5563")). // More subtle gray
+		Background(lipgloss.Color("#111827")).       // Darker, less prominent
+		Foreground(lipgloss.Color("#D1D5DB")).       // Softer white
+		Padding(1).                                  // Minimal padding
 		Width(dialogWidth).
 		Align(lipgloss.Center)
 
 	// Apply the dialog style to the content
 	styledDialog := dialogStyle.Render(dialogContent)
 
-	// Position the dialog in the center of the screen with semi-transparent background
+	// Position the dialog in the top-right corner to be less invasive
 	positionedDialog := lipgloss.Place(
 		width, height,
-		lipgloss.Center, lipgloss.Center,
+		lipgloss.Right, lipgloss.Top,
 		styledDialog,
-		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1E1E2E")),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("#6B7280")),
 	)
 
 	return positionedDialog
