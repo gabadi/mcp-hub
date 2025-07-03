@@ -10,7 +10,7 @@ import (
 // without affecting the main content layout flow. This follows the same pattern as the modal
 // overlay system to ensure consistent behavior.
 func RenderAlertOverlay(message string, width, height int, backgroundContent string) string {
-	// If no message, return background content unchanged  
+	// If no message, return background content unchanged
 	if message == "" {
 		return backgroundContent
 	}
@@ -49,7 +49,7 @@ func RenderAlertOverlay(message string, width, height int, backgroundContent str
 		lipgloss.WithWhitespaceChars(" "),
 	)
 
-	// The key innovation: we layer the overlay on the background by combining 
+	// The key innovation: we layer the overlay on the background by combining
 	// their visual representations. The alert "floats" over the content.
 	return combineOverlayWithBackground(backgroundContent, alertOverlay, width, height)
 }
@@ -65,7 +65,7 @@ func combineOverlayWithBackground(background, overlay string, width, height int)
 	// Ensure we have enough lines to work with
 	maxLines := height
 	if len(backgroundLines) > maxLines {
-		maxLines = len(backgroundLines) 
+		maxLines = len(backgroundLines)
 	}
 	if len(overlayLines) > maxLines {
 		maxLines = len(overlayLines)
@@ -76,7 +76,7 @@ func combineOverlayWithBackground(background, overlay string, width, height int)
 		backgroundLines = append(backgroundLines, strings.Repeat(" ", width))
 	}
 
-	// Pad overlay lines to match dimensions  
+	// Pad overlay lines to match dimensions
 	for len(overlayLines) < maxLines {
 		overlayLines = append(overlayLines, strings.Repeat(" ", width))
 	}
@@ -87,7 +87,7 @@ func combineOverlayWithBackground(background, overlay string, width, height int)
 	for i := 0; i < maxLines; i++ {
 		overlayLine := ""
 		backgroundLine := ""
-		
+
 		if i < len(overlayLines) {
 			overlayLine = overlayLines[i]
 		}

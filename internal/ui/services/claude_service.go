@@ -31,9 +31,9 @@ const (
 	ErrorTypeNetworkTimeout    = "NETWORK_TIMEOUT"
 	ErrorTypePermissionError   = "PERMISSION_ERROR"
 	ErrorTypeMCPAlreadyExists  = "MCP_ALREADY_EXISTS"
-	ErrorTypeMCPNotFound      = "MCP_NOT_FOUND"
-	ErrorTypeInvalidCommand   = "INVALID_COMMAND"
-	ErrorTypeUnknownError     = "UNKNOWN_ERROR"
+	ErrorTypeMCPNotFound       = "MCP_NOT_FOUND"
+	ErrorTypeInvalidCommand    = "INVALID_COMMAND"
+	ErrorTypeUnknownError      = "UNKNOWN_ERROR"
 )
 
 // Error message templates
@@ -301,7 +301,7 @@ func SyncMCPStatus(model types.Model, activeMCPs []string) types.Model {
 	// This implements the mapping: Claude "added" = Local "active"
 	for i := range model.MCPItems {
 		mcpName := model.MCPItems[i].Name
-		
+
 		// Set active status based on Claude's configuration
 		// If MCP is in Claude's list, it's active (added)
 		// If MCP is not in Claude's list, it's inactive (not added/removed)
@@ -473,19 +473,19 @@ func (cs *ClaudeService) retryToggleOperation(ctx context.Context, mcpName strin
 // buildAddCommand constructs the claude mcp add command based on MCP configuration
 func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.MCPItem) *exec.Cmd {
 	args := []string{"mcp", "add", mcpConfig.Name}
-	
+
 	// Add the command or URL
 	if mcpConfig.URL != "" {
 		args = append(args, mcpConfig.URL)
 	} else {
 		args = append(args, mcpConfig.Command)
 	}
-	
+
 	// Add command arguments
 	if len(mcpConfig.Args) > 0 {
 		args = append(args, mcpConfig.Args...)
 	}
-	
+
 	// Determine transport type based on MCP type
 	switch strings.ToUpper(mcpConfig.Type) {
 	case "SSE":
@@ -495,14 +495,14 @@ func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.M
 	default:
 		// stdio is the default, no need to specify
 	}
-	
+
 	// Add environment variables if present
 	if len(mcpConfig.Environment) > 0 {
 		for key, value := range mcpConfig.Environment {
 			args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
 		}
 	}
-	
+
 	return exec.CommandContext(ctx, "claude", args...)
 }
 
@@ -511,48 +511,71 @@ func (cs *ClaudeService) classifyError(err error, output string) string {
 	outputLower := strings.ToLower(output)
 	errMsg := strings.ToLower(err.Error())
 
-	// Check for timeout errors
-	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "deadline exceeded") {
+	if cs.isTimeoutError(errMsg) {
 		return ErrorTypeNetworkTimeout
 	}
 
-	// Check for Claude CLI availability issues first (before generic "not found")
-	if strings.Contains(errMsg, "executable file not found") ||
-		strings.Contains(outputLower, "command not found") ||
-		strings.Contains(outputLower, "not recognized") {
+	if cs.isClaudeUnavailableError(errMsg, outputLower) {
 		return ErrorTypeClaudeUnavailable
 	}
 
-	// Check for MCP already exists (add operation when MCP is already configured)
-	if strings.Contains(outputLower, "already exists") ||
-		strings.Contains(outputLower, "already configured") ||
-		strings.Contains(outputLower, "duplicate") {
+	if cs.isMCPAlreadyExistsError(outputLower) {
 		return ErrorTypeMCPAlreadyExists
 	}
 
-	// Check for MCP not found (remove operation when MCP doesn't exist)
-	// Be more specific to avoid conflicts with "command not found"
-	if strings.Contains(outputLower, "mcp server") && strings.Contains(outputLower, "not found") ||
-		strings.Contains(outputLower, "no mcp server found") ||
-		strings.Contains(outputLower, "does not exist") ||
-		strings.Contains(outputLower, "unknown server") {
+	if cs.isMCPNotFoundError(outputLower) {
 		return ErrorTypeMCPNotFound
 	}
 
-	// Check for invalid command/configuration errors
-	if strings.Contains(outputLower, "invalid command") ||
-		strings.Contains(outputLower, "invalid configuration") ||
-		strings.Contains(outputLower, "malformed") ||
-		strings.Contains(outputLower, "invalid transport") {
+	if cs.isInvalidCommandError(outputLower) {
 		return ErrorTypeInvalidCommand
 	}
 
-	// Check for permission errors
-	if strings.Contains(outputLower, "permission denied") ||
-		strings.Contains(outputLower, "unauthorized") ||
-		strings.Contains(outputLower, "authentication") {
+	if cs.isPermissionError(outputLower) {
 		return ErrorTypePermissionError
 	}
 
 	return ErrorTypeUnknownError
+}
+
+// isTimeoutError checks for timeout-related errors
+func (cs *ClaudeService) isTimeoutError(errMsg string) bool {
+	return strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "deadline exceeded")
+}
+
+// isClaudeUnavailableError checks for Claude CLI availability issues
+func (cs *ClaudeService) isClaudeUnavailableError(errMsg, outputLower string) bool {
+	return strings.Contains(errMsg, "executable file not found") ||
+		strings.Contains(outputLower, "command not found") ||
+		strings.Contains(outputLower, "not recognized")
+}
+
+// isMCPAlreadyExistsError checks for MCP already exists errors
+func (cs *ClaudeService) isMCPAlreadyExistsError(outputLower string) bool {
+	return strings.Contains(outputLower, "already exists") ||
+		strings.Contains(outputLower, "already configured") ||
+		strings.Contains(outputLower, "duplicate")
+}
+
+// isMCPNotFoundError checks for MCP not found errors
+func (cs *ClaudeService) isMCPNotFoundError(outputLower string) bool {
+	return (strings.Contains(outputLower, "mcp server") && strings.Contains(outputLower, "not found")) ||
+		strings.Contains(outputLower, "no mcp server found") ||
+		strings.Contains(outputLower, "does not exist") ||
+		strings.Contains(outputLower, "unknown server")
+}
+
+// isInvalidCommandError checks for invalid command/configuration errors
+func (cs *ClaudeService) isInvalidCommandError(outputLower string) bool {
+	return strings.Contains(outputLower, "invalid command") ||
+		strings.Contains(outputLower, "invalid configuration") ||
+		strings.Contains(outputLower, "malformed") ||
+		strings.Contains(outputLower, "invalid transport")
+}
+
+// isPermissionError checks for permission-related errors
+func (cs *ClaudeService) isPermissionError(outputLower string) bool {
+	return strings.Contains(outputLower, "permission denied") ||
+		strings.Contains(outputLower, "unauthorized") ||
+		strings.Contains(outputLower, "authentication")
 }

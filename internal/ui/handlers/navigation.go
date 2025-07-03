@@ -444,7 +444,7 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPIte
 	return func() tea.Msg {
 		claudeService := services.NewClaudeService()
 		ctx := context.Background()
-		
+
 		// Pass the MCP configuration for add operations
 		result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate, mcpConfig)
 

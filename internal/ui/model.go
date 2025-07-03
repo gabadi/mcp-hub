@@ -116,7 +116,7 @@ func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) (tea.Model, t
 		m.Model.SuccessMessage = "Claude CLI not available"
 		m.Model.SuccessTimer = 180 // Show message for 3 seconds
 	}
-	
+
 	// Start timer for success message countdown (not toggle-specific, so use general timer)
 	return m, handlers.TimerCmd("success_timer")
 }
@@ -184,25 +184,25 @@ func (m Model) handleTimerTickMsg(msg types.TimerTickMsg) (tea.Model, tea.Cmd) {
 	// Only handle success timer ticks
 	if msg.ID == "success_timer" && m.Model.SuccessTimer > 0 {
 		m.Model.SuccessTimer--
-		
+
 		// If timer reaches 0, reset toggle state and clear success message
 		if m.Model.SuccessTimer <= 0 {
 			// Reset toggle state and clear toggle MCP name
 			m.Model.ToggleState = types.ToggleIdle
 			m.Model.ToggleMCPName = ""
 			m.Model.ToggleError = ""
-			
+
 			// Clear success message
 			m.Model.SuccessMessage = ""
-			
+
 			// Timer has expired, don't continue
 			return m, nil
 		}
-		
+
 		// Continue timer countdown
 		return m, handlers.TimerCmd("success_timer")
 	}
-	
+
 	return m, nil
 }
 

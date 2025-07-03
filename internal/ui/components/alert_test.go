@@ -7,44 +7,44 @@ import (
 
 func TestRenderAlertOverlay(t *testing.T) {
 	tests := []struct {
-		name           string
-		message        string
-		width          int
-		height         int
+		name              string
+		message           string
+		width             int
+		height            int
 		backgroundContent string
-		expectOverlay  bool
+		expectOverlay     bool
 	}{
 		{
-			name:           "No message returns background unchanged",
-			message:        "",
-			width:          80,
-			height:         24,
+			name:              "No message returns background unchanged",
+			message:           "",
+			width:             80,
+			height:            24,
 			backgroundContent: "Test background content",
-			expectOverlay:  false,
+			expectOverlay:     false,
 		},
 		{
-			name:           "Message creates overlay with proper styling",
-			message:        "Success! MCP activated",
-			width:          80,
-			height:         24,
+			name:              "Message creates overlay with proper styling",
+			message:           "Success! MCP activated",
+			width:             80,
+			height:            24,
 			backgroundContent: "Test background content",
-			expectOverlay:  true,
+			expectOverlay:     true,
 		},
 		{
-			name:           "Small terminal dimensions handled gracefully",
-			message:        "Success",
-			width:          40,
-			height:         12,
+			name:              "Small terminal dimensions handled gracefully",
+			message:           "Success",
+			width:             40,
+			height:            12,
 			backgroundContent: "Small terminal",
-			expectOverlay:  true,
+			expectOverlay:     true,
 		},
 		{
-			name:           "Very small width uses minimum alert width",
-			message:        "Test",
-			width:          15,
-			height:         10,
+			name:              "Very small width uses minimum alert width",
+			message:           "Test",
+			width:             15,
+			height:            10,
 			backgroundContent: "Tiny",
-			expectOverlay:  true,
+			expectOverlay:     true,
 		},
 	}
 
@@ -100,14 +100,14 @@ func TestRenderAlertOverlay_Styling(t *testing.T) {
 
 func TestCombineOverlayWithBackground(t *testing.T) {
 	background := "Line 1\nLine 2\nLine 3"
-	overlay := "Overlay\n\n"  // Empty second line
+	overlay := "Overlay\n\n" // Empty second line
 	width := 20
 	height := 5
 
 	result := combineOverlayWithBackground(background, overlay, width, height)
 
 	lines := strings.Split(result, "\n")
-	
+
 	// Should have correct number of lines
 	if len(lines) != height {
 		t.Errorf("Expected %d lines, got %d", height, len(lines))
@@ -125,8 +125,8 @@ func TestCombineOverlayWithBackground(t *testing.T) {
 }
 
 func TestRenderAlertOverlay_MinimumWidth(t *testing.T) {
-	message := "Test"  // Short message that should fit
-	width := 10 // Very small width
+	message := "Test" // Short message that should fit
+	width := 10       // Very small width
 	height := 5
 	background := "BG"
 
