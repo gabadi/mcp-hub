@@ -23,7 +23,7 @@ func TestView_MainComposition(t *testing.T) {
 			expectedComponents: []string{
 				"MCP Manager v1.0", // Header
 				"MCP Manager",      // Body
-				"Terminal:",        // Footer
+				"📁",                // Footer project context
 			},
 		},
 		{
@@ -413,7 +413,7 @@ func TestView_VerticalComposition(t *testing.T) {
 		// Find positions of components
 		headerPos := strings.Index(result, "MCP Manager v1.0")
 		bodyPos := strings.Index(result, "Debug: MCPs:")
-		footerPos := strings.Index(result, "Terminal:")
+		footerPos := strings.Index(result, "📁") // Look for project context icon
 
 		if headerPos == -1 {
 			t.Errorf("View() should contain header")
@@ -422,7 +422,7 @@ func TestView_VerticalComposition(t *testing.T) {
 			t.Errorf("View() should contain body")
 		}
 		if footerPos == -1 {
-			t.Errorf("View() should contain footer")
+			t.Errorf("View() should contain footer with project context")
 		}
 
 		// Check order: header should come before body, body before footer

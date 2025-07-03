@@ -128,6 +128,9 @@ type Model struct {
 
 	// Loading overlay state (Epic 2 Story 6)
 	LoadingOverlay *LoadingOverlay
+
+	// Project context state (Epic 2 Story 5)
+	ProjectContext ProjectContext
 }
 
 // ModalType represents the type of modal being displayed
@@ -184,6 +187,27 @@ type ClaudeStatus struct {
 	InstallGuide string    `json:"install_guide,omitempty"`
 }
 
+// SyncStatus represents the sync status between local and Claude
+type SyncStatus int
+
+const (
+	SyncStatusUnknown SyncStatus = iota
+	SyncStatusInSync
+	SyncStatusOutOfSync
+	SyncStatusError
+)
+
+// ProjectContext represents project context information
+type ProjectContext struct {
+	CurrentPath    string
+	LastSyncTime   time.Time
+	ActiveMCPs     int
+	TotalMCPs      int
+	SyncStatus     SyncStatus
+	DisplayPath    string // Truncated path for display
+	SyncStatusText string // Human-readable sync status
+}
+
 // TimerTickMsg represents a timer tick message for countdown functionality
 type TimerTickMsg struct {
 	ID string // Unique identifier for the timer
@@ -205,6 +229,14 @@ type LoadingSpinnerMsg struct {
 type LoadingStepMsg struct {
 	Type LoadingType
 	Step int
+}
+
+// ProjectContextCheckMsg represents a project context check message
+type ProjectContextCheckMsg struct{}
+
+// DirectoryChangeMsg represents a directory change detection message
+type DirectoryChangeMsg struct {
+	NewPath string
 }
 
 // getDefaultMCPs returns the default MCP items for fallback

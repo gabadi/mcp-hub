@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -575,4 +577,138 @@ func (cs *ClaudeService) isPermissionError(outputLower string) bool {
 	return strings.Contains(outputLower, "permission denied") ||
 		strings.Contains(outputLower, "unauthorized") ||
 		strings.Contains(outputLower, "authentication")
+}
+
+// GetProjectContext returns the current project context information
+func GetProjectContext(model types.Model) types.ProjectContext {
+	currentPath, err := os.Getwd()
+	if err != nil {
+		currentPath = "Unknown"
+	}
+
+	// Calculate display path (truncated for UI)
+	displayPath := FormatPathForDisplay(currentPath, 50)
+
+	// Count active MCPs
+	activeMCPs := 0
+	for _, mcp := range model.MCPItems {
+		if mcp.Active {
+			activeMCPs++
+		}
+	}
+
+	// Determine sync status
+	syncStatus := GetSyncStatus(model)
+	syncStatusText := FormatSyncStatusText(syncStatus)
+
+	return types.ProjectContext{
+		CurrentPath:    currentPath,
+		LastSyncTime:   model.LastClaudeSync,
+		ActiveMCPs:     activeMCPs,
+		TotalMCPs:      len(model.MCPItems),
+		SyncStatus:     syncStatus,
+		DisplayPath:    displayPath,
+		SyncStatusText: syncStatusText,
+	}
+}
+
+// FormatPathForDisplay formats a path for display by truncating if necessary
+func FormatPathForDisplay(path string, maxLength int) string {
+	if len(path) <= maxLength {
+		return path
+	}
+
+	// Try to show relative path from home directory
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		if relPath, err := filepath.Rel(homeDir, path); err == nil && !strings.HasPrefix(relPath, "..") {
+			shortPath := "~/" + relPath
+			if len(shortPath) <= maxLength {
+				return shortPath
+			}
+		}
+	}
+
+	// If still too long, truncate with ellipsis
+	if len(path) > maxLength {
+		return "..." + path[len(path)-maxLength+3:]
+	}
+
+	return path
+}
+
+// GetSyncStatus determines the sync status between local and Claude state
+func GetSyncStatus(model types.Model) types.SyncStatus {
+	if !model.ClaudeAvailable {
+		return types.SyncStatusError
+	}
+
+	if model.ClaudeSyncError != "" {
+		return types.SyncStatusError
+	}
+
+	if model.LastClaudeSync.IsZero() {
+		return types.SyncStatusUnknown
+	}
+
+	// Check if local active MCPs match Claude's active MCPs
+	localActiveMCPs := make(map[string]bool)
+	for _, mcp := range model.MCPItems {
+		if mcp.Active {
+			localActiveMCPs[mcp.Name] = true
+		}
+	}
+
+	claudeActiveMCPs := make(map[string]bool)
+	for _, mcpName := range model.ClaudeStatus.ActiveMCPs {
+		claudeActiveMCPs[mcpName] = true
+	}
+
+	// Compare local and Claude active MCPs
+	if len(localActiveMCPs) != len(claudeActiveMCPs) {
+		return types.SyncStatusOutOfSync
+	}
+
+	for mcpName := range localActiveMCPs {
+		if !claudeActiveMCPs[mcpName] {
+			return types.SyncStatusOutOfSync
+		}
+	}
+
+	return types.SyncStatusInSync
+}
+
+// FormatSyncStatusText formats the sync status as human-readable text
+func FormatSyncStatusText(syncStatus types.SyncStatus) string {
+	switch syncStatus {
+	case types.SyncStatusInSync:
+		return "In Sync"
+	case types.SyncStatusOutOfSync:
+		return "Out of Sync"
+	case types.SyncStatusError:
+		return "Error"
+	case types.SyncStatusUnknown:
+		return "Unknown"
+	default:
+		return "Unknown"
+	}
+}
+
+// UpdateProjectContext updates the project context in the model
+func UpdateProjectContext(model types.Model) types.Model {
+	model.ProjectContext = GetProjectContext(model)
+	return model
+}
+
+// HasDirectoryChanged checks if the current directory has changed
+func HasDirectoryChanged(currentPath string) bool {
+	if currentPath == "" {
+		return false
+	}
+
+	actualPath, err := os.Getwd()
+	if err != nil {
+		return false
+	}
+
+	return currentPath != actualPath
 }

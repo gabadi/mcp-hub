@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"testing"
@@ -873,5 +875,293 @@ func BenchmarkClassifyError(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = service.classifyError(mockErr, output)
+	}
+}
+
+// Epic 2 Story 5 Tests - Project Context Display
+
+func TestGetProjectContext(t *testing.T) {
+	// Create test model with MCP items
+	model := types.NewModel()
+	model.MCPItems = []types.MCPItem{
+		{Name: "test1", Active: true},
+		{Name: "test2", Active: false},
+		{Name: "test3", Active: true},
+	}
+	model.LastClaudeSync = time.Now().Add(-5 * time.Minute)
+
+	projectContext := GetProjectContext(model)
+
+	// Test basic structure
+	if projectContext.CurrentPath == "" {
+		t.Error("CurrentPath should not be empty")
+	}
+	if projectContext.DisplayPath == "" {
+		t.Error("DisplayPath should not be empty")
+	}
+	if projectContext.ActiveMCPs != 2 {
+		t.Errorf("Expected 2 active MCPs, got %d", projectContext.ActiveMCPs)
+	}
+	if projectContext.TotalMCPs != 3 {
+		t.Errorf("Expected 3 total MCPs, got %d", projectContext.TotalMCPs)
+	}
+	if projectContext.LastSyncTime.IsZero() {
+		t.Error("LastSyncTime should be set from model")
+	}
+	if projectContext.SyncStatusText == "" {
+		t.Error("SyncStatusText should not be empty")
+	}
+}
+
+func TestFormatPathForDisplay(t *testing.T) {
+	testCases := []struct {
+		name      string
+		path      string
+		maxLength int
+		expected  bool // Whether result should be different from input
+	}{
+		{
+			name:      "short path",
+			path:      "/home/user",
+			maxLength: 50,
+			expected:  false, // Should be unchanged
+		},
+		{
+			name:      "exact length",
+			path:      "/home/user/project",
+			maxLength: 18,
+			expected:  false, // Should be unchanged
+		},
+		{
+			name:      "long path",
+			path:      "/very/long/path/to/some/deeply/nested/project/directory",
+			maxLength: 30,
+			expected:  true, // Should be truncated
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := FormatPathForDisplay(tc.path, tc.maxLength)
+
+			if len(result) > tc.maxLength {
+				t.Errorf("Result length %d exceeds maxLength %d: %s", len(result), tc.maxLength, result)
+			}
+
+			changed := result != tc.path
+			if changed != tc.expected {
+				t.Errorf("Expected changed=%v, got changed=%v. Input: %s, Output: %s", tc.expected, changed, tc.path, result)
+			}
+
+			// For truncated paths, should contain ellipsis
+			if tc.expected && len(tc.path) > tc.maxLength {
+				if !contains(result, "...") && !contains(result, "~/") {
+					t.Errorf("Long path should be truncated with ellipsis or use home dir: %s", result)
+				}
+			}
+		})
+	}
+}
+
+func TestGetSyncStatus(t *testing.T) {
+	baseTime := time.Now()
+
+	testCases := []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}{
+		{
+			name: "claude unavailable",
+			model: types.Model{
+				ClaudeAvailable: false,
+			},
+			expected: types.SyncStatusError,
+		},
+		{
+			name: "claude sync error",
+			model: types.Model{
+				ClaudeAvailable: true,
+				ClaudeSyncError: "connection failed",
+			},
+			expected: types.SyncStatusError,
+		},
+		{
+			name: "no sync performed",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  time.Time{}, // Zero time
+			},
+			expected: types.SyncStatusUnknown,
+		},
+		{
+			name: "in sync",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: false},
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test1"},
+				},
+			},
+			expected: types.SyncStatusInSync,
+		},
+		{
+			name: "out of sync - different active count",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: true}, // Both active locally
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test1"}, // Only one active in Claude
+				},
+			},
+			expected: types.SyncStatusOutOfSync,
+		},
+		{
+			name: "out of sync - different active MCPs",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: false},
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test2"}, // Different MCP active in Claude
+				},
+			},
+			expected: types.SyncStatusOutOfSync,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetSyncStatus(tc.model)
+			if result != tc.expected {
+				t.Errorf("GetSyncStatus() = %v, expected %v", result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestFormatSyncStatusText(t *testing.T) {
+	testCases := []struct {
+		status   types.SyncStatus
+		expected string
+	}{
+		{types.SyncStatusInSync, "In Sync"},
+		{types.SyncStatusOutOfSync, "Out of Sync"},
+		{types.SyncStatusError, "Error"},
+		{types.SyncStatusUnknown, "Unknown"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.expected, func(t *testing.T) {
+			result := FormatSyncStatusText(tc.status)
+			if result != tc.expected {
+				t.Errorf("FormatSyncStatusText(%v) = %s, expected %s", tc.status, result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestUpdateProjectContext(t *testing.T) {
+	// Create test model
+	model := types.NewModel()
+	model.MCPItems = []types.MCPItem{
+		{Name: "test1", Active: true},
+		{Name: "test2", Active: false},
+	}
+
+	// Update project context
+	updatedModel := UpdateProjectContext(model)
+
+	// Verify project context was updated
+	if updatedModel.ProjectContext.TotalMCPs != 2 {
+		t.Errorf("Expected 2 total MCPs in project context, got %d", updatedModel.ProjectContext.TotalMCPs)
+	}
+	if updatedModel.ProjectContext.ActiveMCPs != 1 {
+		t.Errorf("Expected 1 active MCP in project context, got %d", updatedModel.ProjectContext.ActiveMCPs)
+	}
+	if updatedModel.ProjectContext.CurrentPath == "" {
+		t.Error("CurrentPath should be set in project context")
+	}
+	if updatedModel.ProjectContext.DisplayPath == "" {
+		t.Error("DisplayPath should be set in project context")
+	}
+}
+
+func TestHasDirectoryChanged(t *testing.T) {
+	// Test with empty path
+	if HasDirectoryChanged("") {
+		t.Error("Empty path should not indicate directory change")
+	}
+
+	// Test with current directory (should not have changed)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Skip("Cannot get current directory for test")
+	}
+
+	if HasDirectoryChanged(currentDir) {
+		t.Error("Current directory should not indicate change")
+	}
+
+	// Test with different directory
+	if !HasDirectoryChanged("/non/existent/path") {
+		t.Error("Different directory should indicate change")
+	}
+}
+
+// Benchmark tests for project context functions
+func BenchmarkGetProjectContext(b *testing.B) {
+	model := types.NewModel()
+	model.MCPItems = make([]types.MCPItem, 50)
+	for i := range model.MCPItems {
+		model.MCPItems[i] = types.MCPItem{
+			Name:   fmt.Sprintf("mcp-%d", i),
+			Active: i%2 == 0,
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetProjectContext(model)
+	}
+}
+
+func BenchmarkFormatPathForDisplay(b *testing.B) {
+	longPath := "/very/long/path/to/some/deeply/nested/project/directory/with/many/subdirectories"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = FormatPathForDisplay(longPath, 30)
+	}
+}
+
+func BenchmarkGetSyncStatus(b *testing.B) {
+	model := types.Model{
+		ClaudeAvailable: true,
+		LastClaudeSync:  time.Now(),
+		MCPItems: []types.MCPItem{
+			{Name: "test1", Active: true},
+			{Name: "test2", Active: false},
+			{Name: "test3", Active: true},
+		},
+		ClaudeStatus: types.ClaudeStatus{
+			ActiveMCPs: []string{"test1", "test3"},
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetSyncStatus(model)
 	}
 }

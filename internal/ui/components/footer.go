@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
@@ -57,11 +58,37 @@ func RenderFooter(model types.Model) string {
 		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
 			len(filteredMCPs), model.SearchQuery, model.Width, model.Height)
 	} else {
-		// Priority 4: Show Claude status and default info
-		claudeStatusText := services.FormatClaudeStatusForDisplay(model.ClaudeStatus)
+		// Priority 4: Show project context information
+		var projectContext types.ProjectContext
+
+		// Use model's project context if it has valid display info, otherwise compute it
+		if model.ProjectContext.DisplayPath != "" {
+			projectContext = model.ProjectContext
+		} else {
+			projectContext = services.GetProjectContext(model)
+		}
+
+		// Format project context display
+		contextInfo := fmt.Sprintf("📁 %s • %d/%d MCPs • %s",
+			projectContext.DisplayPath,
+			projectContext.ActiveMCPs,
+			projectContext.TotalMCPs,
+			projectContext.SyncStatusText)
+
+		// Add last sync time if available
+		if !projectContext.LastSyncTime.IsZero() {
+			timeSinceSync := time.Since(projectContext.LastSyncTime)
+			if timeSinceSync < time.Hour {
+				contextInfo += fmt.Sprintf(" • Last sync: %s ago",
+					formatDuration(timeSinceSync))
+			} else {
+				contextInfo += fmt.Sprintf(" • Last sync: %s",
+					projectContext.LastSyncTime.Format("15:04"))
+			}
+		}
+
 		refreshHint := services.GetRefreshKeyHint(model.ClaudeStatus)
-		footerText = fmt.Sprintf("%s • %s • Terminal: %dx%d",
-			claudeStatusText, refreshHint, model.Width, model.Height)
+		footerText = fmt.Sprintf("%s • %s", contextInfo, refreshHint)
 	}
 
 	return footerStyle.Render(footerText)
@@ -117,4 +144,15 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 		}
 	}
 	return filtered
+}
+
+// formatDuration formats a duration for display in the footer
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	} else if d < time.Hour {
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	} else {
+		return fmt.Sprintf("%dh", int(d.Hours()))
+	}
 }
