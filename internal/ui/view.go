@@ -22,24 +22,18 @@ func (m Model) View() string {
 	footer := components.RenderFooter(m.Model)
 
 	// Join components vertically without extra container
+	// This creates the base content without any success message disruption
 	content := lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
 
-	// Add success message if present
+	// Apply success message as overlay if present (no layout disruption)
 	if m.Model.SuccessMessage != "" {
-		successStyle := lipgloss.NewStyle().
-			Background(lipgloss.Color("#51CF66")).
-			Foreground(lipgloss.Color("#FFFFFF")).
-			Bold(true).
-			Padding(0, 2).
-			MarginBottom(1)
-
-		successBar := successStyle.Render(m.Model.SuccessMessage)
-		content = lipgloss.JoinVertical(lipgloss.Left, successBar, header, body, footer)
+		content = components.RenderAlertOverlay(m.Model.SuccessMessage, m.Model.Width, m.Model.Height, content)
 	}
 
 	// If a modal is active, render it on top
 	if m.Model.State == types.ModalActive {
 		// Render the modal overlay on top of the main content
+		// The modal will also overlay on top of any alert
 		modalOverlay := components.OverlayModal(m.Model, m.Model.Width, m.Model.Height, content)
 		return modalOverlay
 	}

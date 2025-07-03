@@ -111,9 +111,9 @@ func getEnhancedStatusIndicator(model types.Model, item types.MCPItem) string {
 		case types.ToggleSuccess:
 			// Show success briefly, then return to normal
 			if item.Active {
-				return "✅" // Success with active state
+				return "✅" // Success - MCP activated
 			}
-			return "✓" // Success with inactive state
+			return "◦" // Success - MCP deactivated (removed)
 		case types.ToggleError:
 			return "✗" // Error indicator
 		}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"strings"
+	"time"
 
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
@@ -465,4 +466,11 @@ func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPIte
 			Retrying: result.Retryable && !result.Success,
 		}
 	}
+}
+
+// TimerCmd creates a command that sends timer tick messages every ~50ms
+func TimerCmd(timerID string) tea.Cmd {
+	return tea.Tick(50*time.Millisecond, func(time.Time) tea.Msg {
+		return types.TimerTickMsg{ID: timerID}
+	})
 }

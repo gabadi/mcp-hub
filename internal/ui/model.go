@@ -62,9 +62,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case handlers.SuccessMsg:
 		return m.handleSuccessMsg(msg), nil
 	case handlers.ClaudeStatusMsg:
-		return m.handleClaudeStatusMsg(msg), nil
+		return m.handleClaudeStatusMsg(msg)
 	case handlers.ToggleResultMsg:
-		return m.handleToggleResultMsg(msg), nil
+		return m.handleToggleResultMsg(msg)
+	case types.TimerTickMsg:
+		return m.handleTimerTickMsg(msg)
 	}
 	return m, nil
 }
@@ -91,7 +93,7 @@ func (m Model) handleSuccessMsg(msg handlers.SuccessMsg) Model {
 }
 
 // handleClaudeStatusMsg handles Claude status update messages
-func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) Model {
+func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) (tea.Model, tea.Cmd) {
 	// Update model with Claude status
 	m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
 
@@ -114,23 +116,26 @@ func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) Model {
 		m.Model.SuccessMessage = "Claude CLI not available"
 		m.Model.SuccessTimer = 180 // Show message for 3 seconds
 	}
-	return m
+	
+	// Start timer for success message countdown (not toggle-specific, so use general timer)
+	return m, handlers.TimerCmd("success_timer")
 }
 
 // handleToggleResultMsg handles toggle operation result messages
-func (m Model) handleToggleResultMsg(msg handlers.ToggleResultMsg) Model {
+func (m Model) handleToggleResultMsg(msg handlers.ToggleResultMsg) (tea.Model, tea.Cmd) {
 	// Handle enhanced toggle operation results (Epic 2 Story 2)
+	var cmd tea.Cmd
 	if msg.Success {
-		m = m.handleToggleSuccess(msg)
+		m, cmd = m.handleToggleSuccess(msg)
 	} else {
-		m = m.handleToggleError(msg)
+		m, cmd = m.handleToggleError(msg)
 	}
 	m.Model.ToggleMCPName = msg.MCPName
-	return m
+	return m, cmd
 }
 
 // handleToggleSuccess handles successful toggle operations
-func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) Model {
+func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) (Model, tea.Cmd) {
 	// Update local MCP status and save
 	for i := range m.Model.MCPItems {
 		if m.Model.MCPItems[i].Name == msg.MCPName {
@@ -142,6 +147,9 @@ func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) Model {
 	if err := services.SaveInventory(m.Model.MCPItems); err != nil {
 		m.Model.ToggleState = types.ToggleError
 		m.Model.ToggleError = "MCP toggled but failed to save to storage"
+		m.Model.SuccessTimer = 240
+		// Start timer for error state
+		return m, handlers.TimerCmd("success_timer")
 	} else {
 		m.Model.ToggleState = types.ToggleSuccess
 		activationState := "deactivated"
@@ -150,12 +158,13 @@ func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) Model {
 		}
 		m.Model.SuccessMessage = fmt.Sprintf("MCP '%s' %s successfully", msg.MCPName, activationState)
 		m.Model.SuccessTimer = 120
+		// Start timer for success state
+		return m, handlers.TimerCmd("success_timer")
 	}
-	return m
 }
 
 // handleToggleError handles failed toggle operations
-func (m Model) handleToggleError(msg handlers.ToggleResultMsg) Model {
+func (m Model) handleToggleError(msg handlers.ToggleResultMsg) (Model, tea.Cmd) {
 	if msg.Retrying {
 		m.Model.ToggleState = types.ToggleRetrying
 		m.Model.SuccessMessage = fmt.Sprintf("MCP toggle failed, retrying: %s", msg.Error)
@@ -166,7 +175,35 @@ func (m Model) handleToggleError(msg handlers.ToggleResultMsg) Model {
 		m.Model.SuccessTimer = 240
 	}
 	m.Model.ToggleError = msg.Error
-	return m
+	// Start timer for error/retry state
+	return m, handlers.TimerCmd("success_timer")
+}
+
+// handleTimerTickMsg handles timer tick messages for countdown functionality
+func (m Model) handleTimerTickMsg(msg types.TimerTickMsg) (tea.Model, tea.Cmd) {
+	// Only handle success timer ticks
+	if msg.ID == "success_timer" && m.Model.SuccessTimer > 0 {
+		m.Model.SuccessTimer--
+		
+		// If timer reaches 0, reset toggle state and clear success message
+		if m.Model.SuccessTimer <= 0 {
+			// Reset toggle state and clear toggle MCP name
+			m.Model.ToggleState = types.ToggleIdle
+			m.Model.ToggleMCPName = ""
+			m.Model.ToggleError = ""
+			
+			// Clear success message
+			m.Model.SuccessMessage = ""
+			
+			// Timer has expired, don't continue
+			return m, nil
+		}
+		
+		// Continue timer countdown
+		return m, handlers.TimerCmd("success_timer")
+	}
+	
+	return m, nil
 }
 
 // All key handling has been moved to handlers package

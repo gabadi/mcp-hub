@@ -138,6 +138,11 @@ type ClaudeStatus struct {
 	InstallGuide string    `json:"install_guide,omitempty"`
 }
 
+// TimerTickMsg represents a timer tick message for countdown functionality
+type TimerTickMsg struct {
+	ID string // Unique identifier for the timer
+}
+
 // getDefaultMCPs returns the default MCP items for fallback
 func getDefaultMCPs() []MCPItem {
 	return []MCPItem{
