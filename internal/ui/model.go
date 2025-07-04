@@ -61,7 +61,8 @@ func (m Model) Init() tea.Cmd {
 		handlers.StartupLoadingCmd(),
 		handlers.StartupLoadingTimerCmd(0),
 		handlers.LoadingSpinnerCmd(types.LoadingStartup),
-		ProjectContextCheckCmd(), // Start project context monitoring
+		ProjectContextCheckCmd(),           // Start project context monitoring
+		DelayedClaudeStatusRefreshCmd(),    // Auto-detect Claude CLI after UI loads
 	)
 }
 
@@ -374,6 +375,15 @@ func DirectoryChangeCmd(newPath string) tea.Cmd {
 // RefreshClaudeStatusCmd returns a command to refresh Claude status
 func RefreshClaudeStatusCmd() tea.Cmd {
 	return handlers.RefreshClaudeStatusCmd()
+}
+
+// DelayedClaudeStatusRefreshCmd returns a command to refresh Claude status after a short delay
+// This allows the UI to load first before detecting Claude CLI
+func DelayedClaudeStatusRefreshCmd() tea.Cmd {
+	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
+		// After 500ms, trigger a Claude status refresh
+		return tea.Sequence(RefreshClaudeStatusCmd())()
+	})
 }
 
 // All layout and navigation logic has been moved to services and handlers packages
