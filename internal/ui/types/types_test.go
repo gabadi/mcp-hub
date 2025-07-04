@@ -42,8 +42,9 @@ func TestNewModel(t *testing.T) {
 		t.Errorf("Expected 1 column, got %d", len(model.Columns))
 	}
 
-	if len(model.MCPItems) == 0 {
-		t.Error("Expected MCPItems to be populated with defaults")
+	// MVP starts with empty MCP inventory - users add their own MCPs
+	if len(model.MCPItems) != 0 {
+		t.Errorf("Expected MCPItems to start empty for MVP, got %d items", len(model.MCPItems))
 	}
 
 	if model.FormErrors == nil {
@@ -81,58 +82,15 @@ func TestNewModelWithMCPs(t *testing.T) {
 func TestGetDefaultMCPs(t *testing.T) {
 	defaults := getDefaultMCPs()
 
-	if len(defaults) == 0 {
-		t.Error("Expected default MCPs to be populated")
+	// MVP starts with empty inventory - users should add their own MCPs
+	// This ensures users only configure MCPs they actually have installed and configured
+	if len(defaults) != 0 {
+		t.Errorf("Expected default MCPs to be empty for MVP, got %d items", len(defaults))
 	}
 
-	// Test that we have some well-known MCPs
-	foundContext7 := false
-	foundGithub := false
-	foundHt := false
-
-	for _, mcp := range defaults {
-		if mcp.Name == "context7" {
-			foundContext7 = true
-			if mcp.Type != "SSE" {
-				t.Errorf("Expected context7 to be SSE type, got %s", mcp.Type)
-			}
-			if !mcp.Active {
-				t.Error("Expected context7 to be active by default")
-			}
-		}
-		if mcp.Name == "github-mcp" {
-			foundGithub = true
-			if mcp.Type != "CMD" {
-				t.Errorf("Expected github-mcp to be CMD type, got %s", mcp.Type)
-			}
-		}
-		if mcp.Name == "ht-mcp" {
-			foundHt = true
-			if mcp.Type != "CMD" {
-				t.Errorf("Expected ht-mcp to be CMD type, got %s", mcp.Type)
-			}
-		}
-
-		// Test that all MCPs have required fields
-		if mcp.Name == "" {
-			t.Error("Found MCP with empty name")
-		}
-		if mcp.Type == "" {
-			t.Error("Found MCP with empty type")
-		}
-		if mcp.Command == "" && mcp.URL == "" && mcp.JSONConfig == "" {
-			t.Errorf("MCP %s has no command, URL, or JSON config", mcp.Name)
-		}
-	}
-
-	if !foundContext7 {
-		t.Error("Expected to find context7 in default MCPs")
-	}
-	if !foundGithub {
-		t.Error("Expected to find github-mcp in default MCPs")
-	}
-	if !foundHt {
-		t.Error("Expected to find ht-mcp in default MCPs")
+	// Verify it returns a valid slice (not nil)
+	if defaults == nil {
+		t.Error("Expected getDefaultMCPs to return a valid slice, got nil")
 	}
 }
 
@@ -486,5 +444,287 @@ func TestMCPItemEnvironmentHandling(t *testing.T) {
 	}
 	if mcp3.Environment["VAR2"] != "value2" {
 		t.Error("Environment variable VAR2 not set correctly")
+	}
+}
+
+func TestLoadingOverlayMethods(t *testing.T) {
+	t.Run("StartLoadingOverlay", func(t *testing.T) {
+		model := NewModel()
+		
+		model.StartLoadingOverlay(LoadingStartup)
+		
+		if !model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should be active after start")
+		}
+		if model.LoadingOverlay.Message == "" {
+			t.Error("Loading message should be set after start")
+		}
+		if model.LoadingOverlay.Type != LoadingStartup {
+			t.Errorf("Expected type LoadingStartup, got %v", model.LoadingOverlay.Type)
+		}
+	})
+	
+	t.Run("UpdateLoadingMessage", func(t *testing.T) {
+		model := NewModel()
+		model.StartLoadingOverlay(LoadingRefresh)
+		oldMessage := model.LoadingOverlay.Message
+		
+		model.UpdateLoadingMessage("New message")
+		
+		if model.LoadingOverlay.Message != "New message" {
+			t.Errorf("Expected message 'New message', got '%s'", model.LoadingOverlay.Message)
+		}
+		if !model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should remain active")
+		}
+		
+		// Test that it changed from old message
+		if model.LoadingOverlay.Message == oldMessage {
+			t.Error("Message should have changed")
+		}
+	})
+	
+	t.Run("StopLoadingOverlay", func(t *testing.T) {
+		model := NewModel()
+		model.StartLoadingOverlay(LoadingStartup)
+		
+		// Ensure it's active first
+		if !model.IsLoadingOverlayActive() {
+			t.Error("Setup: Loading overlay should be active before stop")
+		}
+		
+		model.StopLoadingOverlay()
+		
+		if model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should be inactive after stop")
+		}
+		if model.LoadingOverlay != nil {
+			t.Error("Loading overlay should be nil after stop")
+		}
+	})
+	
+	t.Run("AdvanceSpinner", func(t *testing.T) {
+		model := NewModel()
+		model.StartLoadingOverlay(LoadingStartup)
+		
+		initialSpinner := model.LoadingOverlay.Spinner
+		
+		model.AdvanceSpinner()
+		
+		if model.LoadingOverlay.Spinner == initialSpinner {
+			t.Error("Spinner should have advanced")
+		}
+		
+		// Test multiple advances to check wrap around
+		for i := 0; i < 10; i++ {
+			model.AdvanceSpinner()
+		}
+		
+		// Should still be a valid spinner value (0-3)
+		if model.LoadingOverlay.Spinner < 0 || model.LoadingOverlay.Spinner > 3 {
+			t.Errorf("Spinner should be between 0-3, got %d", model.LoadingOverlay.Spinner)
+		}
+	})
+	
+	t.Run("IsLoadingOverlayActive", func(t *testing.T) {
+		model := NewModel()
+		
+		// Initially inactive
+		if model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should be inactive initially")
+		}
+		
+		// Activate
+		model.StartLoadingOverlay(LoadingStartup)
+		if !model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should be active after start")
+		}
+		
+		// Deactivate
+		model.StopLoadingOverlay()
+		if model.IsLoadingOverlayActive() {
+			t.Error("Loading overlay should be inactive after stop")
+		}
+	})
+}
+
+func TestSpinnerTypes(t *testing.T) {
+	// Test that spinner constants are defined
+	if SpinnerFrame1 != 0 {
+		t.Errorf("Expected SpinnerFrame1 to be 0, got %d", SpinnerFrame1)
+	}
+	if SpinnerFrame2 != 1 {
+		t.Errorf("Expected SpinnerFrame2 to be 1, got %d", SpinnerFrame2)
+	}
+	if SpinnerFrame3 != 2 {
+		t.Errorf("Expected SpinnerFrame3 to be 2, got %d", SpinnerFrame3)
+	}
+	if SpinnerFrame4 != 3 {
+		t.Errorf("Expected SpinnerFrame4 to be 3, got %d", SpinnerFrame4)
+	}
+}
+
+func TestLoadingMessageGeneration(t *testing.T) {
+	// Test loading startup message
+	model := NewModel()
+	model.StartLoadingOverlay(LoadingStartup)
+	
+	if model.LoadingOverlay.Message == "" {
+		t.Error("Startup loading message should not be empty")
+	}
+	
+	// Test loading refresh message
+	model2 := NewModel()
+	model2.StartLoadingOverlay(LoadingRefresh)
+	
+	if model2.LoadingOverlay.Message == "" {
+		t.Error("Refresh loading message should not be empty")
+	}
+	
+	// Messages should be different for different types
+	if model.LoadingOverlay.Message == model2.LoadingOverlay.Message {
+		t.Error("Different loading types should have different messages")
+	}
+}
+
+func TestMessageTypes(t *testing.T) {
+	t.Run("TimerTickMsg", func(t *testing.T) {
+		msg := TimerTickMsg{ID: "timer-42"}
+		if msg.ID != "timer-42" {
+			t.Errorf("Expected ID 'timer-42', got '%s'", msg.ID)
+		}
+	})
+	
+	t.Run("LoadingProgressMsg", func(t *testing.T) {
+		msg := LoadingProgressMsg{
+			Type:    LoadingRefresh,
+			Message: "Progress message",
+			Done:    false,
+		}
+		if msg.Type != LoadingRefresh {
+			t.Errorf("Expected LoadingRefresh, got %v", msg.Type)
+		}
+		if msg.Message != "Progress message" {
+			t.Errorf("Expected 'Progress message', got '%s'", msg.Message)
+		}
+		if msg.Done {
+			t.Error("Expected Done to be false")
+		}
+	})
+	
+	t.Run("LoadingStepMsg", func(t *testing.T) {
+		msg := LoadingStepMsg{
+			Type: LoadingStartup,
+			Step: 3,
+		}
+		if msg.Step != 3 {
+			t.Errorf("Expected step 3, got %d", msg.Step)
+		}
+		if msg.Type != LoadingStartup {
+			t.Errorf("Expected LoadingStartup, got %v", msg.Type)
+		}
+	})
+	
+	t.Run("LoadingSpinnerMsg", func(t *testing.T) {
+		msg := LoadingSpinnerMsg{Type: LoadingStartup}
+		if msg.Type != LoadingStartup {
+			t.Errorf("Expected LoadingStartup, got %v", msg.Type)
+		}
+	})
+	
+	t.Run("ProjectContextCheckMsg", func(t *testing.T) {
+		msg := ProjectContextCheckMsg{}
+		// Empty struct, just test that it compiles and exists
+		_ = msg
+	})
+	
+	t.Run("DirectoryChangeMsg", func(t *testing.T) {
+		msg := DirectoryChangeMsg{NewPath: "/new/path"}
+		if msg.NewPath != "/new/path" {
+			t.Errorf("Expected '/new/path', got '%s'", msg.NewPath)
+		}
+	})
+}
+
+func TestLoadingTypeConstants(t *testing.T) {
+	// Test loading type constants
+	if LoadingStartup != 0 {
+		t.Errorf("Expected LoadingStartup to be 0, got %d", LoadingStartup)
+	}
+	if LoadingRefresh != 1 {
+		t.Errorf("Expected LoadingRefresh to be 1, got %d", LoadingRefresh)
+	}
+}
+
+func TestProjectContextStruct(t *testing.T) {
+	ctx := ProjectContext{
+		CurrentPath:    "/test/project",
+		ActiveMCPs:     5,
+		TotalMCPs:      10,
+		DisplayPath:    "/test/project",
+		SyncStatusText: "Synced",
+	}
+	
+	if ctx.CurrentPath != "/test/project" {
+		t.Error("ProjectContext CurrentPath not set correctly")
+	}
+	if ctx.ActiveMCPs != 5 {
+		t.Error("ProjectContext ActiveMCPs not set correctly")
+	}
+	if ctx.TotalMCPs != 10 {
+		t.Error("ProjectContext TotalMCPs not set correctly")
+	}
+	if ctx.DisplayPath != "/test/project" {
+		t.Error("ProjectContext DisplayPath not set correctly")
+	}
+	if ctx.SyncStatusText != "Synced" {
+		t.Error("ProjectContext SyncStatusText not set correctly")
+	}
+}
+
+func TestLoadingOverlayStruct(t *testing.T) {
+	overlay := LoadingOverlay{
+		Active:      true,
+		Message:     "Loading...",
+		Spinner:     SpinnerFrame2,
+		Cancellable: true,
+		Type:        LoadingStartup,
+	}
+	
+	if !overlay.Active {
+		t.Error("LoadingOverlay Active not set correctly")
+	}
+	if overlay.Message != "Loading..." {
+		t.Error("LoadingOverlay Message not set correctly")
+	}
+	if overlay.Spinner != SpinnerFrame2 {
+		t.Error("LoadingOverlay Spinner not set correctly")
+	}
+	if !overlay.Cancellable {
+		t.Error("LoadingOverlay Cancellable not set correctly")
+	}
+	if overlay.Type != LoadingStartup {
+		t.Error("LoadingOverlay Type not set correctly")
+	}
+}
+
+func TestSpinnerCharGeneration(t *testing.T) {
+	tests := []struct {
+		state    SpinnerState
+		expected string
+	}{
+		{SpinnerFrame1, "◐"},
+		{SpinnerFrame2, "◓"},
+		{SpinnerFrame3, "◑"},
+		{SpinnerFrame4, "◒"},
+	}
+	
+	for _, tt := range tests {
+		t.Run("Spinner state", func(t *testing.T) {
+			result := tt.state.GetSpinnerChar()
+			if result != tt.expected {
+				t.Errorf("Expected spinner char %s, got %s", tt.expected, result)
+			}
+		})
 	}
 }

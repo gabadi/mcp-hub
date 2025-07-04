@@ -434,3 +434,164 @@ func TestView_VerticalComposition(t *testing.T) {
 		}
 	})
 }
+
+func TestView_UncoveredMethods(t *testing.T) {
+	t.Run("renderHeader", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.State = types.MainNavigation
+		
+		// Test that the full view includes header content
+		result := model.View()
+		
+		if !strings.Contains(result, "MCP Manager v1.0") {
+			t.Errorf("renderHeader should include title")
+		}
+		if !strings.Contains(result, "MCPs:") {
+			t.Errorf("renderHeader should include MCP count")
+		}
+	})
+
+	t.Run("renderFourColumns", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 150
+		model.Model.Height = 40
+		model.Model.ColumnCount = 4
+		
+		// Add test MCPs
+		model.Model.MCPItems = []types.MCPItem{
+			{Name: "test-mcp-1", Active: true, Type: "CMD"},
+			{Name: "test-mcp-2", Active: false, Type: "SSE"},
+			{Name: "test-mcp-3", Active: true, Type: "JSON"},
+			{Name: "test-mcp-4", Active: false, Type: "CMD"},
+		}
+		
+		result := model.View()
+		
+		// Should use 4-column grid layout
+		if !strings.Contains(result, "Grid (4-column MCP)") {
+			t.Errorf("renderFourColumns should show grid layout")
+		}
+		
+		// Should show all test MCPs
+		if !strings.Contains(result, "test-mcp-1") {
+			t.Errorf("renderFourColumns should show test-mcp-1")
+		}
+		if !strings.Contains(result, "test-mcp-2") {
+			t.Errorf("renderFourColumns should show test-mcp-2")
+		}
+	})
+
+	t.Run("renderMCPColumnList", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 100
+		model.Model.Height = 30
+		model.Model.ColumnCount = 3
+		
+		// Add test MCPs
+		model.Model.MCPItems = []types.MCPItem{
+			{Name: "column-test-1", Active: true, Type: "CMD"},
+			{Name: "column-test-2", Active: false, Type: "SSE"},
+		}
+		
+		result := model.View()
+		
+		// Should show MCPs in 3-column layout
+		if !strings.Contains(result, "column-test-1") {
+			t.Errorf("renderMCPColumnList should show column-test-1")
+		}
+		if !strings.Contains(result, "column-test-2") {
+			t.Errorf("renderMCPColumnList should show column-test-2")
+		}
+	})
+
+	t.Run("renderFooter", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.State = types.MainNavigation
+		
+		result := model.View()
+		
+		// Should include footer content
+		if !strings.Contains(result, "📁") {
+			t.Errorf("renderFooter should include project context icon")
+		}
+		if !strings.Contains(result, "Claude CLI:") {
+			t.Errorf("renderFooter should include Claude CLI status")
+		}
+	})
+
+	t.Run("getLayoutName", func(t *testing.T) {
+		tests := []struct {
+			name        string
+			columnCount int
+			expected    string
+		}{
+			{"Single column", 1, "Narrow"},
+			{"Two columns", 2, "Medium"},
+			{"Three columns", 3, "Wide"},
+			{"Four columns", 4, "Grid (4-column MCP)"},
+		}
+		
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				model := NewModel()
+				model.Model.Width = 120
+				model.Model.Height = 40
+				model.Model.ColumnCount = tt.columnCount
+				
+				result := model.View()
+				
+				if !strings.Contains(result, tt.expected) {
+					t.Errorf("getLayoutName should return %q for %d columns", tt.expected, tt.columnCount)
+				}
+			})
+		}
+	})
+}
+
+func TestView_LoadingStates(t *testing.T) {
+	t.Run("Loading overlay active", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.LoadingOverlay.Active = true
+		model.Model.LoadingOverlay.Message = "Test loading..."
+		
+		result := model.View()
+		
+		if !strings.Contains(result, "Test loading...") {
+			t.Errorf("View should show loading overlay message")
+		}
+	})
+
+	t.Run("Modal active", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.State = types.ModalActive
+		model.Model.ActiveModal = types.AddModal
+		
+		result := model.View()
+		
+		// Should show modal overlay
+		if !strings.Contains(result, "ESC=Cancel") {
+			t.Errorf("View should show modal shortcuts when modal is active")
+		}
+	})
+
+	t.Run("Alert active", func(t *testing.T) {
+		model := NewModel()
+		model.Model.Width = 120
+		model.Model.Height = 40
+		model.Model.SuccessMessage = "Test alert message"
+		
+		result := model.View()
+		
+		if !strings.Contains(result, "Test alert message") {
+			t.Errorf("View should show alert message when alert is active")
+		}
+	})
+}

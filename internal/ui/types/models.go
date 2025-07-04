@@ -240,44 +240,9 @@ type DirectoryChangeMsg struct {
 }
 
 // getDefaultMCPs returns the default MCP items for fallback
+// For MVP, we start with an empty inventory so users only add MCPs they actually have configured
 func getDefaultMCPs() []MCPItem {
-	return []MCPItem{
-		{Name: "context7", Type: "SSE", Active: true, Command: "npx @context7/mcp-server"},
-		{Name: "github-mcp", Type: "CMD", Active: true, Command: "github-mcp"},
-		{Name: "ht-mcp", Type: "CMD", Active: true, Command: "ht-mcp"},
-		{Name: "filesystem", Type: "CMD", Active: false, Command: "filesystem-mcp"},
-		{Name: "docker-mcp", Type: "CMD", Active: false, Command: "docker-mcp"},
-		{Name: "redis-mcp", Type: "CMD", Active: false, Command: "redis-mcp"},
-		{Name: "jira-mcp", Type: "CMD", Active: false, Command: "jira-mcp"},
-		{Name: "aws-mcp", Type: "JSON", Active: false, Command: "aws-mcp"},
-		{Name: "k8s-mcp", Type: "CMD", Active: false, Command: "k8s-mcp"},
-		{Name: "confluence", Type: "SSE", Active: false, Command: "confluence-mcp"},
-		{Name: "mongodb", Type: "CMD", Active: false, Command: "mongodb-mcp"},
-		{Name: "terraform", Type: "CMD", Active: false, Command: "terraform-mcp"},
-		{Name: "gitlab-mcp", Type: "CMD", Active: false, Command: "gitlab-mcp"},
-		{Name: "linear-mcp", Type: "CMD", Active: false, Command: "linear-mcp"},
-		{Name: "postgres", Type: "CMD", Active: false, Command: "postgres-mcp"},
-		{Name: "elastic", Type: "JSON", Active: false, Command: "elastic-mcp"},
-		{Name: "bitbucket", Type: "CMD", Active: false, Command: "bitbucket-mcp"},
-		{Name: "asana-mcp", Type: "CMD", Active: false, Command: "asana-mcp"},
-		{Name: "notion-mcp", Type: "CMD", Active: false, Command: "notion-mcp"},
-		{Name: "anthropic", Type: "HTTP", Active: false, Command: "anthropic-mcp"},
-		{Name: "sourcegraph", Type: "CMD", Active: false, Command: "sourcegraph-mcp"},
-		{Name: "todoist", Type: "CMD", Active: false, Command: "todoist-mcp"},
-		{Name: "slack-mcp", Type: "CMD", Active: false, Command: "slack-mcp"},
-		{Name: "openai-mcp", Type: "HTTP", Active: false, Command: "openai-mcp"},
-		{Name: "codeberg", Type: "CMD", Active: false, Command: "codeberg-mcp"},
-		{Name: "calendar", Type: "CMD", Active: false, Command: "calendar-mcp"},
-		{Name: "discord", Type: "CMD", Active: false, Command: "discord-mcp"},
-		{Name: "gemini-mcp", Type: "HTTP", Active: false, Command: "gemini-mcp"},
-		{Name: "gitness", Type: "CMD", Active: false, Command: "gitness-mcp"},
-		{Name: "email-mcp", Type: "CMD", Active: false, Command: "email-mcp"},
-		{Name: "teams-mcp", Type: "CMD", Active: false, Command: "teams-mcp"},
-		{Name: "claude-mcp", Type: "HTTP", Active: false, Command: "claude-mcp"},
-		{Name: "fossil-mcp", Type: "CMD", Active: false, Command: "fossil-mcp"},
-		{Name: "browser", Type: "CMD", Active: false, Command: "browser-mcp"},
-		{Name: "zoom-mcp", Type: "CMD", Active: false, Command: "zoom-mcp"},
-	}
+	return []MCPItem{}
 }
 
 // NewModel creates a new application model

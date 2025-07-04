@@ -19,7 +19,6 @@ import (
 // These tests verify end-to-end functionality across all components
 
 func TestCompleteUserWorkflow_InitializeAndNavigate(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Complete application initialization workflow", func(t *testing.T) {
 		// Setup temporary storage
 		tempDir := t.TempDir()
@@ -58,7 +57,6 @@ func TestCompleteUserWorkflow_InitializeAndNavigate(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_SearchAndSelection(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Complete search and selection workflow", func(t *testing.T) {
 		// Setup model with known test data
 		testMCPs := []types.MCPItem{
@@ -108,7 +106,6 @@ func TestCompleteUserWorkflow_SearchAndSelection(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_MCPToggleAndPersistence(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Complete MCP toggle and persistence workflow", func(t *testing.T) {
 		// Setup temporary storage
 		tempDir := t.TempDir()
@@ -160,7 +157,6 @@ func TestCompleteUserWorkflow_MCPToggleAndPersistence(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_ResponsiveLayout(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Complete responsive layout adaptation workflow", func(t *testing.T) {
 		model := ui.Model{
 			Model: testutil.NewTestModel().
@@ -204,7 +200,6 @@ func TestCompleteUserWorkflow_ResponsiveLayout(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_ErrorHandlingAndRecovery(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Complete error handling and recovery workflow", func(t *testing.T) {
 		model := ui.Model{
 			Model: testutil.NewTestModel().
@@ -234,7 +229,6 @@ func TestCompleteUserWorkflow_ErrorHandlingAndRecovery(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_PerformanceUnderLoad(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Performance with large dataset", func(t *testing.T) {
 		// Create large dataset for performance testing
 		largeMCPDataset := make([]types.MCPItem, 1000)
@@ -277,7 +271,6 @@ func TestCompleteUserWorkflow_PerformanceUnderLoad(t *testing.T) {
 }
 
 func TestCompleteUserWorkflow_DataIntegrity(t *testing.T) {
-	t.Skip("Integration test skipped - functionality will be implemented in Story 3.1 (Epic 1)")
 	t.Run("Data integrity across operations", func(t *testing.T) {
 		tempDir := t.TempDir()
 

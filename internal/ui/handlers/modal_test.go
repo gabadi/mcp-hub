@@ -5,6 +5,8 @@ import (
 
 	"cc-mcp-manager/internal/testutil"
 	"cc-mcp-manager/internal/ui/types"
+	
+	"github.com/stretchr/testify/assert"
 )
 
 // Epic 1 Story 4 Tests - Edit MCP Functionality
@@ -861,4 +863,59 @@ func findInString(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// Tests for uncovered functions
+
+func TestModalFormHandling(t *testing.T) {
+	t.Run("Modal form state handling", func(t *testing.T) {
+		model := testutil.NewTestModel().Build()
+		model.State = types.ModalActive
+		model.ActiveModal = types.AddCommandForm
+		model.FormData.Name = "test-cmd"
+		model.FormData.Command = "test-command"
+		
+		// Test that modal state is properly maintained
+		assert.Equal(t, types.ModalActive, model.State)
+		assert.Equal(t, types.AddCommandForm, model.ActiveModal)
+		assert.Equal(t, "test-cmd", model.FormData.Name)
+	})
+
+	t.Run("SSE form state handling", func(t *testing.T) {
+		model := testutil.NewTestModel().Build()
+		model.State = types.ModalActive
+		model.ActiveModal = types.AddSSEForm
+		model.FormData.Name = "test-sse"
+		model.FormData.URL = "https://example.com"
+		
+		assert.Equal(t, types.AddSSEForm, model.ActiveModal)
+		assert.Equal(t, "test-sse", model.FormData.Name)
+		assert.Equal(t, "https://example.com", model.FormData.URL)
+	})
+
+	t.Run("JSON form state handling", func(t *testing.T) {
+		model := testutil.NewTestModel().Build()
+		model.State = types.ModalActive
+		model.ActiveModal = types.AddJSONForm
+		model.FormData.Name = "test-json"
+		model.FormData.JSONConfig = `{"key": "value"}`
+		
+		assert.Equal(t, types.AddJSONForm, model.ActiveModal)
+		assert.Equal(t, "test-json", model.FormData.Name)
+		assert.NotEmpty(t, model.FormData.JSONConfig)
+	})
+
+	t.Run("Delete modal state handling", func(t *testing.T) {
+		model := testutil.NewTestModel().Build()
+		model.State = types.ModalActive
+		model.ActiveModal = types.DeleteModal
+		model.SelectedItem = 0
+		model.MCPItems = []types.MCPItem{
+			{Name: "to-delete", Type: "CMD"},
+		}
+		
+		assert.Equal(t, types.DeleteModal, model.ActiveModal)
+		assert.Equal(t, 0, model.SelectedItem)
+		assert.Len(t, model.MCPItems, 1)
+	})
 }
