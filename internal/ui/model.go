@@ -344,7 +344,7 @@ func (m Model) handleProjectContextCheckMsg(msg types.ProjectContextCheckMsg) (t
 }
 
 // handleDirectoryChangeMsg handles directory change events
-func (m Model) handleDirectoryChangeMsg(msg types.DirectoryChangeMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleDirectoryChangeMsg(_ types.DirectoryChangeMsg) (tea.Model, tea.Cmd) {
 	// Update project context with new directory
 	m.Model = services.UpdateProjectContext(m.Model)
 
