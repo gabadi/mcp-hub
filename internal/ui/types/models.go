@@ -316,7 +316,7 @@ func getInitialLoadingMessage(loadingType LoadingType) string {
 	case LoadingRefresh:
 		return "Refreshing MCP status..."
 	case LoadingClaude:
-		return "Detecting Claude CLI..."
+		return "Detecting Claude CLI... (ESC to cancel)"
 	default:
 		return "Loading..."
 	}

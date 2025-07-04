@@ -72,6 +72,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		return m.handleWindowSizeMsg(msg), nil
 	case tea.KeyMsg:
+		// Block input when loading overlay is active, except for exit keys
+		if m.Model.IsLoadingOverlayActive() {
+			// Allow exit even during loading
+			if msg.String() == "esc" || msg.String() == "ctrl+c" {
+				return m.handleKeyMsg(msg)
+			}
+			return m, nil
+		}
 		return m.handleKeyMsg(msg)
 	case handlers.SuccessMsg:
 		return m.handleSuccessMsg(msg), nil
