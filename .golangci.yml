@@ -14,6 +14,9 @@ linters-settings:
     check-type-assertions: true
     check-blank: true
   
+  gocyclo:
+    min-complexity: 15
+  
   revive:
     confidence: 0.8
   
@@ -23,6 +26,9 @@ linters-settings:
   misspell:
     locale: US
   
+  nakedret:
+    max-func-lines: 30
+  
   unparam:
     check-exported: false
 
@@ -30,12 +36,23 @@ linters:
   disable-all: true
   enable:
     - bodyclose
+    - dogsled
     - dupl
     - errcheck
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - goconst
     - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
     - govet
     - ineffassign
     - misspell
+    - nakedret
+    - noctx
+    - nolintlint
     - revive
     - rowserrcheck
     - staticcheck
