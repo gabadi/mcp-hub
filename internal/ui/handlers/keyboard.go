@@ -9,6 +9,15 @@ import (
 // HandleKeyPress processes keyboard input based on current state
 func HandleKeyPress(model types.Model, msg tea.KeyMsg) (types.Model, tea.Cmd) {
 	key := msg.String()
+	
+	// Handle special key types for search states
+	if model.State == types.SearchActiveNavigation && model.SearchInputActive && msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && key != "enter" && key != "tab" && key != "esc" {
+		// Add runes to search query (only if not a special command key)
+		for _, r := range msg.Runes {
+			model.SearchQuery += string(r)
+		}
+		return model, nil
+	}
 
 	// Global keys that work in any state
 	switch key {

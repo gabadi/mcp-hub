@@ -557,7 +557,7 @@ func TestView_LoadingStates(t *testing.T) {
 		model := NewModel()
 		model.Model.Width = 120
 		model.Model.Height = 40
-		model.Model.LoadingOverlay.Active = true
+		model.Model.StartLoadingOverlay(types.LoadingStartup)
 		model.Model.LoadingOverlay.Message = "Test loading..."
 		
 		result := model.View()

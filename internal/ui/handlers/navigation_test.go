@@ -136,53 +136,71 @@ func TestHandleSearchNavigationKeys(t *testing.T) {
 
 func TestNavigationMethods(t *testing.T) {
 	t.Run("NavigateUp", func(t *testing.T) {
+		// Test with 4-column layout - NavigateUp should work within grid
 		model := testutil.NewTestModel().
-			WithWindowSize(120, 40).
+			WithWindowSize(120, 40). // 4 columns
 			WithMCPs([]types.MCPItem{
 				{Name: "mcp-1", Type: "CMD"},
 				{Name: "mcp-2", Type: "CMD"},
 				{Name: "mcp-3", Type: "CMD"},
+				{Name: "mcp-4", Type: "CMD"},
+				{Name: "mcp-5", Type: "CMD"},
 			}).
-			WithSelectedItem(2).
+			WithSelectedItem(4). // Position 4 (second row, first column)
 			Build()
 
 		newModel := NavigateUp(model)
-		assert.Equal(t, 1, newModel.SelectedItem)
+		assert.Equal(t, 0, newModel.SelectedItem) // Should move to position 0 (first row, first column)
 	})
 
 	t.Run("NavigateDown", func(t *testing.T) {
+		// Test with 4-column layout - NavigateDown should work within grid
 		model := testutil.NewTestModel().
-			WithWindowSize(120, 40).
+			WithWindowSize(120, 40). // 4 columns
+			WithMCPs([]types.MCPItem{
+				{Name: "mcp-1", Type: "CMD"},
+				{Name: "mcp-2", Type: "CMD"},
+				{Name: "mcp-3", Type: "CMD"},
+				{Name: "mcp-4", Type: "CMD"},
+				{Name: "mcp-5", Type: "CMD"},
+			}).
+			WithSelectedItem(0). // Position 0 (first row, first column)
+			Build()
+
+		newModel := NavigateDown(model)
+		assert.Equal(t, 4, newModel.SelectedItem) // Should move to position 4 (second row, first column)
+	})
+
+	t.Run("NavigateLeft", func(t *testing.T) {
+		// Test with 4-column layout - NavigateLeft should work within grid
+		model := testutil.NewTestModel().
+			WithWindowSize(120, 40). // 4 columns
 			WithMCPs([]types.MCPItem{
 				{Name: "mcp-1", Type: "CMD"},
 				{Name: "mcp-2", Type: "CMD"},
 				{Name: "mcp-3", Type: "CMD"},
 			}).
-			WithSelectedItem(0).
-			Build()
-
-		newModel := NavigateDown(model)
-		assert.Equal(t, 1, newModel.SelectedItem)
-	})
-
-	t.Run("NavigateLeft", func(t *testing.T) {
-		model := testutil.NewTestModel().
-			WithWindowSize(120, 40).
-			WithActiveColumn(2).
+			WithSelectedItem(2). // Position 2 (first row, third column)
 			Build()
 
 		newModel := NavigateLeft(model)
-		assert.Equal(t, 1, newModel.ActiveColumn)
+		assert.Equal(t, 1, newModel.SelectedItem) // Should move to position 1 (first row, second column)
 	})
 
 	t.Run("NavigateRight", func(t *testing.T) {
+		// Test with 4-column layout - NavigateRight should work within grid
 		model := testutil.NewTestModel().
-			WithWindowSize(120, 40).
-			WithActiveColumn(0).
+			WithWindowSize(120, 40). // 4 columns
+			WithMCPs([]types.MCPItem{
+				{Name: "mcp-1", Type: "CMD"},
+				{Name: "mcp-2", Type: "CMD"},
+				{Name: "mcp-3", Type: "CMD"},
+			}).
+			WithSelectedItem(0). // Position 0 (first row, first column)
 			Build()
 
 		newModel := NavigateRight(model)
-		assert.Equal(t, 1, newModel.ActiveColumn)
+		assert.Equal(t, 1, newModel.SelectedItem) // Should move to position 1 (first row, second column)
 	})
 }
 

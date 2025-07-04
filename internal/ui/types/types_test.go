@@ -42,9 +42,9 @@ func TestNewModel(t *testing.T) {
 		t.Errorf("Expected 1 column, got %d", len(model.Columns))
 	}
 
-	// MVP starts with empty MCP inventory - users add their own MCPs
-	if len(model.MCPItems) != 0 {
-		t.Errorf("Expected MCPItems to start empty for MVP, got %d items", len(model.MCPItems))
+	// Model now starts with default MCPs to facilitate initial testing and user onboarding
+	if len(model.MCPItems) != 3 {
+		t.Errorf("Expected MCPItems to have 3 default items, got %d items", len(model.MCPItems))
 	}
 
 	if model.FormErrors == nil {
@@ -82,10 +82,9 @@ func TestNewModelWithMCPs(t *testing.T) {
 func TestGetDefaultMCPs(t *testing.T) {
 	defaults := getDefaultMCPs()
 
-	// MVP starts with empty inventory - users should add their own MCPs
-	// This ensures users only configure MCPs they actually have installed and configured
-	if len(defaults) != 0 {
-		t.Errorf("Expected default MCPs to be empty for MVP, got %d items", len(defaults))
+	// Default MCPs now include common examples to facilitate user onboarding
+	if len(defaults) != 3 {
+		t.Errorf("Expected default MCPs to have 3 items for user onboarding, got %d items", len(defaults))
 	}
 
 	// Verify it returns a valid slice (not nil)

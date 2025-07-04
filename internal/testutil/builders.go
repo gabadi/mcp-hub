@@ -101,18 +101,21 @@ func (b *TestModelBuilder) updateLayout() {
 			{Title: "MCPs Column 4", Width: columnWidth},
 		}
 	} else if b.model.Width >= types.MEDIUM_LAYOUT_MIN {
-		// Medium: 2 columns (MCPs + Status/Details)
-		b.model.ColumnCount = types.MEDIUM_COLUMNS
+		// Medium: 3 columns (MCPs + Status/Details)
+		b.model.ColumnCount = 3
+		columnWidth := (b.model.Width - 8) / 3
+		b.model.Columns = []types.Column{
+			{Title: "MCPs", Width: columnWidth},
+			{Title: "Status", Width: columnWidth},
+			{Title: "Details", Width: columnWidth},
+		}
+	} else {
+		// Narrow: 2 columns (all in one)
+		b.model.ColumnCount = 2
 		columnWidth := (b.model.Width - 6) / 2
 		b.model.Columns = []types.Column{
 			{Title: "MCPs", Width: columnWidth},
-			{Title: "Status & Details", Width: columnWidth},
-		}
-	} else {
-		// Narrow: 1 column (all in one)
-		b.model.ColumnCount = types.NARROW_COLUMNS
-		b.model.Columns = []types.Column{
-			{Title: "MCP Manager", Width: b.model.Width - 4},
+			{Title: "Status", Width: columnWidth},
 		}
 	}
 
