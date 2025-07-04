@@ -91,6 +91,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleProjectContextCheckMsg(msg)
 	case types.DirectoryChangeMsg:
 		return m.handleDirectoryChangeMsg(msg)
+	case StartClaudeDetectionMsg:
+		return m.handleStartClaudeDetectionMsg(msg)
 	}
 	return m, nil
 }
@@ -120,6 +122,11 @@ func (m Model) handleSuccessMsg(msg handlers.SuccessMsg) Model {
 
 // handleClaudeStatusMsg handles Claude status update messages
 func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) (tea.Model, tea.Cmd) {
+	// Stop Claude detection loading overlay if active
+	if m.Model.LoadingOverlay != nil && m.Model.LoadingOverlay.Active && m.Model.LoadingOverlay.Type == types.LoadingClaude {
+		m.Model.StopLoadingOverlay()
+	}
+	
 	// Update model with Claude status
 	m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
 
@@ -381,9 +388,24 @@ func RefreshClaudeStatusCmd() tea.Cmd {
 // This allows the UI to load first before detecting Claude CLI
 func DelayedClaudeStatusRefreshCmd() tea.Cmd {
 	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
-		// After 500ms, trigger a Claude status refresh
-		return tea.Sequence(RefreshClaudeStatusCmd())()
+		// After 500ms, start the Claude detection process
+		return StartClaudeDetectionMsg{}
 	})
+}
+
+// StartClaudeDetectionMsg signals the start of Claude CLI detection
+type StartClaudeDetectionMsg struct{}
+
+// handleStartClaudeDetectionMsg handles the start of Claude detection
+func (m Model) handleStartClaudeDetectionMsg(msg StartClaudeDetectionMsg) (tea.Model, tea.Cmd) {
+	// Start Claude detection loading overlay
+	m.Model.StartLoadingOverlay(types.LoadingClaude)
+	
+	// Return command to refresh Claude status and spinner
+	return m, tea.Batch(
+		RefreshClaudeStatusCmd(),
+		handlers.LoadingSpinnerCmd(types.LoadingClaude),
+	)
 }
 
 // All layout and navigation logic has been moved to services and handlers packages

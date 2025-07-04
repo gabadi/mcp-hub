@@ -33,6 +33,7 @@ type LoadingType int
 const (
 	LoadingStartup LoadingType = iota
 	LoadingRefresh
+	LoadingClaude
 )
 
 // SpinnerState represents the current spinner animation frame
@@ -314,6 +315,8 @@ func getInitialLoadingMessage(loadingType LoadingType) string {
 		return "Initializing MCP Manager..."
 	case LoadingRefresh:
 		return "Refreshing MCP status..."
+	case LoadingClaude:
+		return "Detecting Claude CLI..."
 	default:
 		return "Loading..."
 	}
