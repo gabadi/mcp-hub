@@ -149,17 +149,17 @@ func safeReadFile(filePath string, baseDir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if !fileInfo.Mode().IsRegular() {
 		return nil, fmt.Errorf("path is not a regular file")
 	}
-	
+
 	// Limit file size to prevent abuse
 	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if fileInfo.Size() > maxFileSize {
 		return nil, fmt.Errorf("file too large")
 	}
-	
+
 	// For test cases, allow direct reading with basic checks
 	if baseDir != "" {
 		// Ensure it's an inventory.json file
@@ -169,20 +169,20 @@ func safeReadFile(filePath string, baseDir string) ([]byte, error) {
 		// Read directly for tests using secure file reading
 		return readSecureFile(filePath)
 	}
-	
+
 	// Production case - create literal file path to avoid G304
 	// First, ensure the file path is exactly what we expect
 	expectedPath := getExpectedConfigPath(filePath)
 	if expectedPath != filePath {
 		return nil, fmt.Errorf("unexpected file path")
 	}
-	
+
 	// Use literal path construction to avoid G304
 	data, err := readConfigFile(expectedPath, baseDir)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return data, nil
 }
 
@@ -193,7 +193,7 @@ func getExpectedConfigPath(_ string) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	// Build the expected path
 	expectedPath := filepath.Join(userConfigDir, appName, configFileName)
 	return expectedPath
@@ -206,12 +206,12 @@ func readConfigFile(configPath string, baseDir string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	expectedPath := filepath.Join(userConfigDir, appName, configFileName)
 	if configPath != expectedPath {
 		return nil, fmt.Errorf("invalid config file path")
 	}
-	
+
 	// Read only the exact expected config file to avoid G304
 	return readSpecificConfigFile(baseDir)
 }
@@ -220,7 +220,7 @@ func readConfigFile(configPath string, baseDir string) ([]byte, error) {
 func readSpecificConfigFile(baseDir string) ([]byte, error) {
 	var configDir string
 	var err error
-	
+
 	if baseDir != "" {
 		// Test case
 		configDir = baseDir
@@ -231,8 +231,8 @@ func readSpecificConfigFile(baseDir string) ([]byte, error) {
 			return nil, err
 		}
 	}
-	
-	// Build path with string literals to avoid G304 
+
+	// Build path with string literals to avoid G304
 	// Use a path function that only accepts known safe patterns
 	return readAllowedConfigFile(configDir)
 }
@@ -241,13 +241,13 @@ func readSpecificConfigFile(baseDir string) ([]byte, error) {
 func readAllowedConfigFile(baseDir string) ([]byte, error) {
 	// Only read the specific config file we know about
 	path := filepath.Join(baseDir, "cc-mcp-manager", "inventory.json")
-	
+
 	// Verify the path ends with the expected suffix (allow for test dirs)
 	if !strings.HasSuffix(path, "inventory.json") {
 		return nil, fmt.Errorf("invalid config file path")
 	}
-	
-	// Use secure file reader  
+
+	// Use secure file reader
 	return secureReadFile(path, baseDir)
 }
 
@@ -255,7 +255,7 @@ func readAllowedConfigFile(baseDir string) ([]byte, error) {
 func secureReadFile(filePath string, baseDir string) ([]byte, error) {
 	// Extract just the filename for pattern matching
 	fileName := filepath.Base(filePath)
-	
+
 	// Check if file matches allowed patterns
 	allowed := false
 	for _, pattern := range allowedFilePatterns {
@@ -264,11 +264,11 @@ func secureReadFile(filePath string, baseDir string) ([]byte, error) {
 			break
 		}
 	}
-	
+
 	if !allowed {
 		return nil, fmt.Errorf("file not in allowlist: %s", fileName)
 	}
-	
+
 	// For security, only allow reading specific known files
 	switch fileName {
 	case "inventory.json":
@@ -284,25 +284,25 @@ func readInventoryFile(filePath string, baseDir string) ([]byte, error) {
 	if !strings.HasSuffix(filePath, "inventory.json") {
 		return nil, fmt.Errorf("not an inventory file")
 	}
-	
+
 	// Handle test vs production cases
 	if baseDir != "" {
-		// Test case - allow reading from test directory 
+		// Test case - allow reading from test directory
 		return readLiteralInventoryFile(baseDir)
 	}
-	
+
 	// Production case - use a hardcoded approach to read only inventory files
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Reconstruct the expected path with literals
 	expectedPath := filepath.Join(userConfigDir, "cc-mcp-manager", "inventory.json")
 	if filePath != expectedPath {
 		return nil, fmt.Errorf("unexpected inventory file path")
 	}
-	
+
 	// Read the literal expected config file
 	return readLiteralInventoryFile(userConfigDir)
 }
@@ -312,11 +312,11 @@ func readLiteralInventoryFile(userConfigDir string) ([]byte, error) {
 	// Use separate variables to avoid G304 detection
 	var appDirName = "cc-mcp-manager"
 	var configFileName = "inventory.json"
-	
+
 	// Create path step by step
 	appDir := filepath.Join(userConfigDir, appDirName)
 	configPath := filepath.Join(appDir, configFileName)
-	
+
 	// Read the file using secure method
 	return readSecureFile(configPath)
 }
@@ -325,29 +325,29 @@ func readLiteralInventoryFile(userConfigDir string) ([]byte, error) {
 func readSecureFile(filePath string) ([]byte, error) {
 	// Clean the path to avoid any path traversal attacks
 	cleanPath := filepath.Clean(filePath)
-	
+
 	// Get file info first to validate it's a regular file
 	fileInfo, err := os.Stat(cleanPath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if !fileInfo.Mode().IsRegular() {
 		return nil, fmt.Errorf("path is not a regular file")
 	}
-	
+
 	// Limit file size to prevent abuse
 	const maxFileSize = 10 * 1024 * 1024 // 10MB
 	if fileInfo.Size() > maxFileSize {
 		return nil, fmt.Errorf("file too large")
 	}
-	
+
 	// Read the file content
 	data, err := os.ReadFile(cleanPath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return data, nil
 }
 
@@ -358,17 +358,17 @@ func validateConfigPath(configPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get user config directory: %w", err)
 	}
-	
+
 	// Check if the config path is within the expected directory
 	expectedPath := filepath.Join(expectedConfigDir, appName)
 	cleanPath := filepath.Clean(configPath)
 	cleanExpectedPath := filepath.Clean(expectedPath)
-	
+
 	// Ensure the config path starts with the expected directory
 	if !strings.HasPrefix(cleanPath, cleanExpectedPath) {
 		return fmt.Errorf("config path outside expected directory")
 	}
-	
+
 	return nil
 }
 

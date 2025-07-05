@@ -99,8 +99,13 @@ func TestHandleSearchNavigationKeysWithRefresh(t *testing.T) {
 func TestClaudeIntegrationFlow(t *testing.T) {
 	// This test verifies the complete integration without actually calling Claude CLI
 
-	// Create a model
-	model := types.NewModel()
+	// Create a model with test MCPs (since we now start with empty MCPs)
+	testMCPs := []types.MCPItem{
+		{Name: "github-mcp", Type: "CMD", Active: false, Command: "github"},
+		{Name: "docker-tools", Type: "SSE", Active: false, Command: "docker"},
+		{Name: "context7", Type: "JSON", Active: false, Command: "context7"},
+	}
+	model := types.NewModelWithMCPs(testMCPs)
 
 	// Simulate receiving a Claude status message
 	status := types.ClaudeStatus{

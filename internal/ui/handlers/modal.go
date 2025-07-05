@@ -16,14 +16,14 @@ import (
 // Modal string constants
 const (
 	// Key constants
-	KeyDownArrow = "down"
+	KeyDownArrow    = "down"
 	KeyBackspaceKey = "backspace"
-	KeyCmdCopy = "cmd+c"
-	KeyCmdPaste = "cmd+v"
-	
+	KeyCmdCopy      = "cmd+c"
+	KeyCmdPaste     = "cmd+v"
+
 	// Error message constants
 	ErrorNameRequired = "Name is required"
-	ErrorNameExists = "Name already exists"
+	ErrorNameExists   = "Name already exists"
 )
 
 // SuccessMsg represents a success message

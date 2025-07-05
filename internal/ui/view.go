@@ -52,7 +52,6 @@ func (m Model) View() string {
 	return content
 }
 
-
 // renderBody creates the main application body with columns
 func (m Model) renderBody() string {
 	switch m.ColumnCount {
@@ -159,6 +158,7 @@ func (m Model) renderThreeColumns() string {
 }
 
 // renderFourColumns renders the clean 4x10 MCP grid layout without column separators
+//
 //nolint:unused // Used in tests
 func (m Model) renderFourColumns() string {
 	// Get filtered MCPs for search functionality
@@ -302,6 +302,7 @@ func (m Model) renderMCPList() string {
 }
 
 // renderMCPColumnList renders a list of MCPs for a specific column with selection highlighting
+//
 //nolint:unused // Used in tests
 func (m Model) renderMCPColumnList(columnMCPs []types.MCPItem, startIdx int) string {
 	if len(columnMCPs) == 0 {
@@ -396,6 +397,7 @@ func (m Model) renderStatusAndDetails() string {
 }
 
 // renderFooter creates the application footer
+//
 //nolint:unused // Used in tests
 func (m Model) renderFooter() string {
 	footerStyle := lipgloss.NewStyle().
@@ -438,6 +440,7 @@ func (m Model) renderFooter() string {
 }
 
 // getLayoutName returns the current layout name for display
+//
 //nolint:unused // Used in tests
 func (m Model) getLayoutName() string {
 	switch m.ColumnCount {

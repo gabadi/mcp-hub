@@ -186,7 +186,7 @@ func getStateTransitionTestCases() []struct {
 } {
 	basicStates := getBasicStateTransitionCases()
 	searchStates := getSearchStateTransitionCases()
-	
+
 	var allCases []struct {
 		name              string
 		state             types.AppState
@@ -196,10 +196,10 @@ func getStateTransitionTestCases() []struct {
 		expectedShortcuts []string
 		expectedFooter    []string
 	}
-	
+
 	allCases = append(allCases, basicStates...)
 	allCases = append(allCases, searchStates...)
-	
+
 	return allCases
 }
 
@@ -573,10 +573,10 @@ func validateRenderHeader(t *testing.T) {
 	model.Width = 120
 	model.Height = 40
 	model.State = types.MainNavigation
-	
+
 	// Test that the full view includes header content
 	result := model.View()
-	
+
 	if !strings.Contains(result, "MCP Manager v1.0") {
 		t.Errorf("renderHeader should include title")
 	}
@@ -590,7 +590,7 @@ func validateRenderFourColumns(t *testing.T) {
 	model.Width = 150
 	model.Height = 40
 	model.ColumnCount = 4
-	
+
 	// Add test MCPs
 	model.MCPItems = []types.MCPItem{
 		{Name: "test-mcp-1", Active: true, Type: "CMD"},
@@ -598,14 +598,14 @@ func validateRenderFourColumns(t *testing.T) {
 		{Name: "test-mcp-3", Active: true, Type: "JSON"},
 		{Name: "test-mcp-4", Active: false, Type: "CMD"},
 	}
-	
+
 	result := model.View()
-	
+
 	// Should use 4-column grid layout
 	if !strings.Contains(result, "Grid (4-column MCP)") {
 		t.Errorf("renderFourColumns should show grid layout")
 	}
-	
+
 	// Should show all test MCPs
 	if !strings.Contains(result, "test-mcp-1") {
 		t.Errorf("renderFourColumns should show test-mcp-1")
@@ -620,15 +620,15 @@ func validateRenderMCPColumnList(t *testing.T) {
 	model.Width = 100
 	model.Height = 30
 	model.ColumnCount = 3
-	
+
 	// Add test MCPs
 	model.MCPItems = []types.MCPItem{
 		{Name: "column-test-1", Active: true, Type: "CMD"},
 		{Name: "column-test-2", Active: false, Type: "SSE"},
 	}
-	
+
 	result := model.View()
-	
+
 	// Should show MCPs in 3-column layout
 	if !strings.Contains(result, "column-test-1") {
 		t.Errorf("renderMCPColumnList should show column-test-1")
@@ -643,9 +643,9 @@ func validateRenderFooter(t *testing.T) {
 	model.Width = 120
 	model.Height = 40
 	model.State = types.MainNavigation
-	
+
 	result := model.View()
-	
+
 	// Should include footer content
 	if !strings.Contains(result, "📁") {
 		t.Errorf("renderFooter should include project context icon")
@@ -657,16 +657,16 @@ func validateRenderFooter(t *testing.T) {
 
 func validateGetLayoutName(t *testing.T) {
 	tests := getLayoutNameTestCases()
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := NewModel()
 			model.Width = 120
 			model.Height = 40
 			model.ColumnCount = tt.columnCount
-			
+
 			result := model.View()
-			
+
 			if !strings.Contains(result, tt.expected) {
 				t.Errorf("getLayoutName should return %q for %d columns", tt.expected, tt.columnCount)
 			}
@@ -698,9 +698,9 @@ func TestView_LoadingStates(t *testing.T) {
 		model.Height = 40
 		model.StartLoadingOverlay(types.LoadingStartup)
 		model.LoadingOverlay.Message = "Test loading..."
-		
+
 		result := model.View()
-		
+
 		if !strings.Contains(result, "Test loading...") {
 			t.Errorf("View should show loading overlay message")
 		}
@@ -712,9 +712,9 @@ func TestView_LoadingStates(t *testing.T) {
 		model.Height = 40
 		model.State = types.ModalActive
 		model.ActiveModal = types.AddModal
-		
+
 		result := model.View()
-		
+
 		// Should show modal overlay
 		if !strings.Contains(result, "ESC=Cancel") {
 			t.Errorf("View should show modal shortcuts when modal is active")
@@ -726,9 +726,9 @@ func TestView_LoadingStates(t *testing.T) {
 		model.Width = 120
 		model.Height = 40
 		model.SuccessMessage = "Test alert message"
-		
+
 		result := model.View()
-		
+
 		if !strings.Contains(result, "Test alert message") {
 			t.Errorf("View should show alert message when alert is active")
 		}

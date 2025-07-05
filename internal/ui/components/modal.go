@@ -13,12 +13,12 @@ import (
 // Modal string constants
 const (
 	// Button/instruction text
-	EscCancelText = "ESC=Cancel"
+	EscCancelText       = "ESC=Cancel"
 	EditInstructionText = "[Tab] Next Field • [Enter] Update • ESC Cancel"
-	AddInstructionText = "[Tab] Next Field • [Enter] Add • ESC Cancel"
-	
+	AddInstructionText  = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+
 	// Form field labels
-	NameRequiredLabel = "Name: (required)"
+	NameRequiredLabel        = "Name: (required)"
 	EnvironmentOptionalLabel = "Environment: (optional)"
 )
 
@@ -29,7 +29,7 @@ func OverlayModal(model types.Model, width, height int, _ string) string {
 	title, content, footer := getModalContent(model)
 	modalContent := buildModalContent(title, content, footer)
 	modal := modalStyle.Render(modalContent)
-	
+
 	return centerModal(modal, width, height)
 }
 
@@ -209,7 +209,7 @@ func renderCommandFormContent(model types.Model) string {
 	nameLabel := NameRequiredLabel
 	nameValue := model.FormData.Name
 	if model.FormData.ActiveField == 0 {
-		nameValue += "_"  // Show cursor
+		nameValue += "_"             // Show cursor
 		nameLabel = "> " + nameLabel // Show focus
 	}
 	lines = append(lines, nameLabel)

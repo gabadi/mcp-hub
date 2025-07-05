@@ -5,7 +5,7 @@ import (
 
 	"cc-mcp-manager/internal/testutil"
 	"cc-mcp-manager/internal/ui/types"
-	
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -593,7 +593,7 @@ func TestDeleteLastChar(t *testing.T) {
 
 func TestValidateCommandForm(t *testing.T) {
 	tests := createValidateCommandFormTests()
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			resultModel, valid := validateCommandForm(tt.model)
@@ -907,7 +907,7 @@ func TestModalFormHandling(t *testing.T) {
 		model.ActiveModal = types.AddCommandForm
 		model.FormData.Name = "test-cmd"
 		model.FormData.Command = "test-command"
-		
+
 		// Test that modal state is properly maintained
 		assert.Equal(t, types.ModalActive, model.State)
 		assert.Equal(t, types.AddCommandForm, model.ActiveModal)
@@ -920,7 +920,7 @@ func TestModalFormHandling(t *testing.T) {
 		model.ActiveModal = types.AddSSEForm
 		model.FormData.Name = "test-sse"
 		model.FormData.URL = "https://example.com"
-		
+
 		assert.Equal(t, types.AddSSEForm, model.ActiveModal)
 		assert.Equal(t, "test-sse", model.FormData.Name)
 		assert.Equal(t, "https://example.com", model.FormData.URL)
@@ -932,7 +932,7 @@ func TestModalFormHandling(t *testing.T) {
 		model.ActiveModal = types.AddJSONForm
 		model.FormData.Name = "test-json"
 		model.FormData.JSONConfig = `{"key": "value"}`
-		
+
 		assert.Equal(t, types.AddJSONForm, model.ActiveModal)
 		assert.Equal(t, "test-json", model.FormData.Name)
 		assert.NotEmpty(t, model.FormData.JSONConfig)
@@ -946,7 +946,7 @@ func TestModalFormHandling(t *testing.T) {
 		model.MCPItems = []types.MCPItem{
 			{Name: "to-delete", Type: "CMD"},
 		}
-		
+
 		assert.Equal(t, types.DeleteModal, model.ActiveModal)
 		assert.Equal(t, 0, model.SelectedItem)
 		assert.Len(t, model.MCPItems, 1)

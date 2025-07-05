@@ -20,12 +20,12 @@ const (
 
 	// BulletChar represents the bullet character used in UI displays
 	BulletChar = "◦"
-	
+
 	// KeyCommandC represents the command+c keyboard shortcut
 	KeyCommandC = "command+c"
 	// KeyCommandV represents the command+v keyboard shortcut
 	KeyCommandV = "command+v"
-	
+
 	// TestCMD represents the CMD type identifier for testing
 	TestCMD = "CMD"
 	// TestStr represents a generic test string constant

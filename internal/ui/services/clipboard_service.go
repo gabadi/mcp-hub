@@ -208,7 +208,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	} else {
 		lastErr = fmt.Errorf("atotto/clipboard returned empty content")
 	}
-	
+
 	// Include design error if it occurred
 	if designErr != nil {
 		lastErr = fmt.Errorf("%v, design/clipboard: %v", lastErr, designErr)
