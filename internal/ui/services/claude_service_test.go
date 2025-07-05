@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test platform constants

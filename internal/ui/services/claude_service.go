@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Use types.ClaudeStatus for consistency

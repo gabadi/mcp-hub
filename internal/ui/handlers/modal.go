@@ -9,8 +9,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 )
 
 // Modal string constants

@@ -1,10 +1,10 @@
-# CC MCP Manager - System Architecture
+# MCP Hub - System Architecture
 
 **Document Version:** 2.0 | **Created:** 2025-06-30 | **Last Updated:** 2025-06-30 | **Owner:** Technical Lead | **Status:** Active - Post Epic 1, Story 3 Implementation
 
 ## Executive Summary
 
-The CC MCP Manager is a Terminal User Interface (TUI) application built in Go that enables developers to manage their Model Context Protocol (MCP) inventory. The system follows clean architecture with the Bubble Tea framework for reactive UI management and implements a sophisticated modal workflow system with comprehensive form validation and state management.
+The MCP Hub is a Terminal User Interface (TUI) application built in Go that enables developers to manage their Model Context Protocol (MCP) inventory. The system follows clean architecture with the Bubble Tea framework for reactive UI management and implements a sophisticated modal workflow system with comprehensive form validation and state management.
 
 **Overall Architecture Rating:** 85% (Good) → Targeting 95% (Excellent)
 
@@ -25,7 +25,7 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      CC MCP Manager                           │
+│                        MCP Hub                                │
 ├─────────────────────────────────────────────────────────────────┤
 │                    main.go (Entry Point)                      │
 ├─────────────────────────────────────────────────────────────────┤
@@ -55,7 +55,7 @@ The CC MCP Manager is a Terminal User Interface (TUI) application built in Go th
 ├─────────────────────────────────────────────────────────────────┤
 │                  Storage Layer                                 │
 │              Local JSON Configuration                          │
-│         ~/.config/cc-mcp-manager/inventory.json               │
+│         ~/.config/mcp-hub/inventory.json                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -387,7 +387,7 @@ Terminal Display     Future Events    State Updates
 
 ### 1. Configuration Management
 
-**Location**: `~/.config/cc-mcp-manager/inventory.json`
+**Location**: `~/.config/mcp-hub/inventory.json`
 
 **Security Model**:
 - Configuration directory: 0700 (user only)

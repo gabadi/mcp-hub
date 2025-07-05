@@ -53,10 +53,10 @@ jobs:
     - name: Build binary
       run: |
         mkdir -p dist
-        go build -ldflags="-s -w" -o dist/cc-mcp-manager ./main.go
+        go build -ldflags="-s -w" -o dist/mcp-hub ./main.go
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: cc-mcp-manager
-        path: dist/cc-mcp-manager
+        name: mcp-hub
+        path: dist/mcp-hub

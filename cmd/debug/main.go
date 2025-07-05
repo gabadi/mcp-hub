@@ -7,7 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	"cc-mcp-manager/internal/ui/services"
+	"mcp-hub/internal/ui/services"
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
@@ -81,7 +81,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := "🔍 Enhanced Key & Clipboard Debug Tool for cc-mcp-manager\n\n"
+	s := "🔍 Enhanced Key & Clipboard Debug Tool for mcp-hub\n\n"
 	s += "System Info:\n"
 	s += fmt.Sprintf("• OS: %s\n", runtime.GOOS)
 	s += fmt.Sprintf("• Terminal: %s\n", os.Getenv("TERM_PROGRAM"))

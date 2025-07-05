@@ -3,9 +3,9 @@ package ui
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/handlers"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/handlers"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

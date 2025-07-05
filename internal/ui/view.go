@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"cc-mcp-manager/internal/ui/components"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/components"
+	"mcp-hub/internal/ui/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

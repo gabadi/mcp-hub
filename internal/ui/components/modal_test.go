@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test message constants

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

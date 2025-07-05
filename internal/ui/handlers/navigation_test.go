@@ -3,8 +3,8 @@ package handlers
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"

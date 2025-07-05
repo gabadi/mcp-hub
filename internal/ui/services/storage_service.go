@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // InventoryData wraps MCPItems with metadata for JSON serialization
@@ -22,13 +22,59 @@ type InventoryData struct {
 
 const (
 	configFileName = "inventory.json"
-	appName        = "cc-mcp-manager"
+	appName        = "mcp-hub"
+	oldAppName     = "cc-mcp-manager"  // For backward compatibility
 	configVersion  = "1.0"
 )
 
 // allowedFilePaths defines patterns for files that are allowed to be read
 var allowedFilePatterns = []string{
 	"inventory.json",
+}
+
+// migrateLegacyConfig migrates config from old cc-mcp-manager directory to new mcp-hub directory
+func migrateLegacyConfig(baseDir string) error {
+	userConfigDir := baseDir
+	if baseDir == "" {
+		var err error
+		userConfigDir, err = os.UserConfigDir()
+		if err != nil {
+			return fmt.Errorf("failed to get user config directory: %w", err)
+		}
+	}
+	
+	// Check if old config directory exists
+	oldConfigDir := filepath.Join(userConfigDir, oldAppName)
+	oldConfigPath := filepath.Join(oldConfigDir, configFileName)
+	
+	// Check if new config directory exists
+	newConfigDir := filepath.Join(userConfigDir, appName)
+	newConfigPath := filepath.Join(newConfigDir, configFileName)
+	
+	// If old config exists but new doesn't, migrate
+	if _, err := os.Stat(oldConfigPath); err == nil {
+		if _, err := os.Stat(newConfigPath); os.IsNotExist(err) {
+			// Create new config directory
+			if err := os.MkdirAll(newConfigDir, 0700); err != nil {
+				return fmt.Errorf("failed to create new config directory: %w", err)
+			}
+			
+			// Copy old config to new location
+			oldData, err := os.ReadFile(oldConfigPath)
+			if err != nil {
+				return fmt.Errorf("failed to read old config: %w", err)
+			}
+			
+			if err := os.WriteFile(newConfigPath, oldData, 0600); err != nil {
+				return fmt.Errorf("failed to write new config: %w", err)
+			}
+			
+			// Log successful migration (commented out for now)
+			// log.Printf("Successfully migrated config from %s to %s", oldConfigPath, newConfigPath)
+		}
+	}
+	
+	return nil
 }
 
 // GetConfigPath returns the full path to the config file
@@ -64,6 +110,13 @@ func EnsureConfigDir() error {
 
 // ensureConfigDirWithBase allows overriding the base directory for testing
 func ensureConfigDirWithBase(baseDir string) error {
+	// First attempt to migrate legacy config
+	if err := migrateLegacyConfig(baseDir); err != nil {
+		// Migration failure shouldn't prevent app from working
+		// log.Printf("Failed to migrate legacy config: %v", err)
+		_ = err // Acknowledge but continue
+	}
+
 	var appConfigDir string
 
 	if baseDir != "" {
@@ -240,7 +293,7 @@ func readSpecificConfigFile(baseDir string) ([]byte, error) {
 // readAllowedConfigFile reads only the allowed config file pattern
 func readAllowedConfigFile(baseDir string) ([]byte, error) {
 	// Only read the specific config file we know about
-	path := filepath.Join(baseDir, "cc-mcp-manager", "inventory.json")
+	path := filepath.Join(baseDir, appName, "inventory.json")
 
 	// Verify the path ends with the expected suffix (allow for test dirs)
 	if !strings.HasSuffix(path, "inventory.json") {
@@ -298,7 +351,7 @@ func readInventoryFile(filePath string, baseDir string) ([]byte, error) {
 	}
 
 	// Reconstruct the expected path with literals
-	expectedPath := filepath.Join(userConfigDir, "cc-mcp-manager", "inventory.json")
+	expectedPath := filepath.Join(userConfigDir, appName, "inventory.json")
 	if filePath != expectedPath {
 		return nil, fmt.Errorf("unexpected inventory file path")
 	}
@@ -310,7 +363,7 @@ func readInventoryFile(filePath string, baseDir string) ([]byte, error) {
 // readLiteralInventoryFile reads the inventory file using literal path construction
 func readLiteralInventoryFile(userConfigDir string) ([]byte, error) {
 	// Use separate variables to avoid G304 detection
-	var appDirName = "cc-mcp-manager"
+	var appDirName = appName
 	var configFileName = "inventory.json"
 
 	// Create path step by step

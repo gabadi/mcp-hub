@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui"
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 )
 
 // Integration tests for complete user workflows

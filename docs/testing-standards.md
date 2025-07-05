@@ -113,7 +113,7 @@ import "github.com/stretchr/testify/assert"
 import "github.com/stretchr/testify/require"
 
 // Test utilities
-import "cc-mcp-manager/internal/testutil"
+import "mcp-hub/internal/testutil"
 ```
 
 ### Development Tools

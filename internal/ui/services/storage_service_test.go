@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 func TestGetConfigPath(t *testing.T) {

@@ -3,7 +3,7 @@ package components
 import (
 	"strings"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

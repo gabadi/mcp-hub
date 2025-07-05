@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/types"
 )
 
 func TestRenderFooter(t *testing.T) {

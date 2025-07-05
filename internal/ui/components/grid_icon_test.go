@@ -3,7 +3,7 @@ package components
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test icon constants
