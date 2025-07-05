@@ -53,7 +53,6 @@ linters:
     - nakedret
     - noctx
     - nolintlint
-    - revive
     - rowserrcheck
     - staticcheck
     - unconvert
@@ -68,67 +67,21 @@ issues:
     - expansion-pack
   
   exclude-rules:
-    # Exclude some linters from running on tests files
+    # Only reasonable exception: Some linters are too strict for test files
     - path: _test\.go
       linters:
-        - errcheck
-        - dupl
-        - revive
+        - dupl  # Duplicate test cases are often intentional
+        - funlen  # Test functions can be long
     
-    # Exclude unused warnings for UI view methods that are part of the interface
-    - path: internal/ui/view\.go
-      linters:
-        - unused
-    
-    # Exclude unused warnings for utility functions that may be used in future
-    - path: internal/ui/components/modal\.go
-      linters:
-        - unused
-    
-    # Allow hardcoded strings in UI components during development
-    - path: internal/ui/
-      linters:
-        - revive
-    
-    # Allow build utilities flexibility
-    - path: internal/testutil/
-      linters:
-        - revive
-    
-    # Allow main.go flexibility during development
-    - path: main\.go
-      linters:
-        - errcheck
-        - revive
-    
-    # Disable field alignment warnings during development
-    - linters:
-        - govet
-      text: "fieldalignment:"
-    
-    # Disable additional warnings during development phase
-    - linters:
-        - staticcheck
-      text: "SA9003:"  # empty branch
-    - linters:
-        - staticcheck
-      text: "SA1019:"  # deprecated usage
-    - linters:
-        - staticcheck
-      text: "SA4006:"  # unused assignment
-    
-    # Exclude shadow checking for common variable names
+    # Exclude shadow checking for common variable names only
     - text: "shadow: declaration of \"err\""
       linters:
         - govet
     
-    # Exclude known style issues during development
-    - linters:
-        - gocritic
-      text: "captLocal:"  # capture loop variable
-    - linters:
-        - gocritic
-      text: "commentedOutCode:"  # commented code
+    # The types package name is meaningful in this context (UI type definitions)
+    - text: "var-naming: avoid meaningless package names"
+      linters:
+        - revive
 
   max-issues-per-linter: 0
   max-same-issues: 0

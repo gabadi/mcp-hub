@@ -76,6 +76,11 @@ func handleLoadingCancellation(model types.Model) (types.Model, tea.Cmd) {
 		model.SuccessMessage = "Refresh operation canceled"
 		model.SuccessTimer = 120
 		return model, TimerCmd("success_timer")
+	case types.LoadingClaude:
+		// For Claude sync cancellation, return to current state
+		model.SuccessMessage = "Claude sync canceled"
+		model.SuccessTimer = 120
+		return model, TimerCmd("success_timer")
 	default:
 		// Unknown loading type, just stop loading
 		return model, nil
@@ -85,7 +90,7 @@ func handleLoadingCancellation(model types.Model) (types.Model, tea.Cmd) {
 // HandleSearchModeKeys handles keyboard input in search mode
 func HandleSearchModeKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
-	case "enter":
+	case KeyEnter:
 		// Return to main navigation with search query preserved
 		model.State = types.MainNavigation
 		model.SearchActive = false
@@ -93,7 +98,7 @@ func HandleSearchModeKeys(model types.Model, key string) (types.Model, tea.Cmd) 
 		if len(model.SearchQuery) > 0 {
 			model.SearchQuery = model.SearchQuery[:len(model.SearchQuery)-1]
 		}
-	case "ctrl+v", "cmd+v", "⌘v", "command+v":
+	case KeyCtrlV, "cmd+v", KeyCmdSymbolV, "command+v":
 		// Paste clipboard content to search query
 		model = pasteToSearchQuery(model)
 	default:

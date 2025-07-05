@@ -12,6 +12,11 @@ import (
 	"cc-mcp-manager/internal/ui/types"
 )
 
+// Test platform constants
+const (
+	TestMCPName = "test-mcp"
+)
+
 func TestNewClaudeService(t *testing.T) {
 	service := NewClaudeService()
 
@@ -66,11 +71,9 @@ func TestDetectClaudeCliWithTimeout(t *testing.T) {
 	if status.Available {
 		// If Claude is very fast and available, that's okay
 		t.Logf("Claude detected even with short timeout")
-	} else {
+	} else if status.Error == "" {
 		// Should have error message
-		if status.Error == "" {
-			t.Error("Expected error message when detection fails")
-		}
+		t.Error("Expected error message when detection fails")
 	}
 }
 
@@ -144,8 +147,22 @@ func TestGetClaudeVersion(t *testing.T) {
 
 func TestParseActiveMCPs(t *testing.T) {
 	service := NewClaudeService()
+	tests := createParseActiveMCPsTests()
 
-	tests := []struct {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.parseActiveMCPs(tt.input)
+			assertParseActiveMCPsResult(t, result, tt.expected)
+		})
+	}
+}
+
+func createParseActiveMCPsTests() []struct {
+	name     string
+	input    string
+	expected []string
+} {
+	return []struct {
 		name     string
 		input    string
 		expected []string
@@ -201,18 +218,15 @@ func TestParseActiveMCPs(t *testing.T) {
 			expected: []string{"github-mcp", "context7"},
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := service.parseActiveMCPs(tt.input)
-			// For empty cases, both nil and empty slice are acceptable
-			if len(tt.expected) == 0 && len(result) == 0 {
-				return // Both are empty, test passes
-			}
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("parseActiveMCPs() = %v, want %v", result, tt.expected)
-			}
-		})
+func assertParseActiveMCPsResult(t *testing.T, result []string, expected []string) {
+	// For empty cases, both nil and empty slice are acceptable
+	if len(expected) == 0 && len(result) == 0 {
+		return // Both are empty, test passes
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("parseActiveMCPs() = %v, want %v", result, expected)
 	}
 }
 
@@ -231,11 +245,11 @@ func TestGetInstallationGuide(t *testing.T) {
 
 	// Should contain some platform-appropriate information
 	switch runtime.GOOS {
-	case "darwin":
+	case PlatformDarwin:
 		if !contains(guide, "Homebrew") && !contains(guide, "brew") && !contains(guide, "PATH") {
 			t.Error("macOS guide should mention Homebrew, brew, or PATH")
 		}
-	case "windows":
+	case PlatformWindows:
 		if !contains(guide, "PATH") && !contains(guide, "Restart") {
 			t.Error("Windows guide should mention PATH or Restart")
 		}
@@ -554,8 +568,8 @@ func BenchmarkFormatClaudeStatusForDisplay(b *testing.B) {
 func TestToggleResultStruct(t *testing.T) {
 	result := &ToggleResult{
 		Success:   true,
-		MCPName:   "test-mcp",
-		NewState:  "active",
+		MCPName:   TestMCPName,
+		NewState:  TestActiveStatus,
 		ErrorType: "",
 		ErrorMsg:  "",
 		Retryable: false,
@@ -565,7 +579,7 @@ func TestToggleResultStruct(t *testing.T) {
 	if !result.Success {
 		t.Error("Expected Success to be true")
 	}
-	if result.MCPName != "test-mcp" {
+	if result.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 	}
 	if result.NewState != "active" {
@@ -641,8 +655,53 @@ func TestErrorMessages(t *testing.T) {
 
 func TestClassifyError(t *testing.T) {
 	service := NewClaudeService()
+	testCases := getClassifyErrorTestCases()
 
-	testCases := []struct {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a mock error
+			mockErr := &mockError{msg: tc.errMsg}
+			result := service.classifyError(mockErr, tc.output)
+			if result != tc.expected {
+				t.Errorf("classifyError() = %s, expected %s", result, tc.expected)
+			}
+		})
+	}
+}
+
+func getClassifyErrorTestCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	timeoutCases := getTimeoutErrorCases()
+	permissionCases := getPermissionErrorCases()
+	unavailableCases := getUnavailableErrorCases()
+	unknownCases := getUnknownErrorCases()
+	
+	var allCases []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}
+	
+	allCases = append(allCases, timeoutCases...)
+	allCases = append(allCases, permissionCases...)
+	allCases = append(allCases, unavailableCases...)
+	allCases = append(allCases, unknownCases...)
+	
+	return allCases
+}
+
+func getTimeoutErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
 		name     string
 		errMsg   string
 		output   string
@@ -660,6 +719,21 @@ func TestClassifyError(t *testing.T) {
 			output:   "",
 			expected: ErrorTypeNetworkTimeout,
 		},
+	}
+}
+
+func getPermissionErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "permission denied in output",
 			errMsg:   "exit status 1",
@@ -678,6 +752,21 @@ func TestClassifyError(t *testing.T) {
 			output:   "authentication failed",
 			expected: ErrorTypePermissionError,
 		},
+	}
+}
+
+func getUnavailableErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "executable not found",
 			errMsg:   "executable file not found in $PATH",
@@ -696,23 +785,27 @@ func TestClassifyError(t *testing.T) {
 			output:   "'claude' is not recognized as an internal or external command",
 			expected: ErrorTypeClaudeUnavailable,
 		},
+	}
+}
+
+func getUnknownErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "unknown error",
 			errMsg:   "some other error",
 			output:   "unexpected output",
 			expected: ErrorTypeUnknownError,
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Create a mock error
-			mockErr := &mockError{msg: tc.errMsg}
-			result := service.classifyError(mockErr, tc.output)
-			if result != tc.expected {
-				t.Errorf("classifyError() = %s, expected %s", result, tc.expected)
-			}
-		})
 	}
 }
 
@@ -735,13 +828,13 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
+	result, err := service.ToggleMCPStatus(ctxShort, TestMCPName, true, testMCP)
 
 	// Should return result, not error
 	if err != nil {
@@ -764,7 +857,7 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 			t.Error("Error message should not be empty when toggle fails")
 		}
 
-		if result.MCPName != "test-mcp" {
+		if result.MCPName != TestMCPName {
 			t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 		}
 	}
@@ -783,32 +876,32 @@ func TestToggleMCPStatusSuccessCase(t *testing.T) {
 	// Test activation
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.ToggleMCPStatus(ctx, "test-mcp", true, testMCP)
+	result, err := service.ToggleMCPStatus(ctx, TestMCPName, true, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
 	if result == nil {
 		t.Fatal("ToggleMCPStatus should return result")
 	}
-	if result.MCPName != "test-mcp" {
+	if result.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 	}
 
 	// Test deactivation
-	result2, err := service.ToggleMCPStatus(ctx, "test-mcp", false, testMCP)
+	result2, err := service.ToggleMCPStatus(ctx, TestMCPName, false, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
 	if result2 == nil {
 		t.Fatal("ToggleMCPStatus should return result")
 	}
-	if result2.MCPName != "test-mcp" {
+	if result2.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result2.MCPName)
 	}
 }
@@ -821,13 +914,13 @@ func TestRetryToggleOperation(t *testing.T) {
 	expiredStart := time.Now().Add(-25 * time.Second)
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.retryToggleOperation(ctx, "test-mcp", true, testMCP, expiredStart)
+	result, err := service.retryToggleOperation(ctx, TestMCPName, true, testMCP, expiredStart)
 
 	if err == nil {
 		t.Error("Expected error when time budget exceeded")
@@ -856,13 +949,13 @@ func BenchmarkToggleMCPStatus(b *testing.B) {
 		ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
 		// Create test MCP config
 		testMCP := &types.MCPItem{
-			Name:    "test-mcp",
+			Name:    TestMCPName,
 			Type:    "CMD",
 			Command: "echo",
 			Args:    []string{"test"},
 		}
 
-		_, _ = service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
+		_, _ = service.ToggleMCPStatus(ctxShort, TestMCPName, true, testMCP)
 		cancel()
 	}
 }
@@ -965,8 +1058,39 @@ func TestFormatPathForDisplay(t *testing.T) {
 
 func TestGetSyncStatus(t *testing.T) {
 	baseTime := time.Now()
+	testCases := createGetSyncStatusTests(baseTime)
 
-	testCases := []struct {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetSyncStatus(tc.model)
+			assertSyncStatusResult(t, result, tc.expected)
+		})
+	}
+}
+
+func createGetSyncStatusTests(baseTime time.Time) []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	var tests []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}
+	
+	tests = append(tests, createErrorStatusTests()...)
+	tests = append(tests, createValidStatusTests(baseTime)...)
+	
+	return tests
+}
+
+func createErrorStatusTests() []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	return []struct {
 		name     string
 		model    types.Model
 		expected types.SyncStatus
@@ -990,10 +1114,23 @@ func TestGetSyncStatus(t *testing.T) {
 			name: "no sync performed",
 			model: types.Model{
 				ClaudeAvailable: true,
-				LastClaudeSync:  time.Time{}, // Zero time
+				LastClaudeSync: time.Time{}, // Zero time
 			},
 			expected: types.SyncStatusUnknown,
 		},
+	}
+}
+
+func createValidStatusTests(baseTime time.Time) []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	return []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}{
 		{
 			name: "in sync",
 			model: types.Model{
@@ -1040,14 +1177,11 @@ func TestGetSyncStatus(t *testing.T) {
 			expected: types.SyncStatusOutOfSync,
 		},
 	}
+}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result := GetSyncStatus(tc.model)
-			if result != tc.expected {
-				t.Errorf("GetSyncStatus() = %v, expected %v", result, tc.expected)
-			}
-		})
+func assertSyncStatusResult(t *testing.T, result types.SyncStatus, expected types.SyncStatus) {
+	if result != expected {
+		t.Errorf("GetSyncStatus() = %v, expected %v", result, expected)
 	}
 }
 

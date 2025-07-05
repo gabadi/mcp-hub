@@ -1,3 +1,4 @@
+// Package types provides UI-specific type definitions and data structures for the MCP manager.
 package types
 
 import (
@@ -54,7 +55,7 @@ func TestNewModel(t *testing.T) {
 
 func TestNewModelWithMCPs(t *testing.T) {
 	testMCPs := []MCPItem{
-		{Name: "test-mcp", Type: "CMD", Active: true, Command: "test-command"},
+		{Name: "test-mcp", Type: TestCMD, Active: true, Command: "test-command"},
 		{Name: "another-mcp", Type: "SSE", Active: false, URL: "http://example.com"},
 	}
 
@@ -95,9 +96,22 @@ func TestGetDefaultMCPs(t *testing.T) {
 
 func TestMCPItemTypes(t *testing.T) {
 	// Test different MCP types
+	cmdMCP, sseMCP, jsonMCP := createTestMCPItems()
+
+	// Test CMD MCP
+	validateCMDMCPItem(t, cmdMCP)
+
+	// Test SSE MCP
+	validateSSEMCPItem(t, sseMCP)
+
+	// Test JSON MCP
+	validateJSONMCPItem(t, jsonMCP)
+}
+
+func createTestMCPItems() (MCPItem, MCPItem, MCPItem) {
 	cmdMCP := MCPItem{
 		Name:    "test-cmd",
-		Type:    "CMD",
+		Type:    TestCMD,
 		Active:  true,
 		Command: "test-command",
 		Args:    []string{"arg1", "arg2"},
@@ -123,11 +137,14 @@ func TestMCPItemTypes(t *testing.T) {
 		JSONConfig: `{"key": "value"}`,
 	}
 
-	// Test that all fields are accessible
+	return cmdMCP, sseMCP, jsonMCP
+}
+
+func validateCMDMCPItem(t *testing.T, cmdMCP MCPItem) {
 	if cmdMCP.Name != "test-cmd" {
 		t.Error("CMD MCP name not set correctly")
 	}
-	if cmdMCP.Type != "CMD" {
+	if cmdMCP.Type != TestCMD {
 		t.Error("CMD MCP type not set correctly")
 	}
 	if !cmdMCP.Active {
@@ -142,7 +159,9 @@ func TestMCPItemTypes(t *testing.T) {
 	if cmdMCP.Environment["TEST_VAR"] != "test_value" {
 		t.Error("CMD MCP environment not set correctly")
 	}
+}
 
+func validateSSEMCPItem(t *testing.T, sseMCP MCPItem) {
 	if sseMCP.Name != "test-sse" {
 		t.Error("SSE MCP name not set correctly")
 	}
@@ -158,7 +177,9 @@ func TestMCPItemTypes(t *testing.T) {
 	if sseMCP.Environment["API_KEY"] != "secret" {
 		t.Error("SSE MCP environment not set correctly")
 	}
+}
 
+func validateJSONMCPItem(t *testing.T, jsonMCP MCPItem) {
 	if jsonMCP.Name != "test-json" {
 		t.Error("JSON MCP name not set correctly")
 	}
@@ -223,7 +244,7 @@ func TestFormData(t *testing.T) {
 		Command:     "test-command",
 		Args:        "arg1 arg2",
 		URL:         "http://example.com",
-		JSONConfig:  `{"test": true}`,
+		JSONConfig:  `{TestStr: true}`,
 		Environment: "TEST_VAR=value",
 		ActiveField: 1,
 	}
@@ -241,7 +262,7 @@ func TestFormData(t *testing.T) {
 	if formData.URL != "http://example.com" {
 		t.Error("FormData URL not set correctly")
 	}
-	if formData.JSONConfig != `{"test": true}` {
+	if formData.JSONConfig != `{TestStr: true}` {
 		t.Error("FormData JSONConfig not set correctly")
 	}
 	if formData.Environment != "TEST_VAR=value" {
@@ -313,23 +334,23 @@ func TestModelInit(t *testing.T) {
 
 func TestLayoutConstants(t *testing.T) {
 	// Test layout constants are properly defined
-	if COLUMN_WIDTH != 28 {
-		t.Errorf("Expected COLUMN_WIDTH to be 28, got %d", COLUMN_WIDTH)
+	if ColumnWidth != 28 {
+		t.Errorf("Expected ColumnWidth to be 28, got %d", ColumnWidth)
 	}
-	if WIDE_LAYOUT_MIN != 120 {
-		t.Errorf("Expected WIDE_LAYOUT_MIN to be 120, got %d", WIDE_LAYOUT_MIN)
+	if WideLayoutMin != 120 {
+		t.Errorf("Expected WideLayoutMin to be 120, got %d", WideLayoutMin)
 	}
-	if MEDIUM_LAYOUT_MIN != 80 {
-		t.Errorf("Expected MEDIUM_LAYOUT_MIN to be 80, got %d", MEDIUM_LAYOUT_MIN)
+	if MediumLayoutMin != 80 {
+		t.Errorf("Expected MediumLayoutMin to be 80, got %d", MediumLayoutMin)
 	}
-	if WIDE_COLUMNS != 4 {
-		t.Errorf("Expected WIDE_COLUMNS to be 4, got %d", WIDE_COLUMNS)
+	if WideColumns != 4 {
+		t.Errorf("Expected WideColumns to be 4, got %d", WideColumns)
 	}
-	if MEDIUM_COLUMNS != 2 {
-		t.Errorf("Expected MEDIUM_COLUMNS to be 2, got %d", MEDIUM_COLUMNS)
+	if MediumColumns != 2 {
+		t.Errorf("Expected MediumColumns to be 2, got %d", MediumColumns)
 	}
-	if NARROW_COLUMNS != 1 {
-		t.Errorf("Expected NARROW_COLUMNS to be 1, got %d", NARROW_COLUMNS)
+	if NarrowColumns != 1 {
+		t.Errorf("Expected NarrowColumns to be 1, got %d", NarrowColumns)
 	}
 }
 
@@ -371,180 +392,221 @@ func TestModelComplexState(t *testing.T) {
 
 func TestMCPItemEnvironmentHandling(t *testing.T) {
 	// Test MCP with nil environment
-	mcp1 := MCPItem{
-		Name:        "test1",
-		Type:        "CMD",
-		Command:     "test",
-		Environment: nil,
-	}
-
-	if mcp1.Name != "test1" {
-		t.Error("MCP1 name not set correctly")
-	}
-	if mcp1.Type != "CMD" {
-		t.Error("MCP1 type not set correctly")
-	}
-	if mcp1.Command != "test" {
-		t.Error("MCP1 command not set correctly")
-	}
-	if mcp1.Environment != nil {
-		t.Error("Expected nil environment to remain nil")
-	}
+	mcp1 := createMCPWithNilEnvironment()
+	validateMCPWithNilEnvironment(t, mcp1)
 
 	// Test MCP with empty environment
-	mcp2 := MCPItem{
-		Name:        "test2",
-		Type:        "CMD",
-		Command:     "test",
-		Environment: make(map[string]string),
-	}
-
-	if mcp2.Name != "test2" {
-		t.Error("MCP2 name not set correctly")
-	}
-	if mcp2.Type != "CMD" {
-		t.Error("MCP2 type not set correctly")
-	}
-	if mcp2.Command != "test" {
-		t.Error("MCP2 command not set correctly")
-	}
-	if mcp2.Environment == nil {
-		t.Error("Expected empty environment map to be preserved")
-	}
-	if len(mcp2.Environment) != 0 {
-		t.Error("Expected empty environment map to have length 0")
-	}
+	mcp2 := createMCPWithEmptyEnvironment()
+	validateMCPWithEmptyEnvironment(t, mcp2)
 
 	// Test MCP with populated environment
-	mcp3 := MCPItem{
+	mcp3 := createMCPWithPopulatedEnvironment()
+	validateMCPWithPopulatedEnvironment(t, mcp3)
+}
+
+func createMCPWithNilEnvironment() MCPItem {
+	return MCPItem{
+		Name:        "test1",
+		Type:        TestCMD,
+		Command:     TestStr,
+		Environment: nil,
+	}
+}
+
+func validateMCPWithNilEnvironment(t *testing.T, mcp MCPItem) {
+	if mcp.Name != "test1" {
+		t.Error("MCP1 name not set correctly")
+	}
+	if mcp.Type != TestCMD {
+		t.Error("MCP1 type not set correctly")
+	}
+	if mcp.Command != TestStr {
+		t.Error("MCP1 command not set correctly")
+	}
+	if mcp.Environment != nil {
+		t.Error("Expected nil environment to remain nil")
+	}
+}
+
+func createMCPWithEmptyEnvironment() MCPItem {
+	return MCPItem{
+		Name:        "test2",
+		Type:        TestCMD,
+		Command:     TestStr,
+		Environment: make(map[string]string),
+	}
+}
+
+func validateMCPWithEmptyEnvironment(t *testing.T, mcp MCPItem) {
+	if mcp.Name != "test2" {
+		t.Error("MCP2 name not set correctly")
+	}
+	if mcp.Type != TestCMD {
+		t.Error("MCP2 type not set correctly")
+	}
+	if mcp.Command != TestStr {
+		t.Error("MCP2 command not set correctly")
+	}
+	if mcp.Environment == nil {
+		t.Error("Expected empty environment map to be preserved")
+	}
+	if len(mcp.Environment) != 0 {
+		t.Error("Expected empty environment map to have length 0")
+	}
+}
+
+func createMCPWithPopulatedEnvironment() MCPItem {
+	return MCPItem{
 		Name:    "test3",
-		Type:    "CMD",
-		Command: "test",
+		Type:    TestCMD,
+		Command: TestStr,
 		Environment: map[string]string{
 			"VAR1": "value1",
 			"VAR2": "value2",
 		},
 	}
+}
 
-	if mcp3.Name != "test3" {
+func validateMCPWithPopulatedEnvironment(t *testing.T, mcp MCPItem) {
+	if mcp.Name != "test3" {
 		t.Error("MCP3 name not set correctly")
 	}
-	if mcp3.Type != "CMD" {
+	if mcp.Type != TestCMD {
 		t.Error("MCP3 type not set correctly")
 	}
-	if mcp3.Command != "test" {
+	if mcp.Command != TestStr {
 		t.Error("MCP3 command not set correctly")
 	}
-	if len(mcp3.Environment) != 2 {
+	if len(mcp.Environment) != 2 {
 		t.Error("Expected environment to have 2 variables")
 	}
-	if mcp3.Environment["VAR1"] != "value1" {
+	if mcp.Environment["VAR1"] != "value1" {
 		t.Error("Environment variable VAR1 not set correctly")
 	}
-	if mcp3.Environment["VAR2"] != "value2" {
+	if mcp.Environment["VAR2"] != "value2" {
 		t.Error("Environment variable VAR2 not set correctly")
 	}
 }
 
 func TestLoadingOverlayMethods(t *testing.T) {
 	t.Run("StartLoadingOverlay", func(t *testing.T) {
-		model := NewModel()
-		
-		model.StartLoadingOverlay(LoadingStartup)
-		
-		if !model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should be active after start")
-		}
-		if model.LoadingOverlay.Message == "" {
-			t.Error("Loading message should be set after start")
-		}
-		if model.LoadingOverlay.Type != LoadingStartup {
-			t.Errorf("Expected type LoadingStartup, got %v", model.LoadingOverlay.Type)
-		}
+		testStartLoadingOverlay(t)
 	})
 	
 	t.Run("UpdateLoadingMessage", func(t *testing.T) {
-		model := NewModel()
-		model.StartLoadingOverlay(LoadingRefresh)
-		oldMessage := model.LoadingOverlay.Message
-		
-		model.UpdateLoadingMessage("New message")
-		
-		if model.LoadingOverlay.Message != "New message" {
-			t.Errorf("Expected message 'New message', got '%s'", model.LoadingOverlay.Message)
-		}
-		if !model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should remain active")
-		}
-		
-		// Test that it changed from old message
-		if model.LoadingOverlay.Message == oldMessage {
-			t.Error("Message should have changed")
-		}
+		testUpdateLoadingMessage(t)
 	})
 	
 	t.Run("StopLoadingOverlay", func(t *testing.T) {
-		model := NewModel()
-		model.StartLoadingOverlay(LoadingStartup)
-		
-		// Ensure it's active first
-		if !model.IsLoadingOverlayActive() {
-			t.Error("Setup: Loading overlay should be active before stop")
-		}
-		
-		model.StopLoadingOverlay()
-		
-		if model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should be inactive after stop")
-		}
-		if model.LoadingOverlay != nil {
-			t.Error("Loading overlay should be nil after stop")
-		}
+		testStopLoadingOverlay(t)
 	})
 	
 	t.Run("AdvanceSpinner", func(t *testing.T) {
-		model := NewModel()
-		model.StartLoadingOverlay(LoadingStartup)
-		
-		initialSpinner := model.LoadingOverlay.Spinner
-		
-		model.AdvanceSpinner()
-		
-		if model.LoadingOverlay.Spinner == initialSpinner {
-			t.Error("Spinner should have advanced")
-		}
-		
-		// Test multiple advances to check wrap around
-		for i := 0; i < 10; i++ {
-			model.AdvanceSpinner()
-		}
-		
-		// Should still be a valid spinner value (0-3)
-		if model.LoadingOverlay.Spinner < 0 || model.LoadingOverlay.Spinner > 3 {
-			t.Errorf("Spinner should be between 0-3, got %d", model.LoadingOverlay.Spinner)
-		}
+		testAdvanceSpinner(t)
 	})
 	
 	t.Run("IsLoadingOverlayActive", func(t *testing.T) {
-		model := NewModel()
-		
-		// Initially inactive
-		if model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should be inactive initially")
-		}
-		
-		// Activate
-		model.StartLoadingOverlay(LoadingStartup)
-		if !model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should be active after start")
-		}
-		
-		// Deactivate
-		model.StopLoadingOverlay()
-		if model.IsLoadingOverlayActive() {
-			t.Error("Loading overlay should be inactive after stop")
-		}
+		testIsLoadingOverlayActive(t)
 	})
+}
+
+func testStartLoadingOverlay(t *testing.T) {
+	model := NewModel()
+	
+	model.StartLoadingOverlay(LoadingStartup)
+	
+	if !model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should be active after start")
+	}
+	if model.LoadingOverlay.Message == "" {
+		t.Error("Loading message should be set after start")
+	}
+	if model.LoadingOverlay.Type != LoadingStartup {
+		t.Errorf("Expected type LoadingStartup, got %v", model.LoadingOverlay.Type)
+	}
+}
+
+func testUpdateLoadingMessage(t *testing.T) {
+	model := NewModel()
+	model.StartLoadingOverlay(LoadingRefresh)
+	oldMessage := model.LoadingOverlay.Message
+	
+	model.UpdateLoadingMessage("New message")
+	
+	if model.LoadingOverlay.Message != "New message" {
+		t.Errorf("Expected message 'New message', got '%s'", model.LoadingOverlay.Message)
+	}
+	if !model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should remain active")
+	}
+	
+	// Test that it changed from old message
+	if model.LoadingOverlay.Message == oldMessage {
+		t.Error("Message should have changed")
+	}
+}
+
+func testStopLoadingOverlay(t *testing.T) {
+	model := NewModel()
+	model.StartLoadingOverlay(LoadingStartup)
+	
+	// Ensure it's active first
+	if !model.IsLoadingOverlayActive() {
+		t.Error("Setup: Loading overlay should be active before stop")
+	}
+	
+	model.StopLoadingOverlay()
+	
+	if model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should be inactive after stop")
+	}
+	if model.LoadingOverlay != nil {
+		t.Error("Loading overlay should be nil after stop")
+	}
+}
+
+func testAdvanceSpinner(t *testing.T) {
+	model := NewModel()
+	model.StartLoadingOverlay(LoadingStartup)
+	
+	initialSpinner := model.LoadingOverlay.Spinner
+	
+	model.AdvanceSpinner()
+	
+	if model.LoadingOverlay.Spinner == initialSpinner {
+		t.Error("Spinner should have advanced")
+	}
+	
+	// Test multiple advances to check wrap around
+	for i := 0; i < 10; i++ {
+		model.AdvanceSpinner()
+	}
+	
+	// Should still be a valid spinner value (0-3)
+	if model.LoadingOverlay.Spinner < 0 || model.LoadingOverlay.Spinner > 3 {
+		t.Errorf("Spinner should be between 0-3, got %d", model.LoadingOverlay.Spinner)
+	}
+}
+
+func testIsLoadingOverlayActive(t *testing.T) {
+	model := NewModel()
+	
+	// Initially inactive
+	if model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should be inactive initially")
+	}
+	
+	// Activate
+	model.StartLoadingOverlay(LoadingStartup)
+	if !model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should be active after start")
+	}
+	
+	// Deactivate
+	model.StopLoadingOverlay()
+	if model.IsLoadingOverlayActive() {
+		t.Error("Loading overlay should be inactive after stop")
+	}
 }
 
 func TestSpinnerTypes(t *testing.T) {
@@ -631,7 +693,7 @@ func TestMessageTypes(t *testing.T) {
 		}
 	})
 	
-	t.Run("ProjectContextCheckMsg", func(t *testing.T) {
+	t.Run("ProjectContextCheckMsg", func(_ *testing.T) {
 		msg := ProjectContextCheckMsg{}
 		// Empty struct, just test that it compiles and exists
 		_ = msg

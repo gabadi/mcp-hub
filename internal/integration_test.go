@@ -148,15 +148,15 @@ func TestCompleteUserWorkflow_MCPToggleAndPersistence(t *testing.T) {
 		m := updatedModel.(ui.Model)
 
 		// Verify toggle loading state was set
-		assert.Equal(t, types.ToggleLoading, m.Model.ToggleState, "Should be in loading state")
-		assert.Equal(t, "test-mcp", m.Model.ToggleMCPName, "Should track which MCP is being toggled")
+		assert.Equal(t, types.ToggleLoading, m.ToggleState, "Should be in loading state")
+		assert.Equal(t, "test-mcp", m.ToggleMCPName, "Should track which MCP is being toggled")
 		assert.NotNil(t, cmd, "Toggle should produce command")
 
 		// Step 2: Simulate successful command execution
 		// In a real application, the command would be executed by the runtime
 		// For testing, we simulate the successful result
 		m.MCPItems[0].Active = true // Simulate successful toggle
-		m.Model.ToggleState = types.ToggleSuccess
+		m.ToggleState = types.ToggleSuccess
 
 		// Verify the toggle was applied to the model
 		require.Len(t, m.MCPItems, 1, "Should have one MCP")

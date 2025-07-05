@@ -264,7 +264,7 @@ func TestUtilityFunctions(t *testing.T) {
 			Build()
 
 		newModel := pasteToSearchQuery(model)
-		var cmd tea.Cmd = nil
+		var cmd tea.Cmd
 		assert.NotNil(t, newModel)
 		_ = cmd
 	})

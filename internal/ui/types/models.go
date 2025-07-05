@@ -1,3 +1,4 @@
+// Package types provides UI-specific data models and structures for the MCP manager.
 package types
 
 import (
@@ -10,9 +11,13 @@ import (
 type AppState int
 
 const (
+	// MainNavigation represents the main navigation state of the application
 	MainNavigation AppState = iota
+	// SearchMode represents the search input state
 	SearchMode
-	SearchActiveNavigation // Combined search + navigation
+	// SearchActiveNavigation represents combined search and navigation state
+	SearchActiveNavigation
+	// ModalActive represents the modal dialog state
 	ModalActive
 )
 
@@ -20,10 +25,15 @@ const (
 type ToggleOperationState int
 
 const (
+	// ToggleIdle represents no ongoing toggle operation
 	ToggleIdle ToggleOperationState = iota
+	// ToggleLoading represents a toggle operation in progress
 	ToggleLoading
+	// ToggleSuccess represents a successful toggle operation
 	ToggleSuccess
+	// ToggleError represents a failed toggle operation
 	ToggleError
+	// ToggleRetrying represents a toggle operation being retried
 	ToggleRetrying
 )
 
@@ -31,8 +41,11 @@ const (
 type LoadingType int
 
 const (
+	// LoadingStartup represents application startup loading
 	LoadingStartup LoadingType = iota
+	// LoadingRefresh represents refresh operation loading
 	LoadingRefresh
+	// LoadingClaude represents Claude CLI detection loading
 	LoadingClaude
 )
 
@@ -40,9 +53,13 @@ const (
 type SpinnerState int
 
 const (
+	// SpinnerFrame1 represents the first spinner animation frame
 	SpinnerFrame1 SpinnerState = iota
+	// SpinnerFrame2 represents the second spinner animation frame
 	SpinnerFrame2
+	// SpinnerFrame3 represents the third spinner animation frame
 	SpinnerFrame3
+	// SpinnerFrame4 represents the fourth spinner animation frame
 	SpinnerFrame4
 )
 
@@ -138,13 +155,21 @@ type Model struct {
 type ModalType int
 
 const (
+	// NoModal represents no active modal dialog
 	NoModal ModalType = iota
+	// AddModal represents the basic add MCP modal
 	AddModal
+	// AddMCPTypeSelection represents the MCP type selection modal
 	AddMCPTypeSelection
+	// AddCommandForm represents the command MCP form modal
 	AddCommandForm
+	// AddSSEForm represents the SSE MCP form modal
 	AddSSEForm
+	// AddJSONForm represents the JSON MCP form modal
 	AddJSONForm
+	// EditModal represents the edit MCP modal
 	EditModal
+	// DeleteModal represents the delete confirmation modal
 	DeleteModal
 )
 
@@ -192,9 +217,13 @@ type ClaudeStatus struct {
 type SyncStatus int
 
 const (
+	// SyncStatusUnknown represents unknown sync status
 	SyncStatusUnknown SyncStatus = iota
+	// SyncStatusInSync represents synchronized state
 	SyncStatusInSync
+	// SyncStatusOutOfSync represents out-of-sync state
 	SyncStatusOutOfSync
+	// SyncStatusError represents sync error state
 	SyncStatusError
 )
 

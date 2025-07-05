@@ -8,9 +8,10 @@ import (
 func UpdateLayout(model types.Model) types.Model {
 	// Responsive breakpoints as specified in acceptance criteria
 	// Prioritize 4-column MCP grid layout as per wireframe
-	if model.Width >= types.WIDE_LAYOUT_MIN {
+	switch {
+	case model.Width >= types.WideLayoutMin:
 		// Wide: 4-column MCP grid for maximum information density
-		model.ColumnCount = types.WIDE_COLUMNS
+		model.ColumnCount = types.WideColumns
 		columnWidth := (model.Width - 10) / 4 // Account for spacing between 4 columns
 		model.Columns = []types.Column{
 			{Title: "MCPs Column 1", Width: columnWidth},
@@ -18,17 +19,17 @@ func UpdateLayout(model types.Model) types.Model {
 			{Title: "MCPs Column 3", Width: columnWidth},
 			{Title: "MCPs Column 4", Width: columnWidth},
 		}
-	} else if model.Width >= types.MEDIUM_LAYOUT_MIN {
+	case model.Width >= types.MediumLayoutMin:
 		// Medium: 2 columns (MCPs + Status/Details)
-		model.ColumnCount = types.MEDIUM_COLUMNS
+		model.ColumnCount = types.MediumColumns
 		columnWidth := (model.Width - 6) / 2
 		model.Columns = []types.Column{
 			{Title: "MCPs", Width: columnWidth},
 			{Title: "Status & Details", Width: columnWidth},
 		}
-	} else {
+	default:
 		// Narrow: 1 column (all in one)
-		model.ColumnCount = types.NARROW_COLUMNS
+		model.ColumnCount = types.NarrowColumns
 		model.Columns = []types.Column{
 			{Title: "MCP Manager", Width: model.Width - 4},
 		}

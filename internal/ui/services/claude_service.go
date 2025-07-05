@@ -1,3 +1,4 @@
+// Package services provides Claude CLI integration and MCP management services.
 package services
 
 import (
@@ -7,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -15,6 +17,23 @@ import (
 )
 
 // Use types.ClaudeStatus for consistency
+
+const (
+	// ClaudeCommand is the command name for the Claude CLI
+	ClaudeCommand = "claude"
+	
+	// PlatformDarwin represents the macOS operating system identifier
+	PlatformDarwin   = "darwin"
+	// PlatformWindows represents the Windows operating system identifier  
+	PlatformWindows  = "windows"
+	// TestActiveStatus represents the active status string for testing
+	TestActiveStatus = "active"
+)
+
+// allowedCommands defines the commands that are allowed to be executed
+var allowedCommands = map[string]bool{
+	"claude": true,
+}
 
 // ToggleResult represents the result of an MCP toggle operation
 type ToggleResult struct {
@@ -31,6 +50,8 @@ type ToggleResult struct {
 // Error type constants for toggle operations
 const (
 	ErrorTypeClaudeUnavailable = "CLAUDE_UNAVAILABLE"
+	// Service string constants
+	UnknownStatus = "Unknown"
 	ErrorTypeNetworkTimeout    = "NETWORK_TIMEOUT"
 	ErrorTypePermissionError   = "PERMISSION_ERROR"
 	ErrorTypeMCPAlreadyExists  = "MCP_ALREADY_EXISTS"
@@ -39,7 +60,7 @@ const (
 	ErrorTypeUnknownError      = "UNKNOWN_ERROR"
 )
 
-// Error message templates
+// ErrorMessages provides templates for user-friendly error messages
 var ErrorMessages = map[string]string{
 	ErrorTypeClaudeUnavailable: "Claude CLI not available. Install Claude CLI to manage MCP activation.",
 	ErrorTypeNetworkTimeout:    "MCP toggle operation timed out. Retrying...",
@@ -108,7 +129,7 @@ func (cs *ClaudeService) DetectClaudeCLI(ctx context.Context) types.ClaudeStatus
 
 // getClaudeVersion attempts to get the Claude CLI version
 func (cs *ClaudeService) getClaudeVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "claude", "--version")
+	cmd := exec.CommandContext(ctx, ClaudeCommand, "--version")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get claude version: %w", err)
@@ -130,7 +151,7 @@ func (cs *ClaudeService) QueryActiveMCPs(ctx context.Context) ([]string, error) 
 	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(timeoutCtx, "claude", "mcp", "list")
+	cmd := exec.CommandContext(timeoutCtx, ClaudeCommand, "mcp", "list")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active MCPs: %w", err)
@@ -196,7 +217,7 @@ func (cs *ClaudeService) extractMCPNameFromJSON(mcp map[string]interface{}) stri
 	}
 
 	// Check if MCP is active
-	if active, exists := mcp["active"]; exists {
+	if active, exists := mcp[TestActiveStatus]; exists {
 		if isActive, ok := active.(bool); ok && isActive {
 			return name
 		}
@@ -267,7 +288,7 @@ func (cs *ClaudeService) RefreshClaudeStatus(ctx context.Context) types.ClaudeSt
 // getInstallationGuide returns platform-specific installation guidance
 func (cs *ClaudeService) getInstallationGuide() string {
 	switch runtime.GOOS {
-	case "darwin":
+	case PlatformDarwin:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Or use Homebrew: brew install claude-cli\n• Ensure it's in your PATH"
 	case "windows":
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Add to your system PATH\n• Restart your terminal after installation"
@@ -301,7 +322,7 @@ func SyncMCPStatus(model types.Model, activeMCPs []string) types.Model {
 	}
 
 	// Update local MCP items based on Claude's active MCPs
-	// This implements the mapping: Claude "added" = Local "active"
+	// This implements the mapping: Claude "added" = Local TestActiveStatus
 	for i := range model.MCPItems {
 		mcpName := model.MCPItems[i].Name
 
@@ -345,7 +366,26 @@ func GetRefreshKeyHint(status types.ClaudeStatus) string {
 // This method maps the toggle concept to Claude's add/remove paradigm
 func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, activate bool, mcpConfig *types.MCPItem) (*ToggleResult, error) {
 	start := time.Now()
+	result := cs.initializeToggleResult(mcpName, activate)
 
+	// First check if Claude CLI is available
+	if !cs.validateClaudeAvailability(ctx, result, start) {
+		return result, nil
+	}
+
+	// Attempt the toggle operation with timeout
+	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
+	defer cancel()
+
+	cmd, err := cs.buildToggleCommand(timeoutCtx, mcpName, activate, mcpConfig, result, start)
+	if err != nil {
+		return result, err
+	}
+
+	return cs.executeToggleCommand(cmd, result, start)
+}
+
+func (cs *ClaudeService) initializeToggleResult(mcpName string, activate bool) *ToggleResult {
 	result := &ToggleResult{
 		MCPName:  mcpName,
 		NewState: "deactivating",
@@ -355,7 +395,10 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 		result.NewState = "activating"
 	}
 
-	// First check if Claude CLI is available
+	return result
+}
+
+func (cs *ClaudeService) validateClaudeAvailability(ctx context.Context, result *ToggleResult, start time.Time) bool {
 	status := cs.DetectClaudeCLI(ctx)
 	if !status.Available {
 		result.Success = false
@@ -363,51 +406,70 @@ func (cs *ClaudeService) ToggleMCPStatus(ctx context.Context, mcpName string, ac
 		result.ErrorMsg = ErrorMessages[ErrorTypeClaudeUnavailable]
 		result.Retryable = false
 		result.Duration = time.Since(start)
-		return result, nil
+		return false
 	}
+	return true
+}
 
-	// Attempt the toggle operation with timeout
-	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
-	defer cancel()
-
-	var cmd *exec.Cmd
+func (cs *ClaudeService) buildToggleCommand(ctx context.Context, mcpName string, activate bool, mcpConfig *types.MCPItem, result *ToggleResult, start time.Time) (*exec.Cmd, error) {
 	if activate {
-		// Use 'claude mcp add' command with proper configuration
-		if mcpConfig == nil {
-			result.Success = false
-			result.ErrorType = ErrorTypeUnknownError
-			result.ErrorMsg = "MCP configuration required for activation"
-			result.Duration = time.Since(start)
-			return result, nil
-		}
-		cmd = cs.buildAddCommand(timeoutCtx, mcpConfig)
-		result.NewState = "active"
-	} else {
-		// Use 'claude mcp remove' command
-		cmd = exec.CommandContext(timeoutCtx, "claude", "mcp", "remove", mcpName)
-		result.NewState = "inactive"
+		return cs.buildActivateCommand(ctx, mcpConfig, result, start)
+	}
+	return cs.buildDeactivateCommand(ctx, mcpName, result), nil
+}
+
+func (cs *ClaudeService) buildActivateCommand(ctx context.Context, mcpConfig *types.MCPItem, result *ToggleResult, start time.Time) (*exec.Cmd, error) {
+	if mcpConfig == nil {
+		result.Success = false
+		result.ErrorType = ErrorTypeUnknownError
+		result.ErrorMsg = "MCP configuration required for activation"
+		result.Duration = time.Since(start)
+		return nil, nil
 	}
 
+	cmd, cmdErr := cs.buildAddCommand(ctx, mcpConfig)
+	if cmdErr != nil {
+		result.Success = false
+		result.ErrorType = ErrorTypeUnknownError
+		result.ErrorMsg = "Invalid MCP configuration: " + cmdErr.Error()
+		result.Duration = time.Since(start)
+		return nil, cmdErr
+	}
+
+	result.NewState = TestActiveStatus
+	return cmd, nil
+}
+
+func (cs *ClaudeService) buildDeactivateCommand(ctx context.Context, mcpName string, result *ToggleResult) *exec.Cmd {
+	result.NewState = "inactive"
+	return exec.CommandContext(ctx, ClaudeCommand, "mcp", "remove", mcpName)
+}
+
+func (cs *ClaudeService) executeToggleCommand(cmd *exec.Cmd, result *ToggleResult, start time.Time) (*ToggleResult, error) {
 	output, err := cmd.CombinedOutput()
 	result.Duration = time.Since(start)
 
 	if err != nil {
-		result.Success = false
-		result.ErrorType = cs.classifyError(err, string(output))
-		result.ErrorMsg = ErrorMessages[result.ErrorType]
-		result.Retryable = (result.ErrorType == ErrorTypeNetworkTimeout)
-
-		// If retryable and within time budget, mark as retrying
-		// The actual retry will be handled by the UI layer with proper delay
-		if result.Retryable && result.Duration < 8*time.Second {
-			result.Retrying = true
-			result.ErrorMsg = "MCP toggle timed out. Retrying..."
-		}
-
-		return result, nil
+		return cs.handleToggleError(err, string(output), result)
 	}
 
 	result.Success = true
+	return result, nil
+}
+
+func (cs *ClaudeService) handleToggleError(err error, output string, result *ToggleResult) (*ToggleResult, error) {
+	result.Success = false
+	result.ErrorType = cs.classifyError(err, output)
+	result.ErrorMsg = ErrorMessages[result.ErrorType]
+	result.Retryable = (result.ErrorType == ErrorTypeNetworkTimeout)
+
+	// If retryable and within time budget, mark as retrying
+	// The actual retry will be handled by the UI layer with proper delay
+	if result.Retryable && result.Duration < 8*time.Second {
+		result.Retrying = true
+		result.ErrorMsg = "MCP toggle timed out. Retrying..."
+	}
+
 	return result, nil
 }
 
@@ -447,11 +509,19 @@ func (cs *ClaudeService) retryToggleOperation(ctx context.Context, mcpName strin
 			result.Duration = time.Since(originalStart)
 			return result, fmt.Errorf("missing MCP configuration")
 		}
-		cmd = cs.buildAddCommand(timeoutCtx, mcpConfig)
-		result.NewState = "active"
+		var cmdErr error
+		cmd, cmdErr = cs.buildAddCommand(timeoutCtx, mcpConfig)
+		if cmdErr != nil {
+			result.Success = false
+			result.ErrorType = ErrorTypeUnknownError
+			result.ErrorMsg = "Invalid MCP configuration: " + cmdErr.Error()
+			result.Duration = time.Since(originalStart)
+			return result, cmdErr
+		}
+		result.NewState = TestActiveStatus
 	} else {
 		// Use 'claude mcp remove' command
-		cmd = exec.CommandContext(timeoutCtx, "claude", "mcp", "remove", mcpName)
+		cmd = exec.CommandContext(timeoutCtx, ClaudeCommand, "mcp", "remove", mcpName)
 		result.NewState = "inactive"
 	}
 
@@ -469,8 +539,32 @@ func (cs *ClaudeService) retryToggleOperation(ctx context.Context, mcpName strin
 	return result, nil
 }
 
+// validateMCPConfig validates MCP configuration to prevent command injection
+func (cs *ClaudeService) validateMCPConfig(mcpConfig *types.MCPItem) error {
+	// Validate MCP name - should only contain safe characters
+	nameRegex := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	if !nameRegex.MatchString(mcpConfig.Name) {
+		return fmt.Errorf("invalid MCP name: contains unsafe characters")
+	}
+	
+	// Validate environment variable keys
+	envKeyRegex := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+	for key := range mcpConfig.Environment {
+		if !envKeyRegex.MatchString(key) {
+			return fmt.Errorf("invalid environment variable key: %s", key)
+		}
+	}
+	
+	return nil
+}
+
 // buildAddCommand constructs the claude mcp add command based on MCP configuration
-func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.MCPItem) *exec.Cmd {
+func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.MCPItem) (*exec.Cmd, error) {
+	// Validate configuration to prevent command injection
+	if err := cs.validateMCPConfig(mcpConfig); err != nil {
+		return nil, err
+	}
+	
 	args := []string{"mcp", "add", mcpConfig.Name}
 
 	// Add the command or URL
@@ -502,7 +596,29 @@ func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.M
 		}
 	}
 
-	return exec.CommandContext(ctx, "claude", args...)
+	// Validate command name to prevent command injection
+	if ClaudeCommand != "claude" {
+		return nil, fmt.Errorf("invalid command name")
+	}
+	
+	// Use a secure command executor
+	return createSecureCommand(ctx, ClaudeCommand, args...)
+}
+
+// createSecureCommand creates a command only for allowed commands
+func createSecureCommand(ctx context.Context, cmdName string, args ...string) (*exec.Cmd, error) {
+	// Check if command is in allowlist
+	if !allowedCommands[cmdName] {
+		return nil, fmt.Errorf("command not allowed: %s", cmdName)
+	}
+	
+	// For extra security, ensure we only allow the specific command we expect
+	switch cmdName {
+	case "claude":
+		return exec.CommandContext(ctx, "claude", args...), nil
+	default:
+		return nil, fmt.Errorf("unknown command: %s", cmdName)
+	}
 }
 
 // classifyError classifies the error type based on the error and output
@@ -583,7 +699,7 @@ func (cs *ClaudeService) isPermissionError(outputLower string) bool {
 func GetProjectContext(model types.Model) types.ProjectContext {
 	currentPath, err := os.Getwd()
 	if err != nil {
-		currentPath = "Unknown"
+		currentPath = UnknownStatus
 	}
 
 	// Calculate display path (truncated for UI)
@@ -687,9 +803,9 @@ func FormatSyncStatusText(syncStatus types.SyncStatus) string {
 	case types.SyncStatusError:
 		return "Error"
 	case types.SyncStatusUnknown:
-		return "Unknown"
+		return UnknownStatus
 	default:
-		return "Unknown"
+		return UnknownStatus
 	}
 }
 

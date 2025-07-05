@@ -8,9 +8,9 @@ import (
 
 // GetLayoutType determines layout based on terminal width
 func GetLayoutType(width int) string {
-	if width >= types.WIDE_LAYOUT_MIN {
+	if width >= types.WideLayoutMin {
 		return "wide"
-	} else if width >= types.MEDIUM_LAYOUT_MIN {
+	} else if width >= types.MediumLayoutMin {
 		return "medium"
 	}
 	return "narrow"
@@ -18,12 +18,12 @@ func GetLayoutType(width int) string {
 
 // GetExpectedColumns returns expected column count for given width
 func GetExpectedColumns(width int) int {
-	if width >= types.WIDE_LAYOUT_MIN {
-		return types.WIDE_COLUMNS
-	} else if width >= types.MEDIUM_LAYOUT_MIN {
-		return types.MEDIUM_COLUMNS
+	if width >= types.WideLayoutMin {
+		return types.WideColumns
+	} else if width >= types.MediumLayoutMin {
+		return types.MediumColumns
 	}
-	return types.NARROW_COLUMNS
+	return types.NarrowColumns
 }
 
 // GetFilteredMCPs returns MCPs filtered by search query

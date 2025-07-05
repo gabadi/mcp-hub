@@ -12,15 +12,15 @@ import (
 func TestNewModelCreation(t *testing.T) {
 	model := NewModel()
 
-	if model.Model.State != types.MainNavigation {
+	if model.State != types.MainNavigation {
 		t.Error("Expected initial state to be MainNavigation")
 	}
 
-	if len(model.Model.MCPItems) == 0 {
+	if len(model.MCPItems) == 0 {
 		t.Error("Expected MCPItems to be populated")
 	}
 
-	if model.Model.FormErrors == nil {
+	if model.FormErrors == nil {
 		t.Error("Expected FormErrors to be initialized")
 	}
 }
@@ -43,11 +43,11 @@ func TestModelUpdateWindowSize(t *testing.T) {
 	newModel, cmd := model.Update(windowMsg)
 
 	updatedModel := newModel.(Model)
-	if updatedModel.Model.Width != 120 {
-		t.Errorf("Expected width 120, got %d", updatedModel.Model.Width)
+	if updatedModel.Width != 120 {
+		t.Errorf("Expected width 120, got %d", updatedModel.Width)
 	}
-	if updatedModel.Model.Height != 40 {
-		t.Errorf("Expected height 40, got %d", updatedModel.Model.Height)
+	if updatedModel.Height != 40 {
+		t.Errorf("Expected height 40, got %d", updatedModel.Height)
 	}
 
 	// Command should be nil for window resize
@@ -96,13 +96,13 @@ func TestGetterMethods(t *testing.T) {
 	model := NewModel()
 
 	// Set some test values
-	model.Model.ColumnCount = 4
-	model.Model.ActiveColumn = 2
-	model.Model.SelectedItem = 5
-	model.Model.State = types.SearchActiveNavigation
-	model.Model.SearchQuery = "test query"
-	model.Model.SearchActive = true
-	model.Model.SearchInputActive = true
+	model.ColumnCount = 4
+	model.ActiveColumn = 2
+	model.SelectedItem = 5
+	model.State = types.SearchActiveNavigation
+	model.SearchQuery = "test query"
+	model.SearchActive = true
+	model.SearchInputActive = true
 
 	// Test getter methods
 	if model.GetColumnCount() != 4 {
@@ -138,7 +138,7 @@ func TestGetFilteredMCPs(t *testing.T) {
 	model := NewModel()
 
 	// Add some test MCPs
-	model.Model.MCPItems = []types.MCPItem{
+	model.MCPItems = []types.MCPItem{
 		{Name: "github-mcp", Type: "CMD", Active: true},
 		{Name: "docker-mcp", Type: "CMD", Active: false},
 		{Name: "context7", Type: "SSE", Active: true},
@@ -151,7 +151,7 @@ func TestGetFilteredMCPs(t *testing.T) {
 	}
 
 	// Test with search query
-	model.Model.SearchQuery = "github"
+	model.SearchQuery = "github"
 	filtered = model.GetFilteredMCPs()
 	if len(filtered) != 1 {
 		t.Errorf("Expected 1 filtered MCP for 'github', got %d", len(filtered))
@@ -163,8 +163,8 @@ func TestGetFilteredMCPs(t *testing.T) {
 
 func TestViewRendering(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
+	model.Width = 120
+	model.Height = 40
 
 	result := model.View()
 
@@ -181,8 +181,8 @@ func TestViewRendering(t *testing.T) {
 
 func TestViewZeroDimensions(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 0
-	model.Model.Height = 0
+	model.Width = 0
+	model.Height = 0
 
 	result := model.View()
 
@@ -193,10 +193,10 @@ func TestViewZeroDimensions(t *testing.T) {
 
 func TestViewWithModal(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
-	model.Model.State = types.ModalActive
-	model.Model.ActiveModal = types.AddCommandForm
+	model.Width = 120
+	model.Height = 40
+	model.State = types.ModalActive
+	model.ActiveModal = types.AddCommandForm
 
 	result := model.View()
 
@@ -208,8 +208,8 @@ func TestViewWithModal(t *testing.T) {
 
 func TestRenderHeaderDifferentStates(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
+	model.Width = 120
+	model.Height = 40
 
 	tests := []struct {
 		state    types.AppState
@@ -222,9 +222,9 @@ func TestRenderHeaderDifferentStates(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		model.Model.State = tt.state
+		model.State = tt.state
 		if tt.state == types.SearchActiveNavigation {
-			model.Model.SearchActive = true
+			model.SearchActive = true
 		}
 
 		result := model.View()
@@ -236,8 +236,8 @@ func TestRenderHeaderDifferentStates(t *testing.T) {
 
 func TestRenderBodyDifferentLayouts(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
+	model.Width = 120
+	model.Height = 40
 
 	// Test different column counts
 	testCases := []struct {
@@ -250,7 +250,7 @@ func TestRenderBodyDifferentLayouts(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		model.Model.ColumnCount = tc.columns
+		model.ColumnCount = tc.columns
 		result := model.View()
 
 		if result == "" {
@@ -261,10 +261,10 @@ func TestRenderBodyDifferentLayouts(t *testing.T) {
 
 func TestRenderStatusColumn(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
-	model.Model.ColumnCount = 2 // Ensure we're in a layout that shows status
-	model.Model.ClaudeStatus = types.ClaudeStatus{
+	model.Width = 120
+	model.Height = 40
+	model.ColumnCount = 2 // Ensure we're in a layout that shows status
+	model.ClaudeStatus = types.ClaudeStatus{
 		Available:  true,
 		Version:    "1.0.0",
 		ActiveMCPs: []string{"github-mcp", "context7"},
@@ -282,13 +282,13 @@ func TestRenderStatusColumn(t *testing.T) {
 
 func TestRenderDetailsColumn(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
-	model.Model.ColumnCount = 2 // Multi-column layout
-	model.Model.MCPItems = []types.MCPItem{
+	model.Width = 120
+	model.Height = 40
+	model.ColumnCount = 2 // Multi-column layout
+	model.MCPItems = []types.MCPItem{
 		{Name: "test-mcp", Type: "CMD", Command: "test-cmd", Active: true},
 	}
-	model.Model.SelectedItem = 0
+	model.SelectedItem = 0
 
 	result := model.View()
 
@@ -305,13 +305,13 @@ func TestRenderDetailsColumn(t *testing.T) {
 
 func TestRenderFooterDifferentStates(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
+	model.Width = 120
+	model.Height = 40
 
 	// Test search active state
-	model.Model.State = types.SearchActiveNavigation
-	model.Model.SearchActive = true
-	model.Model.SearchQuery = "test"
+	model.State = types.SearchActiveNavigation
+	model.SearchActive = true
+	model.SearchQuery = "test"
 
 	result := model.View()
 
@@ -322,8 +322,8 @@ func TestRenderFooterDifferentStates(t *testing.T) {
 
 func TestGetLayoutName(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
+	model.Width = 120
+	model.Height = 40
 
 	// Test different column counts
 	testCases := []struct {
@@ -337,7 +337,7 @@ func TestGetLayoutName(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		model.Model.ColumnCount = tc.columns
+		model.ColumnCount = tc.columns
 		// Access layout through the view rendering
 		result := model.View()
 
@@ -350,9 +350,9 @@ func TestGetLayoutName(t *testing.T) {
 
 func TestModelWithDifferentMCPTypes(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
-	model.Model.MCPItems = []types.MCPItem{
+	model.Width = 120
+	model.Height = 40
+	model.MCPItems = []types.MCPItem{
 		{Name: "cmd-mcp", Type: "CMD", Command: "cmd", Active: true},
 		{Name: "sse-mcp", Type: "SSE", URL: "http://example.com", Active: false},
 		{Name: "json-mcp", Type: "JSON", JSONConfig: `{"key":"value"}`, Active: false},
@@ -373,14 +373,14 @@ func TestModelWithDifferentMCPTypes(t *testing.T) {
 
 func TestModelSearchFunctionality(t *testing.T) {
 	model := NewModel()
-	model.Model.MCPItems = []types.MCPItem{
+	model.MCPItems = []types.MCPItem{
 		{Name: "github-mcp", Type: "CMD", Active: true},
 		{Name: "docker-mcp", Type: "CMD", Active: false},
 		{Name: "context7", Type: "SSE", Active: true},
 	}
 
 	// Test search filtering
-	model.Model.SearchQuery = "github"
+	model.SearchQuery = "github"
 	filtered := model.GetFilteredMCPs()
 
 	if len(filtered) != 1 {
@@ -392,7 +392,7 @@ func TestModelSearchFunctionality(t *testing.T) {
 	}
 
 	// Test case-insensitive search
-	model.Model.SearchQuery = "GITHUB"
+	model.SearchQuery = "GITHUB"
 	filtered = model.GetFilteredMCPs()
 
 	if len(filtered) != 1 {
@@ -400,7 +400,7 @@ func TestModelSearchFunctionality(t *testing.T) {
 	}
 
 	// Test partial match
-	model.Model.SearchQuery = "git"
+	model.SearchQuery = "git"
 	filtered = model.GetFilteredMCPs()
 
 	if len(filtered) != 1 {
@@ -410,7 +410,7 @@ func TestModelSearchFunctionality(t *testing.T) {
 
 func TestModelWithEmptyMCPList(t *testing.T) {
 	model := NewModel()
-	model.Model.MCPItems = []types.MCPItem{}
+	model.MCPItems = []types.MCPItem{}
 
 	result := model.View()
 
@@ -422,10 +422,10 @@ func TestModelWithEmptyMCPList(t *testing.T) {
 
 func TestModelSuccessMessage(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 120
-	model.Model.Height = 40
-	model.Model.SuccessMessage = "Test success message"
-	model.Model.SuccessTimer = 120
+	model.Width = 120
+	model.Height = 40
+	model.SuccessMessage = "Test success message"
+	model.SuccessTimer = 120
 
 	result := model.View()
 
@@ -458,8 +458,8 @@ func TestModelUpdateUnknownMessage(t *testing.T) {
 
 func TestModelLargeWindow(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 200
-	model.Model.Height = 60
+	model.Width = 200
+	model.Height = 60
 
 	result := model.View()
 
@@ -471,8 +471,8 @@ func TestModelLargeWindow(t *testing.T) {
 
 func TestModelSmallWindow(t *testing.T) {
 	model := NewModel()
-	model.Model.Width = 40
-	model.Model.Height = 10
+	model.Width = 40
+	model.Height = 10
 
 	result := model.View()
 

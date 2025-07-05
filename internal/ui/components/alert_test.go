@@ -6,7 +6,31 @@ import (
 )
 
 func TestRenderAlertOverlay(t *testing.T) {
-	tests := []struct {
+	tests := getAlertOverlayTestCases()
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := RenderAlertOverlay(tt.message, tt.width, tt.height, tt.backgroundContent)
+			
+			if !tt.expectOverlay {
+				assertBackgroundUnchanged(t, result, tt.backgroundContent)
+				return
+			}
+			
+			assertOverlayApplied(t, result, tt.backgroundContent, tt.message)
+		})
+	}
+}
+
+func getAlertOverlayTestCases() []struct {
+	name              string
+	message           string
+	width             int
+	height            int
+	backgroundContent string
+	expectOverlay     bool
+} {
+	return []struct {
 		name              string
 		message           string
 		width             int
@@ -47,35 +71,26 @@ func TestRenderAlertOverlay(t *testing.T) {
 			expectOverlay:     true,
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := RenderAlertOverlay(tt.message, tt.width, tt.height, tt.backgroundContent)
+func assertBackgroundUnchanged(t *testing.T, result, background string) {
+	if result != background {
+		t.Errorf("Expected unchanged background, got different result")
+	}
+}
 
-			if !tt.expectOverlay {
-				// Should return background unchanged
-				if result != tt.backgroundContent {
-					t.Errorf("Expected unchanged background, got different result")
-				}
-				return
-			}
-
-			// When overlay is expected
-			if result == tt.backgroundContent {
-				t.Errorf("Expected overlay to be applied, but result matches background")
-			}
-
-			// Check that the result contains the message
-			if !strings.Contains(result, tt.message) {
-				t.Errorf("Expected result to contain message '%s', but it doesn't", tt.message)
-			}
-
-			// Verify result has appropriate dimensions
-			lines := strings.Split(result, "\n")
-			if len(lines) == 0 {
-				t.Errorf("Expected result to have content, got empty")
-			}
-		})
+func assertOverlayApplied(t *testing.T, result, background, message string) {
+	if result == background {
+		t.Errorf("Expected overlay to be applied, but result matches background")
+	}
+	
+	if !strings.Contains(result, message) {
+		t.Errorf("Expected result to contain message '%s', but it doesn't", message)
+	}
+	
+	lines := strings.Split(result, "\n")
+	if len(lines) == 0 {
+		t.Errorf("Expected result to have content, got empty")
 	}
 }
 

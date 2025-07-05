@@ -1,3 +1,4 @@
+// Package components provides UI components for the MCP manager application.
 package components
 
 import (

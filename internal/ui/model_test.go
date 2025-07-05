@@ -10,180 +10,201 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func TestModel_GetterMethods(t *testing.T) {
-	t.Run("GetColumnCount", func(t *testing.T) {
-		tests := []struct {
-			name        string
-			columnCount int
-		}{
-			{"1 column", 1},
-			{"2 columns", 2},
-			{"3 columns", 3},
-			{"4 columns", 4},
-		}
+// Test constants
+const (
+	TestPlatformGithub = "github"
+)
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.ColumnCount = tt.columnCount
+func TestModel_GetColumnCount(t *testing.T) {
+	tests := []struct {
+		name        string
+		columnCount int
+	}{
+		{"1 column", 1},
+		{"2 columns", 2},
+		{"3 columns", 3},
+		{"4 columns", 4},
+	}
 
-				result := model.GetColumnCount()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.ColumnCount = tt.columnCount
 
-				if result != tt.columnCount {
-					t.Errorf("GetColumnCount() = %d, expected %d", result, tt.columnCount)
-				}
-			})
-		}
-	})
+			result := model.GetColumnCount()
 
-	t.Run("GetActiveColumn", func(t *testing.T) {
-		tests := []struct {
-			name         string
-			activeColumn int
-		}{
-			{"First column", 0},
-			{"Second column", 1},
-			{"Third column", 2},
-			{"Fourth column", 3},
-		}
+			if result != tt.columnCount {
+				t.Errorf("GetColumnCount() = %d, expected %d", result, tt.columnCount)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.ActiveColumn = tt.activeColumn
+func TestModel_GetActiveColumn(t *testing.T) {
+	tests := []struct {
+		name         string
+		activeColumn int
+	}{
+		{"First column", 0},
+		{"Second column", 1},
+		{"Third column", 2},
+		{"Fourth column", 3},
+	}
 
-				result := model.GetActiveColumn()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.ActiveColumn = tt.activeColumn
 
-				if result != tt.activeColumn {
-					t.Errorf("GetActiveColumn() = %d, expected %d", result, tt.activeColumn)
-				}
-			})
-		}
-	})
+			result := model.GetActiveColumn()
 
-	t.Run("GetSelectedItem", func(t *testing.T) {
-		tests := []struct {
-			name         string
-			selectedItem int
-		}{
-			{"First item", 0},
-			{"Middle item", 5},
-			{"Last item", 10},
-		}
+			if result != tt.activeColumn {
+				t.Errorf("GetActiveColumn() = %d, expected %d", result, tt.activeColumn)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.SelectedItem = tt.selectedItem
+func TestModel_GetSelectedItem(t *testing.T) {
+	tests := []struct {
+		name         string
+		selectedItem int
+	}{
+		{"First item", 0},
+		{"Middle item", 5},
+		{"Last item", 10},
+	}
 
-				result := model.GetSelectedItem()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.SelectedItem = tt.selectedItem
 
-				if result != tt.selectedItem {
-					t.Errorf("GetSelectedItem() = %d, expected %d", result, tt.selectedItem)
-				}
-			})
-		}
-	})
+			result := model.GetSelectedItem()
 
-	t.Run("GetState", func(t *testing.T) {
-		tests := []struct {
-			name  string
-			state types.AppState
-		}{
-			{"MainNavigation", types.MainNavigation},
-			{"SearchMode", types.SearchMode},
-			{"SearchActiveNavigation", types.SearchActiveNavigation},
-			{"ModalActive", types.ModalActive},
-		}
+			if result != tt.selectedItem {
+				t.Errorf("GetSelectedItem() = %d, expected %d", result, tt.selectedItem)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.State = tt.state
+func TestModel_GetState(t *testing.T) {
+	tests := []struct {
+		name  string
+		state types.AppState
+	}{
+		{"MainNavigation", types.MainNavigation},
+		{"SearchMode", types.SearchMode},
+		{"SearchActiveNavigation", types.SearchActiveNavigation},
+		{"ModalActive", types.ModalActive},
+	}
 
-				result := model.GetState()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.State = tt.state
 
-				if result != tt.state {
-					t.Errorf("GetState() = %v, expected %v", result, tt.state)
-				}
-			})
-		}
-	})
+			result := model.GetState()
 
-	t.Run("GetSearchQuery", func(t *testing.T) {
-		tests := []struct {
-			name        string
-			searchQuery string
-		}{
-			{"Empty query", ""},
-			{"Simple query", "test"},
-			{"Complex query", "github-mcp"},
-			{"Special characters", "test@#$%"},
-		}
+			if result != tt.state {
+				t.Errorf("GetState() = %v, expected %v", result, tt.state)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.SearchQuery = tt.searchQuery
+func TestModel_GetSearchQuery(t *testing.T) {
+	tests := []struct {
+		name        string
+		searchQuery string
+	}{
+		{"Empty query", ""},
+		{"Simple query", "test"},
+		{"Complex query", "github-mcp"},
+		{"Special characters", "test@#$%"},
+	}
 
-				result := model.GetSearchQuery()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.SearchQuery = tt.searchQuery
 
-				if result != tt.searchQuery {
-					t.Errorf("GetSearchQuery() = %q, expected %q", result, tt.searchQuery)
-				}
-			})
-		}
-	})
+			result := model.GetSearchQuery()
 
-	t.Run("GetSearchActive", func(t *testing.T) {
-		tests := []struct {
-			name         string
-			searchActive bool
-		}{
-			{"Search active", true},
-			{"Search inactive", false},
-		}
+			if result != tt.searchQuery {
+				t.Errorf("GetSearchQuery() = %q, expected %q", result, tt.searchQuery)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.SearchActive = tt.searchActive
+func TestModel_GetSearchActive(t *testing.T) {
+	tests := []struct {
+		name         string
+		searchActive bool
+	}{
+		{"Search active", true},
+		{"Search inactive", false},
+	}
 
-				result := model.GetSearchActive()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.SearchActive = tt.searchActive
 
-				if result != tt.searchActive {
-					t.Errorf("GetSearchActive() = %v, expected %v", result, tt.searchActive)
-				}
-			})
-		}
-	})
+			result := model.GetSearchActive()
 
-	t.Run("GetSearchInputActive", func(t *testing.T) {
-		tests := []struct {
-			name              string
-			searchInputActive bool
-		}{
-			{"Search input active", true},
-			{"Search input inactive", false},
-		}
+			if result != tt.searchActive {
+				t.Errorf("GetSearchActive() = %v, expected %v", result, tt.searchActive)
+			}
+		})
+	}
+}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				model := NewModel()
-				model.Model.SearchInputActive = tt.searchInputActive
+func TestModel_GetSearchInputActive(t *testing.T) {
+	tests := []struct {
+		name              string
+		searchInputActive bool
+	}{
+		{"Search input active", true},
+		{"Search input inactive", false},
+	}
 
-				result := model.GetSearchInputActive()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := NewModel()
+			model.SearchInputActive = tt.searchInputActive
 
-				if result != tt.searchInputActive {
-					t.Errorf("GetSearchInputActive() = %v, expected %v", result, tt.searchInputActive)
-				}
-			})
-		}
-	})
+			result := model.GetSearchInputActive()
+
+			if result != tt.searchInputActive {
+				t.Errorf("GetSearchInputActive() = %v, expected %v", result, tt.searchInputActive)
+			}
+		})
+	}
 }
 
 func TestModel_GetFilteredMCPs(t *testing.T) {
-	tests := []struct {
+	tests := createGetFilteredMCPsTests()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := createModelWithMCPItems(tt.mcpItems, tt.searchQuery)
+			result := model.GetFilteredMCPs()
+			assertFilteredMCPsResult(t, result, tt.expected, tt.expectedNames)
+		})
+	}
+}
+
+func createGetFilteredMCPsTests() []struct {
+	name          string
+	mcpItems      []types.MCPItem
+	searchQuery   string
+	expected      int
+	expectedNames []string
+} {
+	return []struct {
 		name          string
 		mcpItems      []types.MCPItem
 		searchQuery   string
@@ -193,12 +214,12 @@ func TestModel_GetFilteredMCPs(t *testing.T) {
 		{
 			name: "No filter returns all",
 			mcpItems: []types.MCPItem{
-				{Name: "github", Active: true},
+				{Name: TestPlatformGithub, Active: true},
 				{Name: "docker", Active: false},
 			},
 			searchQuery:   "",
 			expected:      2,
-			expectedNames: []string{"github", "docker"},
+			expectedNames: []string{TestPlatformGithub, "docker"},
 		},
 		{
 			name: "Filter by name",
@@ -224,7 +245,7 @@ func TestModel_GetFilteredMCPs(t *testing.T) {
 		{
 			name: "No matches",
 			mcpItems: []types.MCPItem{
-				{Name: "github", Active: true},
+				{Name: TestPlatformGithub, Active: true},
 				{Name: "docker", Active: false},
 			},
 			searchQuery:   "nonexistent",
@@ -232,30 +253,29 @@ func TestModel_GetFilteredMCPs(t *testing.T) {
 			expectedNames: []string{},
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model := NewModel()
-			model.Model.MCPItems = tt.mcpItems
-			model.Model.SearchQuery = tt.searchQuery
+func createModelWithMCPItems(mcpItems []types.MCPItem, searchQuery string) Model {
+	model := NewModel()
+	model.MCPItems = mcpItems
+	model.SearchQuery = searchQuery
+	return model
+}
 
-			result := model.GetFilteredMCPs()
+func assertFilteredMCPsResult(t *testing.T, result []types.MCPItem, expected int, expectedNames []string) {
+	if len(result) != expected {
+		t.Errorf("GetFilteredMCPs() returned %d items, expected %d", len(result), expected)
+	}
 
-			if len(result) != tt.expected {
-				t.Errorf("GetFilteredMCPs() returned %d items, expected %d", len(result), tt.expected)
-			}
+	resultNames := make(map[string]bool)
+	for _, item := range result {
+		resultNames[item.Name] = true
+	}
 
-			resultNames := make(map[string]bool)
-			for _, item := range result {
-				resultNames[item.Name] = true
-			}
-
-			for _, expectedName := range tt.expectedNames {
-				if !resultNames[expectedName] {
-					t.Errorf("GetFilteredMCPs() should include %s", expectedName)
-				}
-			}
-		})
+	for _, expectedName := range expectedNames {
+		if !resultNames[expectedName] {
+			t.Errorf("GetFilteredMCPs() should include %s", expectedName)
+		}
 	}
 }
 
@@ -292,13 +312,13 @@ func TestModel_NewModel(t *testing.T) {
 	}
 
 	// Test that MCPItems are populated
-	if len(model.Model.MCPItems) == 0 {
+	if len(model.MCPItems) == 0 {
 		t.Errorf("NewModel() should have populated MCPItems")
 	}
 }
 
 func TestModel_Update(t *testing.T) {
-	t.Run("WindowSizeMsg updates dimensions", func(t *testing.T) {
+	t.Run("WindowSizeMsg updates dimensions", func(_ *testing.T) {
 		model := NewModel()
 
 		msg := tea.WindowSizeMsg{
@@ -309,12 +329,12 @@ func TestModel_Update(t *testing.T) {
 		updatedModel, cmd := model.Update(msg)
 		m := updatedModel.(Model)
 
-		if m.Model.Width != 120 {
-			t.Errorf("Update() should set width to 120, got %d", m.Model.Width)
+		if m.Width != 120 {
+			t.Errorf("Update() should set width to 120, got %d", m.Width)
 		}
 
-		if m.Model.Height != 40 {
-			t.Errorf("Update() should set height to 40, got %d", m.Model.Height)
+		if m.Height != 40 {
+			t.Errorf("Update() should set height to 40, got %d", m.Height)
 		}
 
 		if cmd != nil {
@@ -322,10 +342,10 @@ func TestModel_Update(t *testing.T) {
 		}
 	})
 
-	t.Run("KeyMsg delegates to handlers", func(t *testing.T) {
+	t.Run("KeyMsg delegates to handlers", func(_ *testing.T) {
 		model := NewModel()
-		model.Model.Width = 120
-		model.Model.Height = 40
+		model.Width = 120
+		model.Height = 40
 
 		// Test a key that should change state
 		msg := tea.KeyMsg{
@@ -342,7 +362,7 @@ func TestModel_Update(t *testing.T) {
 		_ = cmd
 	})
 
-	t.Run("Unknown message type", func(t *testing.T) {
+	t.Run("Unknown message type", func(_ *testing.T) {
 		model := NewModel()
 
 		// Send an unknown message type
@@ -363,7 +383,7 @@ func TestModel_Update(t *testing.T) {
 }
 
 func TestModel_StateConsistency(t *testing.T) {
-	t.Run("Model maintains state consistency", func(t *testing.T) {
+	t.Run("Model maintains state consistency", func(_ *testing.T) {
 		model := testutil.NewTestModel().
 			WithWindowSize(120, 40).
 			WithState(types.SearchActiveNavigation).
@@ -404,163 +424,161 @@ func TestModel_StateConsistency(t *testing.T) {
 	})
 }
 
-func TestModel_MessageHandlers(t *testing.T) {
-	t.Run("handleSuccessMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a success message
-		successMsg := handlers.SuccessMsg{
-			Message: "Test success message",
-		}
-		
-		updatedModel, cmd := model.Update(successMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		if cmd != nil {
-			t.Errorf("handleSuccessMsg should return nil cmd")
-		}
-	})
+func TestModel_HandleSuccessMsg(t *testing.T) {
+	model := NewModel()
+	
+	// Create a success message
+	successMsg := handlers.SuccessMsg{
+		Message: "Test success message",
+	}
+	
+	updatedModel, cmd := model.Update(successMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	if cmd != nil {
+		t.Errorf("handleSuccessMsg should return nil cmd")
+	}
+}
 
-	t.Run("handleClaudeStatusMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a Claude status message
-		statusMsg := handlers.ClaudeStatusMsg{
-			Status: types.ClaudeStatus{
-				Available:  true,
-				Version:    "1.0.0",
-				ActiveMCPs: []string{"github", "docker"},
-			},
-		}
-		
-		updatedModel, cmd := model.Update(statusMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleClaudeStatusMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a Claude status message
+	statusMsg := handlers.ClaudeStatusMsg{
+		Status: types.ClaudeStatus{
+			Available:  true,
+			Version:    "1.0.0",
+			ActiveMCPs: []string{TestPlatformGithub, "docker"},
+		},
+	}
+	
+	updatedModel, cmd := model.Update(statusMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleToggleResultMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a toggle result message
-		toggleMsg := handlers.ToggleResultMsg{
-			MCPName: "github",
-			Success: true,
-			Error:   "",
-		}
-		
-		updatedModel, cmd := model.Update(toggleMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleToggleResultMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a toggle result message
+	toggleMsg := handlers.ToggleResultMsg{
+		MCPName: TestPlatformGithub,
+		Success: true,
+		Error:   "",
+	}
+	
+	updatedModel, cmd := model.Update(toggleMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleTimerTickMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a timer tick message
-		timerMsg := types.TimerTickMsg{
-			ID: "1",
-		}
-		
-		updatedModel, cmd := model.Update(timerMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleTimerTickMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a timer tick message
+	timerMsg := types.TimerTickMsg{
+		ID: "1",
+	}
+	
+	updatedModel, cmd := model.Update(timerMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleLoadingProgressMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a loading progress message
-		progressMsg := types.LoadingProgressMsg{
-			Type:    types.LoadingStartup,
-			Message: "Loading...",
-			Done:    false,
-		}
-		
-		updatedModel, cmd := model.Update(progressMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleLoadingProgressMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a loading progress message
+	progressMsg := types.LoadingProgressMsg{
+		Type:    types.LoadingStartup,
+		Message: "Loading...",
+		Done:    false,
+	}
+	
+	updatedModel, cmd := model.Update(progressMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleLoadingStepMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a loading step message
-		stepMsg := types.LoadingStepMsg{
-			Type: types.LoadingStartup,
-			Step: 1,
-		}
-		
-		updatedModel, cmd := model.Update(stepMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleLoadingStepMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a loading step message
+	stepMsg := types.LoadingStepMsg{
+		Type: types.LoadingStartup,
+		Step: 1,
+	}
+	
+	updatedModel, cmd := model.Update(stepMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleLoadingSpinnerMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a loading spinner message
-		spinnerMsg := types.LoadingSpinnerMsg{
-			Type: types.LoadingStartup,
-		}
-		
-		updatedModel, cmd := model.Update(spinnerMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleLoadingSpinnerMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a loading spinner message
+	spinnerMsg := types.LoadingSpinnerMsg{
+		Type: types.LoadingStartup,
+	}
+	
+	updatedModel, cmd := model.Update(spinnerMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleProjectContextCheckMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a project context check message
-		contextMsg := types.ProjectContextCheckMsg{}
-		
-		updatedModel, cmd := model.Update(contextMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleProjectContextCheckMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a project context check message
+	contextMsg := types.ProjectContextCheckMsg{}
+	
+	updatedModel, cmd := model.Update(contextMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
+}
 
-	t.Run("handleDirectoryChangeMsg", func(t *testing.T) {
-		model := NewModel()
-		
-		// Create a directory change message
-		dirMsg := types.DirectoryChangeMsg{
-			NewPath: "/new/path",
-		}
-		
-		updatedModel, cmd := model.Update(dirMsg)
-		m := updatedModel.(Model)
-		
-		// Should update model state appropriately
-		_ = m
-		_ = cmd // May return command for follow-up actions
-	})
+func TestModel_HandleDirectoryChangeMsg(_ *testing.T) {
+	model := NewModel()
+	
+	// Create a directory change message
+	dirMsg := types.DirectoryChangeMsg{
+		NewPath: "/new/path",
+	}
+	
+	updatedModel, cmd := model.Update(dirMsg)
+	m := updatedModel.(Model)
+	
+	// Should update model state appropriately
+	_ = m
+	_ = cmd // May return command for follow-up actions
 }
 
 func TestPackageCommandGenerators(t *testing.T) {
-	t.Run("ProjectContextCheckCmd", func(t *testing.T) {
+	t.Run("ProjectContextCheckCmd", func(_ *testing.T) {
 		cmd := ProjectContextCheckCmd()
 		
 		if cmd == nil {
@@ -568,7 +586,7 @@ func TestPackageCommandGenerators(t *testing.T) {
 		}
 	})
 
-	t.Run("DirectoryChangeCmd", func(t *testing.T) {
+	t.Run("DirectoryChangeCmd", func(_ *testing.T) {
 		cmd := DirectoryChangeCmd("/test/path")
 		
 		if cmd == nil {
@@ -576,7 +594,7 @@ func TestPackageCommandGenerators(t *testing.T) {
 		}
 	})
 
-	t.Run("RefreshClaudeStatusCmd", func(t *testing.T) {
+	t.Run("RefreshClaudeStatusCmd", func(_ *testing.T) {
 		cmd := RefreshClaudeStatusCmd()
 		
 		if cmd == nil {
@@ -586,7 +604,7 @@ func TestPackageCommandGenerators(t *testing.T) {
 }
 
 func TestModel_ErrorHandling(t *testing.T) {
-	t.Run("Model handles nil messages gracefully", func(t *testing.T) {
+	t.Run("Model handles nil messages gracefully", func(_ *testing.T) {
 		model := NewModel()
 		
 		// Test with nil-like empty message
@@ -605,7 +623,7 @@ func TestModel_ErrorHandling(t *testing.T) {
 		}
 	})
 
-	t.Run("Model preserves state across updates", func(t *testing.T) {
+	t.Run("Model preserves state across updates", func(_ *testing.T) {
 		model := testutil.NewTestModel().
 			WithWindowSize(120, 40).
 			WithState(types.SearchActiveNavigation).
@@ -636,7 +654,7 @@ func TestModel_ErrorHandling(t *testing.T) {
 }
 
 func TestModel_Integration(t *testing.T) {
-	t.Run("Model works with testutil builders", func(t *testing.T) {
+	t.Run("Model works with testutil builders", func(_ *testing.T) {
 		// Test that our UI model integrates properly with testutil
 		baseModel := testutil.NewTestModel().
 			WithWindowSize(150, 50).
@@ -647,7 +665,7 @@ func TestModel_Integration(t *testing.T) {
 		uiModel := Model{Model: baseModel}
 
 		// Test that all properties are accessible
-		if uiModel.Model.Width != 150 || uiModel.Model.Height != 50 {
+		if uiModel.Width != 150 || uiModel.Height != 50 {
 			t.Errorf("Model should preserve window dimensions")
 		}
 
@@ -660,7 +678,7 @@ func TestModel_Integration(t *testing.T) {
 		}
 	})
 
-	t.Run("Model with realistic MCP data", func(t *testing.T) {
+	t.Run("Model with realistic MCP data", func(_ *testing.T) {
 		// Test with realistic test data to ensure the model works with substantial datasets
 		testMCPs := []types.MCPItem{
 			{Name: "github-mcp", Type: "CMD", Active: true, Command: "github-mcp"},
@@ -678,13 +696,13 @@ func TestModel_Integration(t *testing.T) {
 		model := Model{Model: types.NewModelWithMCPs(testMCPs)}
 
 		// Should have substantial test MCP data
-		if len(model.Model.MCPItems) < 10 {
-			t.Errorf("Test model should have substantial MCP data, got %d items", len(model.Model.MCPItems))
+		if len(model.MCPItems) < 10 {
+			t.Errorf("Test model should have substantial MCP data, got %d items", len(model.MCPItems))
 		}
 
 		// Should have some active MCPs in test data
 		activeCount := 0
-		for _, item := range model.Model.MCPItems {
+		for _, item := range model.MCPItems {
 			if item.Active {
 				activeCount++
 			}
@@ -695,7 +713,7 @@ func TestModel_Integration(t *testing.T) {
 		}
 
 		// Test filtering with test data
-		model.Model.SearchQuery = "github"
+		model.SearchQuery = TestPlatformGithub
 		filtered := model.GetFilteredMCPs()
 
 		if len(filtered) == 0 {
