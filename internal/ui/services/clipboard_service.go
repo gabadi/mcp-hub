@@ -30,7 +30,7 @@ func NewClipboardService() *ClipboardService {
 	}
 
 	// Try to initialize golang.design/x/clipboard for better macOS support
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == PlatformDarwin {
 		if err := designclipboard.Init(); err == nil {
 			cs.useDesignClipboard = true
 			cs.initialized = true
@@ -43,7 +43,7 @@ func NewClipboardService() *ClipboardService {
 // Copy copies text to the system clipboard with macOS fallbacks
 func (cs *ClipboardService) Copy(text string) error {
 	// Try golang.design/x/clipboard first on macOS
-	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
+	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
 		designclipboard.Write(designclipboard.FmtText, []byte(text))
 		return nil
 	}
@@ -55,7 +55,7 @@ func (cs *ClipboardService) Copy(text string) error {
 	}
 
 	// macOS fallback using pbcopy
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == PlatformDarwin {
 		return cs.copyWithPbcopy(text)
 	}
 
@@ -65,7 +65,7 @@ func (cs *ClipboardService) Copy(text string) error {
 // Paste gets text from the system clipboard with macOS fallbacks
 func (cs *ClipboardService) Paste() (string, error) {
 	// Try golang.design/x/clipboard first on macOS
-	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
+	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
 		data := designclipboard.Read(designclipboard.FmtText)
 		if len(data) > 0 {
 			return string(data), nil
@@ -79,7 +79,7 @@ func (cs *ClipboardService) Paste() (string, error) {
 	}
 
 	// macOS fallback using pbpaste
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == PlatformDarwin {
 		return cs.pasteWithPbpaste()
 	}
 
@@ -112,11 +112,10 @@ func (cs *ClipboardService) IsAvailable() bool {
 	available := false
 
 	// Test golang.design/x/clipboard if available
-	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
-		data := designclipboard.Read(designclipboard.FmtText)
-		if len(data) >= 0 { // Even empty clipboard is considered available
-			available = true
-		}
+	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
+		// Try reading to ensure clipboard is functional, but even empty clipboard is considered available
+		_ = designclipboard.Read(designclipboard.FmtText)
+		available = true
 	}
 
 	// Test atotto/clipboard
@@ -126,7 +125,7 @@ func (cs *ClipboardService) IsAvailable() bool {
 	}
 
 	// Test macOS pbpaste fallback
-	if !available && runtime.GOOS == "darwin" {
+	if !available && runtime.GOOS == PlatformDarwin {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		cmd2 := exec.CommandContext(ctx, "pbpaste")
@@ -166,7 +165,7 @@ func (cs *ClipboardService) GetDiagnosticInfo() map[string]interface{} {
 	info["isAvailable"] = cs.IsAvailable()
 
 	// Test clipboard access methods
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == PlatformDarwin {
 		// Test pbpaste availability
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
@@ -189,14 +188,14 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	var lastErr error
 
 	// Method 1: Try golang.design/x/clipboard on macOS
-	if cs.useDesignClipboard && runtime.GOOS == "darwin" {
+	var designErr error
+	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
 		data := designclipboard.Read(designclipboard.FmtText)
 		if len(data) > 0 {
 			return string(data), nil
 		}
 		// Store error for fallback reporting
-		//nolint:staticcheck // SA4017: lastErr is used in final error reporting
-		lastErr = fmt.Errorf("golang.design/x/clipboard returned empty data")
+		designErr = fmt.Errorf("golang.design/x/clipboard returned empty data")
 	}
 
 	// Method 2: Try atotto/clipboard
@@ -209,18 +208,22 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	} else {
 		lastErr = fmt.Errorf("atotto/clipboard returned empty content")
 	}
+	
+	// Include design error if it occurred
+	if designErr != nil {
+		lastErr = fmt.Errorf("%v, design/clipboard: %v", lastErr, designErr)
+	}
 
 	// Method 3: macOS fallback using pbpaste
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == PlatformDarwin {
 		content, err := cs.pasteWithPbpaste()
 		if err == nil && content != "" {
 			return content, nil
 		}
 		if err != nil {
 			return "", fmt.Errorf("all clipboard methods failed - pbpaste error: %w, previous: %v", err, lastErr)
-		} else {
-			return "", fmt.Errorf("all clipboard methods failed - pbpaste returned empty, previous: %v", lastErr)
 		}
+		return "", fmt.Errorf("all clipboard methods failed - pbpaste returned empty, previous: %v", lastErr)
 	}
 
 	return "", fmt.Errorf("clipboard access failed: %v", lastErr)

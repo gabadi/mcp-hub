@@ -9,6 +9,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Header string constants
+const (
+	EnterConfirmEscCancel = "Enter=Confirm • ESC=Cancel"
+)
+
 // RenderHeader creates the application header with shortcuts and context
 func RenderHeader(model types.Model) string {
 	headerStyle := lipgloss.NewStyle().
@@ -32,7 +37,7 @@ func RenderHeader(model types.Model) string {
 			shortcuts = "Navigate Mode • Tab=Input Mode • ↑↓←→=Navigate • Space=Toggle • R=Refresh • Enter=Apply • ESC=Cancel"
 		}
 	case types.ModalActive:
-		shortcuts = "Enter=Confirm • ESC=Cancel"
+		shortcuts = EnterConfirmEscCancel
 	}
 
 	// Context information

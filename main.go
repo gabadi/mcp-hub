@@ -1,3 +1,4 @@
+// Package main provides the cc-mcp-manager CLI application for managing Claude MCP configurations.
 package main
 
 import (
@@ -10,11 +11,20 @@ import (
 )
 
 func main() {
+	if err := runApp(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func runApp() error {
 	// Redirect log output to a file to prevent interference with TUI
-	logFile, err := os.OpenFile("/tmp/cc-mcp-manager.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
+	var logFile *os.File
+	if file, err := os.OpenFile("/tmp/cc-mcp-manager.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
+		logFile = file
 		log.SetOutput(logFile)
-		defer logFile.Close()
+		defer func() {
+			_ = logFile.Close()
+		}()
 	}
 
 	model := ui.NewModel()
@@ -22,6 +32,8 @@ func main() {
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
-		log.Fatal("Error running MCP Manager:", err)
+		log.Printf("Error running MCP Manager: %v", err)
+		return err
 	}
+	return nil
 }

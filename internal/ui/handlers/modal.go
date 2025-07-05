@@ -13,6 +13,19 @@ import (
 	"cc-mcp-manager/internal/ui/types"
 )
 
+// Modal string constants
+const (
+	// Key constants
+	KeyDownArrow = "down"
+	KeyBackspaceKey = "backspace"
+	KeyCmdCopy = "cmd+c"
+	KeyCmdPaste = "cmd+v"
+	
+	// Error message constants
+	ErrorNameRequired = "Name is required"
+	ErrorNameExists = "Name already exists"
+)
+
 // SuccessMsg represents a success message
 type SuccessMsg struct {
 	Message string
@@ -28,6 +41,15 @@ func hideSuccessMsg() tea.Cmd {
 // HandleModalKeys handles keyboard input in modal mode
 func HandleModalKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch model.ActiveModal {
+	case types.NoModal:
+		// No modal active, should not happen in modal mode
+		return model, nil
+	case types.AddModal:
+		// Basic add modal handling
+		if key == KeyEnter {
+			model.State = types.MainNavigation
+		}
+		return model, nil
 	case types.AddMCPTypeSelection:
 		return handleTypeSelectionKeys(model, key)
 	case types.AddCommandForm:
@@ -36,12 +58,17 @@ func HandleModalKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 		return handleSSEFormKeys(model, key)
 	case types.AddJSONForm:
 		return handleJSONFormKeys(model, key)
+	case types.EditModal:
+		// Edit modal handling
+		if key == KeyEnter {
+			model.State = types.MainNavigation
+		}
+		return model, nil
 	case types.DeleteModal:
 		return handleDeleteModalKeys(model, key)
 	default:
 		// Legacy modal handling
-		switch key {
-		case "enter":
+		if key == KeyEnter {
 			// Confirm modal action and return to main navigation
 			model.State = types.MainNavigation
 		}
@@ -75,12 +102,12 @@ func handleTypeSelectionKeys(model types.Model, key string) (types.Model, tea.Cm
 		if model.FormData.ActiveField > 1 {
 			model.FormData.ActiveField--
 		}
-	case "down", "j":
+	case KeyDownArrow, "j":
 		// Navigate down in type selection
 		if model.FormData.ActiveField < 3 {
 			model.FormData.ActiveField++
 		}
-	case "enter":
+	case KeyEnter:
 		// Select the currently highlighted option
 		switch model.FormData.ActiveField {
 		case 1:
@@ -106,10 +133,10 @@ func handleTypeSelectionKeys(model types.Model, key string) (types.Model, tea.Cm
 // handleCommandFormKeys handles keyboard input in the Command/Binary form
 func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
-	case "tab":
+	case KeyTab:
 		// Move to next field
 		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 4 // 4 fields: Name, Command, Args, Environment
-	case "enter":
+	case KeyEnter:
 		// Submit form if valid
 		var valid bool
 		model, valid = validateCommandForm(model)
@@ -150,13 +177,13 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 			model.EditMCPName = ""
 			return model, cmd
 		}
-	case "backspace":
+	case KeyBackspaceKey:
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c", "command+c":
+	case KeyCtrlC, KeyCmdCopy, KeyCmdSymbolC, types.KeyCommandC:
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v", "command+v":
+	case KeyCtrlV, KeyCmdPaste, KeyCmdSymbolV, types.KeyCommandV:
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -175,10 +202,10 @@ func handleCommandFormKeys(model types.Model, key string) (types.Model, tea.Cmd)
 // handleSSEFormKeys handles keyboard input in the SSE Server form
 func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
-	case "tab":
+	case KeyTab:
 		// Move to next field
 		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 3 // 3 fields: Name, URL, Environment
-	case "enter":
+	case KeyEnter:
 		// Submit form if valid
 		var valid bool
 		model, valid = validateSSEForm(model)
@@ -215,13 +242,13 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 			model.EditMCPName = ""
 			return model, cmd
 		}
-	case "backspace":
+	case KeyBackspaceKey:
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c", "command+c":
+	case KeyCtrlC, KeyCmdCopy, KeyCmdSymbolC, types.KeyCommandC:
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v", "command+v":
+	case KeyCtrlV, KeyCmdPaste, KeyCmdSymbolV, types.KeyCommandV:
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -240,10 +267,10 @@ func handleSSEFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 // handleJSONFormKeys handles keyboard input in the JSON Configuration form
 func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
-	case "tab":
+	case KeyTab:
 		// Move to next field
 		model.FormData.ActiveField = (model.FormData.ActiveField + 1) % 3 // 3 fields: Name, JSONConfig, Environment
-	case "enter":
+	case KeyEnter:
 		// Submit form if valid (or newline in JSON field)
 		if model.FormData.ActiveField == 1 { // JSON field
 			model = addCharToActiveField(model, "\n")
@@ -284,13 +311,13 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 				return model, cmd
 			}
 		}
-	case "backspace":
+	case KeyBackspaceKey:
 		// Delete character from active field
 		model = deleteCharFromActiveField(model)
-	case "ctrl+c", "cmd+c", "⌘c", "command+c":
+	case KeyCtrlC, KeyCmdCopy, KeyCmdSymbolC, types.KeyCommandC:
 		// Copy active field content to clipboard
 		model = copyActiveFieldToClipboard(model)
-	case "ctrl+v", "cmd+v", "⌘v", "command+v":
+	case KeyCtrlV, KeyCmdPaste, KeyCmdSymbolV, types.KeyCommandV:
 		// Paste clipboard content to active field
 		model = pasteFromClipboardToActiveField(model)
 	default:
@@ -309,6 +336,12 @@ func handleJSONFormKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 // Helper functions for form field manipulation
 func addCharToActiveField(model types.Model, char string) types.Model {
 	switch model.ActiveModal {
+	case types.NoModal:
+		// No modal active, do nothing
+	case types.AddModal:
+		// Basic add modal, do nothing
+	case types.AddMCPTypeSelection:
+		// Type selection modal, do nothing
 	case types.AddCommandForm:
 		switch model.FormData.ActiveField {
 		case 0:
@@ -338,18 +371,32 @@ func addCharToActiveField(model types.Model, char string) types.Model {
 		case 2:
 			model.FormData.Environment += char
 		}
+	case types.EditModal:
+		// Edit modal, do nothing
+	case types.DeleteModal:
+		// Delete modal, do nothing
 	}
 	return model
 }
 
 func deleteCharFromActiveField(model types.Model) types.Model {
 	switch model.ActiveModal {
+	case types.NoModal:
+		// No modal active, do nothing
+	case types.AddModal:
+		// Basic add modal, do nothing
+	case types.AddMCPTypeSelection:
+		// Type selection modal, do nothing
 	case types.AddCommandForm:
 		return deleteCharFromCommandForm(model)
 	case types.AddSSEForm:
 		return deleteCharFromSSEForm(model)
 	case types.AddJSONForm:
 		return deleteCharFromJSONForm(model)
+	case types.EditModal:
+		// Edit modal, do nothing
+	case types.DeleteModal:
+		// Delete modal, do nothing
 	}
 	return model
 }
@@ -405,7 +452,7 @@ func validateCommandForm(model types.Model) (types.Model, bool) {
 	valid := true
 
 	if model.FormData.Name == "" {
-		model.FormErrors["name"] = "Name is required"
+		model.FormErrors["name"] = ErrorNameRequired
 		valid = false
 	}
 
@@ -427,7 +474,7 @@ func validateCommandForm(model types.Model) (types.Model, bool) {
 		if item.Name == model.FormData.Name {
 			// Allow the current name in edit mode
 			if !model.EditMode || item.Name != model.EditMCPName {
-				model.FormErrors["name"] = "Name already exists"
+				model.FormErrors["name"] = ErrorNameExists
 				valid = false
 				break
 			}
@@ -442,7 +489,7 @@ func validateSSEForm(model types.Model) (types.Model, bool) {
 	valid := true
 
 	if model.FormData.Name == "" {
-		model.FormErrors["name"] = "Name is required"
+		model.FormErrors["name"] = ErrorNameRequired
 		valid = false
 	}
 
@@ -471,7 +518,7 @@ func validateSSEForm(model types.Model) (types.Model, bool) {
 		if item.Name == model.FormData.Name {
 			// Allow the current name in edit mode
 			if !model.EditMode || item.Name != model.EditMCPName {
-				model.FormErrors["name"] = "Name already exists"
+				model.FormErrors["name"] = ErrorNameExists
 				valid = false
 				break
 			}
@@ -486,7 +533,7 @@ func validateJSONForm(model types.Model) (types.Model, bool) {
 	valid := true
 
 	if model.FormData.Name == "" {
-		model.FormErrors["name"] = "Name is required"
+		model.FormErrors["name"] = ErrorNameRequired
 		valid = false
 	}
 
@@ -509,7 +556,7 @@ func validateJSONForm(model types.Model) (types.Model, bool) {
 		if item.Name == model.FormData.Name {
 			// Allow the current name in edit mode
 			if !model.EditMode || item.Name != model.EditMCPName {
-				model.FormErrors["name"] = "Name already exists"
+				model.FormErrors["name"] = ErrorNameExists
 				valid = false
 				break
 			}
@@ -587,7 +634,7 @@ func updateMCPInInventory(model types.Model, updatedMCP types.MCPItem) (types.Mo
 // handleDeleteModalKeys handles keyboard input in the delete confirmation modal
 func handleDeleteModalKeys(model types.Model, key string) (types.Model, tea.Cmd) {
 	switch key {
-	case "enter":
+	case KeyEnter:
 		// Confirm deletion
 		var cmd tea.Cmd
 		model, cmd = deleteMCPFromInventory(model)
@@ -675,15 +722,16 @@ func parseArgsString(argsStr string) []string {
 
 		switch char {
 		case '"', '\'':
-			if !inQuotes {
+			switch {
+			case !inQuotes:
 				// Start of quoted string
 				inQuotes = true
 				quoteChar = char
-			} else if char == quoteChar {
+			case char == quoteChar:
 				// End of quoted string
 				inQuotes = false
 				quoteChar = 0
-			} else {
+			default:
 				// Quote inside different quote type
 				current.WriteByte(char)
 			}
@@ -770,12 +818,22 @@ func copyActiveFieldToClipboard(model types.Model) types.Model {
 // getActiveFieldContent extracts content from the currently active field
 func getActiveFieldContent(model types.Model) string {
 	switch model.ActiveModal {
+	case types.NoModal:
+		return ""
+	case types.AddModal:
+		return ""
+	case types.AddMCPTypeSelection:
+		return ""
 	case types.AddCommandForm:
 		return getCommandFormFieldContent(model)
 	case types.AddSSEForm:
 		return getSSEFormFieldContent(model)
 	case types.AddJSONForm:
 		return getJSONFormFieldContent(model)
+	case types.EditModal:
+		return ""
+	case types.DeleteModal:
+		return ""
 	default:
 		return ""
 	}
@@ -824,53 +882,83 @@ func getJSONFormFieldContent(model types.Model) string {
 
 // pasteFromClipboardToActiveField pastes clipboard content to the active field
 func pasteFromClipboardToActiveField(model types.Model) types.Model {
-	clipboardService := services.NewClipboardService()
-
-	// Use enhanced paste for better error diagnostics
-	content, err := clipboardService.EnhancedPaste()
+	content, err := getClipboardContent()
 	if err != nil {
-		// Add user feedback for clipboard paste failure with enhanced error information
-		model.SuccessMessage = "Failed to paste from clipboard: " + err.Error()
-		model.SuccessTimer = 240 // Show error message for 4 seconds to allow reading detailed error
-		return model
+		return handleClipboardError(model, err)
 	}
 
+	model = pasteContentToActiveField(model, content)
+	return addPasteSuccessMessage(model)
+}
+
+func getClipboardContent() (string, error) {
+	clipboardService := services.NewClipboardService()
+	return clipboardService.EnhancedPaste()
+}
+
+func handleClipboardError(model types.Model, err error) types.Model {
+	model.SuccessMessage = "Failed to paste from clipboard: " + err.Error()
+	model.SuccessTimer = 240 // Show error message for 4 seconds to allow reading detailed error
+	return model
+}
+
+func pasteContentToActiveField(model types.Model, content string) types.Model {
 	switch model.ActiveModal {
 	case types.AddCommandForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			model.FormData.Name = content
-		case 1:
-			model.FormData.Command = content
-		case 2:
-			model.FormData.Args = content
-		case 3:
-			model.FormData.Environment = content
-		}
+		return pasteToCommandForm(model, content)
 	case types.AddSSEForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			model.FormData.Name = content
-		case 1:
-			model.FormData.URL = content
-		case 2:
-			model.FormData.Environment = content
-		}
+		return pasteToSSEForm(model, content)
 	case types.AddJSONForm:
-		switch model.FormData.ActiveField {
-		case 0:
-			model.FormData.Name = content
-		case 1:
-			model.FormData.JSONConfig = content
-		case 2:
-			model.FormData.Environment = content
-		}
+		return pasteToJSONForm(model, content)
+	case types.NoModal, types.AddModal, types.AddMCPTypeSelection, types.EditModal, types.DeleteModal:
+		// Other modal types don't support pasting
+		return model
+	default:
+		return model
 	}
+}
 
-	// Add success feedback for successful paste operation
+func pasteToCommandForm(model types.Model, content string) types.Model {
+	switch model.FormData.ActiveField {
+	case 0:
+		model.FormData.Name = content
+	case 1:
+		model.FormData.Command = content
+	case 2:
+		model.FormData.Args = content
+	case 3:
+		model.FormData.Environment = content
+	}
+	return model
+}
+
+func pasteToSSEForm(model types.Model, content string) types.Model {
+	switch model.FormData.ActiveField {
+	case 0:
+		model.FormData.Name = content
+	case 1:
+		model.FormData.URL = content
+	case 2:
+		model.FormData.Environment = content
+	}
+	return model
+}
+
+func pasteToJSONForm(model types.Model, content string) types.Model {
+	switch model.FormData.ActiveField {
+	case 0:
+		model.FormData.Name = content
+	case 1:
+		model.FormData.JSONConfig = content
+	case 2:
+		model.FormData.Environment = content
+	}
+	return model
+}
+
+func addPasteSuccessMessage(model types.Model) types.Model {
 	model.SuccessMessage = "Pasted from clipboard"
 	model.SuccessTimer = 120 // Show success message for 2 seconds
-
 	return model
 }
 
@@ -926,6 +1014,12 @@ func getLineColumn(content string, offset int64) (line int, col int) {
 // focusOnFirstErrorField moves focus to the first field that has a validation error
 func focusOnFirstErrorField(model types.Model) types.Model {
 	switch model.ActiveModal {
+	case types.NoModal:
+		// No modal active, do nothing
+	case types.AddModal:
+		// Basic add modal, do nothing
+	case types.AddMCPTypeSelection:
+		// Type selection modal, do nothing
 	case types.AddCommandForm:
 		// Check field order: Name (0), Command (1), Args (2), Environment (3)
 		if _, exists := model.FormErrors["name"]; exists {
@@ -948,6 +1042,10 @@ func focusOnFirstErrorField(model types.Model) types.Model {
 		} else if _, exists := model.FormErrors["json"]; exists {
 			model.FormData.ActiveField = 1
 		}
+	case types.EditModal:
+		// Edit modal, do nothing
+	case types.DeleteModal:
+		// Delete modal, do nothing
 	}
 
 	return model

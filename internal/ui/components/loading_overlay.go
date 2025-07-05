@@ -122,6 +122,12 @@ func GetLoadingMessages(loadingType types.LoadingType) []string {
 			"Updating display...",
 			"Complete!",
 		}
+	case types.LoadingClaude:
+		return []string{
+			"Syncing with Claude CLI...",
+			"Updating MCP status...",
+			"Complete!",
+		}
 	default:
 		return []string{"Loading..."}
 	}

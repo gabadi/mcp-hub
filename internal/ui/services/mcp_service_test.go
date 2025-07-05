@@ -337,7 +337,23 @@ func createTestModelWithClaudeStatus(claudeAvailable bool) types.Model {
 }
 
 func TestToggleMCPStatusEnhanced(t *testing.T) {
-	tests := []struct {
+	tests := getToggleMCPStatusTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validateToggleMCPStatusTestCase(t, tt)
+		})
+	}
+}
+
+func getToggleMCPStatusTestCases() []struct {
+	name            string
+	claudeAvailable bool
+	selectedItem    int
+	expectedState   types.ToggleOperationState
+	expectError     bool
+} {
+	return []struct {
 		name            string
 		claudeAvailable bool
 		selectedItem    int
@@ -373,36 +389,40 @@ func TestToggleMCPStatusEnhanced(t *testing.T) {
 			expectError:     false,
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model := createTestModelWithClaudeStatus(tt.claudeAvailable)
-			model.SelectedItem = tt.selectedItem
+func validateToggleMCPStatusTestCase(t *testing.T, tt struct {
+	name            string
+	claudeAvailable bool
+	selectedItem    int
+	expectedState   types.ToggleOperationState
+	expectError     bool
+}) {
+	model := createTestModelWithClaudeStatus(tt.claudeAvailable)
+	model.SelectedItem = tt.selectedItem
 
-			result := ToggleMCPStatus(model)
+	result := ToggleMCPStatus(model)
 
-			if result.ToggleState != tt.expectedState {
-				t.Errorf("ToggleMCPStatus() state = %v, expected %v", result.ToggleState, tt.expectedState)
+	if result.ToggleState != tt.expectedState {
+		t.Errorf("ToggleMCPStatus() state = %v, expected %v", result.ToggleState, tt.expectedState)
+	}
+
+	if tt.expectError && result.ToggleError == "" {
+		t.Error("ToggleMCPStatus() should set error message when Claude unavailable")
+	}
+
+	if !tt.expectError && result.ToggleError != "" && result.ToggleState != types.ToggleIdle {
+		t.Errorf("ToggleMCPStatus() should not set error when Claude available, got: %s", result.ToggleError)
+	}
+
+	// Check MCP name is set when appropriate
+	if tt.expectedState == types.ToggleLoading || tt.expectedState == types.ToggleError {
+		if tt.selectedItem >= 0 && tt.selectedItem < len(model.MCPItems) {
+			expectedMCPName := model.MCPItems[tt.selectedItem].Name
+			if result.ToggleMCPName != expectedMCPName {
+				t.Errorf("ToggleMCPStatus() MCPName = %s, expected %s", result.ToggleMCPName, expectedMCPName)
 			}
-
-			if tt.expectError && result.ToggleError == "" {
-				t.Error("ToggleMCPStatus() should set error message when Claude unavailable")
-			}
-
-			if !tt.expectError && result.ToggleError != "" && result.ToggleState != types.ToggleIdle {
-				t.Errorf("ToggleMCPStatus() should not set error when Claude available, got: %s", result.ToggleError)
-			}
-
-			// Check MCP name is set when appropriate
-			if tt.expectedState == types.ToggleLoading || tt.expectedState == types.ToggleError {
-				if tt.selectedItem >= 0 && tt.selectedItem < len(model.MCPItems) {
-					expectedMCPName := model.MCPItems[tt.selectedItem].Name
-					if result.ToggleMCPName != expectedMCPName {
-						t.Errorf("ToggleMCPStatus() MCPName = %s, expected %s", result.ToggleMCPName, expectedMCPName)
-					}
-				}
-			}
-		})
+		}
 	}
 }
 

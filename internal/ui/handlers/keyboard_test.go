@@ -8,6 +8,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Test constants
+const (
+	TestString = "test"
+)
+
 // Helper function to create KeyMsg for testing
 func createKeyMsg(key string) tea.KeyMsg {
 	return tea.KeyMsg{
@@ -125,6 +130,8 @@ func TestHandleKeyPressStateRouting(t *testing.T) {
 				// Down navigation should move from 0 to 1 (in 2+ column layout)
 				// Or from 0 to 4 in 4-column layout, but we only have 2 items
 				// The actual navigation logic is tested in navigation_test.go
+				// TODO: Add specific navigation assertions if needed
+				_ = result // Placeholder to avoid empty branch
 			}
 
 			// For SearchMode, verify character was added
@@ -138,7 +145,20 @@ func TestHandleKeyPressStateRouting(t *testing.T) {
 }
 
 func TestHandleKeyPressWithDifferentStates(t *testing.T) {
-	baseModel := types.Model{
+	baseModel := getBaseKeyboardTestModel()
+	tests := getKeyboardStateTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := setupKeyboardStateTest(baseModel, tt)
+			result, cmd := executeKeyboardStateTest(model, tt)
+			assertKeyboardStateTestResult(t, result, cmd, tt, model)
+		})
+	}
+}
+
+func getBaseKeyboardTestModel() types.Model {
+	return types.Model{
 		Width:        100,
 		Height:       50,
 		ColumnCount:  2,
@@ -149,17 +169,29 @@ func TestHandleKeyPressWithDifferentStates(t *testing.T) {
 			{Name: "test2", Active: false},
 		},
 	}
+}
 
-	tests := []struct {
-		name                string
-		state               types.AppState
-		key                 string
-		searchActive        bool
-		searchInputActive   bool
-		searchQuery         string
-		expectedStateChange bool
-		expectedQueryChange bool
-	}{
+func getKeyboardStateTestCases() []keyboardStateTestCase {
+	cases := make([]keyboardStateTestCase, 0)
+	cases = append(cases, getMainNavigationTestCases()...)
+	cases = append(cases, getSearchNavigationTestCases()...)
+	cases = append(cases, getSearchModeTestCases()...)
+	return cases
+}
+
+type keyboardStateTestCase struct {
+	name                string
+	state               types.AppState
+	key                 string
+	searchActive        bool
+	searchInputActive   bool
+	searchQuery         string
+	expectedStateChange bool
+	expectedQueryChange bool
+}
+
+func getMainNavigationTestCases() []keyboardStateTestCase {
+	return []keyboardStateTestCase{
 		{
 			name:                "MainNavigation with tab activates search",
 			state:               types.MainNavigation,
@@ -178,6 +210,11 @@ func TestHandleKeyPressWithDifferentStates(t *testing.T) {
 			key:                 " ",
 			expectedStateChange: false,
 		},
+	}
+}
+
+func getSearchNavigationTestCases() []keyboardStateTestCase {
+	return []keyboardStateTestCase{
 		{
 			name:                "SearchActiveNavigation with enter returns to main",
 			state:               types.SearchActiveNavigation,
@@ -192,53 +229,58 @@ func TestHandleKeyPressWithDifferentStates(t *testing.T) {
 			key:                 "a",
 			searchActive:        true,
 			searchInputActive:   true,
-			searchQuery:         "test",
+			searchQuery:         TestString,
 			expectedQueryChange: true,
 		},
+	}
+}
+
+func getSearchModeTestCases() []keyboardStateTestCase {
+	return []keyboardStateTestCase{
 		{
 			name:                "SearchMode with backspace",
 			state:               types.SearchMode,
 			key:                 "backspace",
-			searchQuery:         "test",
+			searchQuery:         TestString,
 			expectedQueryChange: true,
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model := baseModel
-			model.State = tt.state
-			model.SearchActive = tt.searchActive
-			model.SearchInputActive = tt.searchInputActive
-			model.SearchQuery = tt.searchQuery
+func setupKeyboardStateTest(baseModel types.Model, tt keyboardStateTestCase) types.Model {
+	model := baseModel
+	model.State = tt.state
+	model.SearchActive = tt.searchActive
+	model.SearchInputActive = tt.searchInputActive
+	model.SearchQuery = tt.searchQuery
+	return model
+}
 
-			originalState := model.State
-			originalQuery := model.SearchQuery
+func executeKeyboardStateTest(model types.Model, tt keyboardStateTestCase) (types.Model, tea.Cmd) {
+	msg := createKeyMsg(tt.key)
+	return HandleKeyPress(model, msg)
+}
 
-			msg := createKeyMsg(tt.key)
-			result, cmd := HandleKeyPress(model, msg)
+func assertKeyboardStateTestResult(t *testing.T, result types.Model, cmd tea.Cmd, tt keyboardStateTestCase, originalModel types.Model) {
+	if tt.expectedStateChange {
+		if result.State == originalModel.State {
+			t.Errorf("HandleKeyPress() expected state change but state remained %v", originalModel.State)
+		}
+	} else {
+		if result.State != originalModel.State {
+			t.Errorf("HandleKeyPress() unexpected state change from %v to %v", originalModel.State, result.State)
+		}
+	}
 
-			if tt.expectedStateChange {
-				if result.State == originalState {
-					t.Errorf("HandleKeyPress() expected state change but state remained %v", originalState)
-				}
-			} else {
-				if result.State != originalState {
-					t.Errorf("HandleKeyPress() unexpected state change from %v to %v", originalState, result.State)
-				}
-			}
+	if tt.expectedQueryChange {
+		if result.SearchQuery == originalModel.SearchQuery {
+			t.Errorf("HandleKeyPress() expected query change but query remained %s", originalModel.SearchQuery)
+		}
+	}
 
-			if tt.expectedQueryChange {
-				if result.SearchQuery == originalQuery {
-					t.Errorf("HandleKeyPress() expected query change but query remained %s", originalQuery)
-				}
-			}
-
-			// Verify cmd is reasonable
-			if cmd != nil && cmd == nil {
-				t.Errorf("HandleKeyPress() returned unexpected command type")
-			}
-		})
+	// Verify cmd is reasonable
+	if cmd != nil && cmd == nil {
+		t.Errorf("HandleKeyPress() returned unexpected command type")
 	}
 }
 
@@ -279,7 +321,7 @@ func TestHandleKeyPressEdgeCases(t *testing.T) {
 	t.Run("Special characters", func(t *testing.T) {
 		model := types.Model{
 			State:       types.SearchMode,
-			SearchQuery: "test",
+			SearchQuery: TestString,
 		}
 
 		specialKeys := []string{"@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "=", "+"}
@@ -288,13 +330,13 @@ func TestHandleKeyPressEdgeCases(t *testing.T) {
 			msg := createKeyMsg(key)
 			result, _ := HandleKeyPress(model, msg)
 
-			expectedQuery := "test" + key
+			expectedQuery := TestString + key
 			if result.SearchQuery != expectedQuery {
 				t.Errorf("HandleKeyPress() should handle special character %s", key)
 			}
 
 			// Reset for next iteration
-			model.SearchQuery = "test"
+			model.SearchQuery = TestString
 		}
 	})
 }
@@ -339,92 +381,104 @@ func TestHandleKeyPressPreservesModelFields(t *testing.T) {
 
 func TestHandleKeyPressIntegrationScenarios(t *testing.T) {
 	t.Run("Complete search workflow", func(t *testing.T) {
-		model := types.Model{
-			State:       types.MainNavigation,
-			SearchQuery: "",
-			MCPItems: []types.MCPItem{
-				{Name: "github", Active: true},
-				{Name: "docker", Active: false},
-			},
-		}
-
-		// 1. Activate search with '/'
-		msg := createKeyMsg("/")
-		model, _ = HandleKeyPress(model, msg)
-
-		if model.State != types.SearchActiveNavigation {
-			t.Errorf("'/' should activate search navigation")
-		}
-
-		// 2. Type search query
-		msg = createKeyMsg("g")
-		model, _ = HandleKeyPress(model, msg)
-
-		if model.SearchQuery != "g" {
-			t.Errorf("Should add character to search query")
-		}
-
-		// 3. Return to main navigation
-		msg = createKeyMsg("enter")
-		model, _ = HandleKeyPress(model, msg)
-
-		if model.State != types.MainNavigation {
-			t.Errorf("Enter should return to main navigation")
-		}
-		if model.SearchQuery != "g" {
-			t.Errorf("Search query should be preserved")
-		}
+		testSearchWorkflow(t)
 	})
 
 	t.Run("Modal activation and return", func(t *testing.T) {
-		model := types.Model{
-			State: types.MainNavigation,
-		}
-
-		// Activate modal
-		msg := createKeyMsg("a")
-		model, _ = HandleKeyPress(model, msg)
-
-		if model.State != types.ModalActive {
-			t.Errorf("'a' should activate modal")
-		}
-
-		// Return from modal with ESC
-		msg = createKeyMsg("esc")
-		model, _ = HandleKeyPress(model, msg)
-
-		if model.State != types.MainNavigation {
-			t.Errorf("ESC should return from modal to main navigation")
-		}
+		testModalActivationWorkflow(t)
 	})
 
 	t.Run("Navigation in different layouts", func(t *testing.T) {
-		// Test 4-column navigation
-		model := types.Model{
-			State:        types.MainNavigation,
-			ColumnCount:  4,
-			SelectedItem: 0,
-			MCPItems:     make([]types.MCPItem, 10),
-		}
-
-		// Move right in 4-column grid
-		msg := createKeyMsg("l")
-		result, _ := HandleKeyPress(model, msg)
-
-		if result.SelectedItem != 1 {
-			t.Errorf("Right navigation in 4-column grid should move from 0 to 1")
-		}
-
-		// Test 2-column navigation
-		model.ColumnCount = 2
-		model.ActiveColumn = 0
-
-		// Move right should change column in 2-column layout
-		msg = createKeyMsg("l")
-		result, _ = HandleKeyPress(model, msg)
-
-		if result.ActiveColumn != 1 {
-			t.Errorf("Right navigation in 2-column layout should change ActiveColumn")
-		}
+		testNavigationInDifferentLayouts(t)
 	})
+}
+
+func testSearchWorkflow(t *testing.T) {
+	model := types.Model{
+		State:       types.MainNavigation,
+		SearchQuery: "",
+		MCPItems: []types.MCPItem{
+			{Name: "github", Active: true},
+			{Name: "docker", Active: false},
+		},
+	}
+
+	// 1. Activate search with '/'
+	msg := createKeyMsg("/")
+	model, _ = HandleKeyPress(model, msg)
+
+	if model.State != types.SearchActiveNavigation {
+		t.Errorf("'/' should activate search navigation")
+	}
+
+	// 2. Type search query
+	msg = createKeyMsg("g")
+	model, _ = HandleKeyPress(model, msg)
+
+	if model.SearchQuery != "g" {
+		t.Errorf("Should add character to search query")
+	}
+
+	// 3. Return to main navigation
+	msg = createKeyMsg("enter")
+	model, _ = HandleKeyPress(model, msg)
+
+	if model.State != types.MainNavigation {
+		t.Errorf("Enter should return to main navigation")
+	}
+	if model.SearchQuery != "g" {
+		t.Errorf("Search query should be preserved")
+	}
+}
+
+func testModalActivationWorkflow(t *testing.T) {
+	model := types.Model{
+		State: types.MainNavigation,
+	}
+
+	// Activate modal
+	msg := createKeyMsg("a")
+	model, _ = HandleKeyPress(model, msg)
+
+	if model.State != types.ModalActive {
+		t.Errorf("'a' should activate modal")
+	}
+
+	// Return from modal with ESC
+	msg = createKeyMsg("esc")
+	model, _ = HandleKeyPress(model, msg)
+
+	if model.State != types.MainNavigation {
+		t.Errorf("ESC should return from modal to main navigation")
+	}
+}
+
+func testNavigationInDifferentLayouts(t *testing.T) {
+	// Test 4-column navigation
+	model := types.Model{
+		State:        types.MainNavigation,
+		ColumnCount:  4,
+		SelectedItem: 0,
+		MCPItems:     make([]types.MCPItem, 10),
+	}
+
+	// Move right in 4-column grid
+	msg := createKeyMsg("l")
+	result, _ := HandleKeyPress(model, msg)
+
+	if result.SelectedItem != 1 {
+		t.Errorf("Right navigation in 4-column grid should move from 0 to 1")
+	}
+
+	// Test 2-column navigation
+	model.ColumnCount = 2
+	model.ActiveColumn = 0
+
+	// Move right should change column in 2-column layout
+	msg = createKeyMsg("l")
+	result, _ = HandleKeyPress(model, msg)
+
+	if result.ActiveColumn != 1 {
+		t.Errorf("Right navigation in 2-column layout should change ActiveColumn")
+	}
 }

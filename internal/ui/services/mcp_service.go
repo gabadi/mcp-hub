@@ -106,7 +106,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 	return model
 }
 
-// Legacy function for backward compatibility - now just calls enhanced version
+// LegacyToggleMCPStatus provides backward compatibility for MCP toggle operations
 func LegacyToggleMCPStatus(model types.Model) types.Model {
 	filteredMCPs := GetFilteredMCPs(model)
 
@@ -127,6 +127,8 @@ func LegacyToggleMCPStatus(model types.Model) types.Model {
 				if err := SaveInventory(model.MCPItems); err != nil {
 					// Log error but don't fail the operation
 					// Error is already logged in SaveInventory
+					// Intentionally empty - MCP status change should succeed even if save fails
+					_ = err // Acknowledge error but continue
 				}
 				break
 			}

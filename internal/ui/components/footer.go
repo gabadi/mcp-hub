@@ -3,6 +3,7 @@ package components
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"cc-mcp-manager/internal/ui/services"
 	"cc-mcp-manager/internal/ui/types"
@@ -18,58 +19,105 @@ func RenderFooter(model types.Model) string {
 		Padding(0, 2).
 		Width(model.Width)
 
-	var footerText string
+	footerText := getFooterContent(model)
+	return footerStyle.Render(footerText)
+}
 
-	// Priority 1: Show toggle operation status if active
-	if model.ToggleState != types.ToggleIdle {
-		toggleStatus := renderToggleStatus(model)
-		if toggleStatus != "" {
-			footerText = toggleStatus
-		}
-	} else if model.SearchActive {
-		// Priority 2: Show search input with cursor and mode indicator
-		searchStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#000000")).
-			Background(lipgloss.Color("#FFFFFF")).
-			Padding(0, 1)
-		cursor := "_"
+// getFooterContent determines the appropriate footer content based on model state
+func getFooterContent(model types.Model) string {
+	switch {
+	case model.ToggleState != types.ToggleIdle:
+		return getToggleFooterContent(model)
+	case model.SearchActive:
+		return getSearchActiveFooterContent(model)
+	case model.SearchQuery != "":
+		return getSearchResultsFooterContent(model)
+	default:
+		return getProjectContextFooterContent(model)
+	}
+}
 
-		var modeIndicator string
-		if model.State == types.SearchActiveNavigation {
-			if model.SearchInputActive {
-				modeIndicator = " [INPUT MODE]"
-			} else {
-				modeIndicator = " [NAVIGATION MODE]"
-			}
-		}
+// getToggleFooterContent returns footer content for toggle operations
+func getToggleFooterContent(model types.Model) string {
+	toggleStatus := renderToggleStatus(model)
+	if toggleStatus != "" {
+		return toggleStatus
+	}
+	return ""
+}
 
-		// Show the search query with cursor in styled box
-		searchDisplay := model.SearchQuery
+// getSearchActiveFooterContent returns footer content for active search
+func getSearchActiveFooterContent(model types.Model) string {
+	searchStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#000000")).
+		Background(lipgloss.Color("#FFFFFF")).
+		Padding(0, 1)
+	cursor := "_"
+
+	var modeIndicator string
+	if model.State == types.SearchActiveNavigation {
 		if model.SearchInputActive {
-			searchDisplay = model.SearchQuery + cursor
+			modeIndicator = " [INPUT MODE]"
 		} else {
-			searchDisplay = model.SearchQuery
+			modeIndicator = " [NAVIGATION MODE]"
 		}
-		footerText = fmt.Sprintf("Search: %s%s", searchStyle.Render(searchDisplay), modeIndicator)
-	} else if model.SearchQuery != "" {
-		// Priority 3: Show search results info when not actively searching but have a query
-		filteredMCPs := GetFilteredMCPs(model)
-		footerText = fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
-			len(filteredMCPs), model.SearchQuery, model.Width, model.Height)
-	} else {
-		// Priority 4: Show Claude status and default info
-		claudeStatusText := services.FormatClaudeStatusForDisplay(model.ClaudeStatus)
-		refreshHint := services.GetRefreshKeyHint(model.ClaudeStatus)
-		footerText = fmt.Sprintf("%s • %s • Terminal: %dx%d",
-			claudeStatusText, refreshHint, model.Width, model.Height)
 	}
 
-	return footerStyle.Render(footerText)
+	var searchDisplay string
+	if model.SearchInputActive {
+		searchDisplay = model.SearchQuery + cursor
+	} else {
+		searchDisplay = model.SearchQuery
+	}
+	return fmt.Sprintf("Search: %s%s", searchStyle.Render(searchDisplay), modeIndicator)
+}
+
+// getSearchResultsFooterContent returns footer content for search results
+func getSearchResultsFooterContent(model types.Model) string {
+	filteredMCPs := GetFilteredMCPs(model)
+	return fmt.Sprintf("Found %d MCPs matching '%s' • ESC to clear • Terminal: %dx%d",
+		len(filteredMCPs), model.SearchQuery, model.Width, model.Height)
+}
+
+// getProjectContextFooterContent returns footer content for project context
+func getProjectContextFooterContent(model types.Model) string {
+	var projectContext types.ProjectContext
+
+	// Use model's project context if it has valid display info, otherwise compute it
+	if model.ProjectContext.DisplayPath != "" {
+		projectContext = model.ProjectContext
+	} else {
+		projectContext = services.GetProjectContext(model)
+	}
+
+	// Format project context display
+	contextInfo := fmt.Sprintf("📁 %s • %d/%d MCPs • %s",
+		projectContext.DisplayPath,
+		projectContext.ActiveMCPs,
+		projectContext.TotalMCPs,
+		projectContext.SyncStatusText)
+
+	// Add last sync time if available
+	if !projectContext.LastSyncTime.IsZero() {
+		timeSinceSync := time.Since(projectContext.LastSyncTime)
+		if timeSinceSync < time.Hour {
+			contextInfo += fmt.Sprintf(" • Last sync: %s ago",
+				formatDuration(timeSinceSync))
+		} else {
+			contextInfo += fmt.Sprintf(" • Last sync: %s",
+				projectContext.LastSyncTime.Format("15:04"))
+		}
+	}
+
+	refreshHint := services.GetRefreshKeyHint(model.ClaudeStatus)
+	return fmt.Sprintf("%s • %s", contextInfo, refreshHint)
 }
 
 // renderToggleStatus renders the current toggle operation status with visual indicators
 func renderToggleStatus(model types.Model) string {
 	switch model.ToggleState {
+	case types.ToggleIdle:
+		return ""
 	case types.ToggleLoading:
 		loadingStyle := lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFD700")).
@@ -117,4 +165,15 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 		}
 	}
 	return filtered
+}
+
+// formatDuration formats a duration for display in the footer
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	}
+	return fmt.Sprintf("%dh", int(d.Hours()))
 }

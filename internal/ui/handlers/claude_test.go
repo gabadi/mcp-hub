@@ -1,3 +1,4 @@
+// Package handlers provides testing for Claude CLI integration functionality.
 package handlers
 
 import (

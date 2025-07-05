@@ -10,18 +10,51 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Modal string constants
+const (
+	// Button/instruction text
+	EscCancelText = "ESC=Cancel"
+	EditInstructionText = "[Tab] Next Field • [Enter] Update • ESC Cancel"
+	AddInstructionText = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+	
+	// Form field labels
+	NameRequiredLabel = "Name: (required)"
+	EnvironmentOptionalLabel = "Environment: (optional)"
+)
+
 // OverlayModal renders a modal on top of existing content
-func OverlayModal(model types.Model, width, height int, backgroundContent string) string {
-	// Modal dimensions based on modal type
+func OverlayModal(model types.Model, width, height int, _ string) string {
+	modalWidth, modalHeight := calculateModalDimensions(model.ActiveModal, width, height)
+	modalStyle := createModalStyle(modalWidth, modalHeight)
+	title, content, footer := getModalContent(model)
+	modalContent := buildModalContent(title, content, footer)
+	modal := modalStyle.Render(modalContent)
+	
+	return centerModal(modal, width, height)
+}
+
+func calculateModalDimensions(activeModal types.ModalType, width, height int) (int, int) {
 	modalWidth := 60
 	modalHeight := 20
 
 	// Adjust dimensions for different modal types
-	switch model.ActiveModal {
-	case types.AddJSONForm:
-		modalHeight = 25 // Larger for JSON text area
+	switch activeModal {
+	case types.NoModal:
+		// Default modal size, no adjustment needed
+	case types.AddModal:
+		// Default modal size, no adjustment needed
+	case types.AddMCPTypeSelection:
+		modalHeight = 18 // Smaller for type selection
 	case types.AddCommandForm:
 		modalHeight = 22 // Slightly larger for 3 fields
+	case types.AddSSEForm:
+		modalHeight = 20 // Standard form size
+	case types.AddJSONForm:
+		modalHeight = 25 // Larger for JSON text area
+	case types.EditModal:
+		modalHeight = 15 // Smaller for edit confirmation
+	case types.DeleteModal:
+		modalHeight = 12 // Smaller for delete confirmation
 	}
 
 	if modalWidth > width-10 {
@@ -31,8 +64,11 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 		modalHeight = height - 10
 	}
 
-	// Modal style with solid background to ensure it's opaque
-	modalStyle := lipgloss.NewStyle().
+	return modalWidth, modalHeight
+}
+
+func createModalStyle(modalWidth, modalHeight int) lipgloss.Style {
+	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#7C3AED")).
 		Padding(1).
@@ -40,43 +76,33 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 		Height(modalHeight).
 		Background(lipgloss.Color("#1E1E2E")).
 		Foreground(lipgloss.Color("#FFFFFF"))
+}
 
-	// Title and content based on modal type
-	var title string
-	var content string
-	var footer string
+func getModalContent(model types.Model) (string, string, string) {
+	var title, content, footer string
 
 	switch model.ActiveModal {
+	case types.NoModal:
+		// For legacy support - treat NoModal as basic AddModal
+		title = "Add New MCP"
+		content = "Select type of MCP to add"
+		footer = EscCancelText
+	case types.AddModal:
+		title = "Add New MCP"
+		content = "Select type of MCP to add"
+		footer = EscCancelText
 	case types.AddMCPTypeSelection:
 		title = "Add New MCP - Select Type"
 		content = renderTypeSelectionContent(model)
 		footer = "[1-3] Select • ESC Cancel"
 	case types.AddCommandForm:
-		if model.EditMode {
-			title = "Edit MCP - Command/Binary: " + model.EditMCPName
-			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
-		} else {
-			title = "Add New MCP - Command/Binary"
-			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
-		}
+		title, footer = getFormTitleAndFooter("Command/Binary", model.EditMode, model.EditMCPName)
 		content = renderCommandFormContent(model)
 	case types.AddSSEForm:
-		if model.EditMode {
-			title = "Edit MCP - SSE Server: " + model.EditMCPName
-			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
-		} else {
-			title = "Add New MCP - SSE Server"
-			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
-		}
+		title, footer = getFormTitleAndFooter("SSE Server", model.EditMode, model.EditMCPName)
 		content = renderSSEFormContent(model)
 	case types.AddJSONForm:
-		if model.EditMode {
-			title = "Edit MCP - JSON Configuration: " + model.EditMCPName
-			footer = "[Tab] Next Field • [Enter] Update • ESC Cancel"
-		} else {
-			title = "Add New MCP - JSON Configuration"
-			footer = "[Tab] Next Field • [Enter] Add • ESC Cancel"
-		}
+		title, footer = getFormTitleAndFooter("JSON Configuration", model.EditMode, model.EditMCPName)
 		content = renderJSONFormContent(model)
 	case types.EditModal:
 		title = "Edit MCP"
@@ -89,41 +115,47 @@ func OverlayModal(model types.Model, width, height int, backgroundContent string
 	default:
 		title = "Unknown Modal"
 		content = "Unknown modal type"
-		footer = "ESC=Cancel"
+		footer = EscCancelText
 	}
 
-	// Title style
+	return title, content, footer
+}
+
+func getFormTitleAndFooter(formType string, editMode bool, editMCPName string) (string, string) {
+	if editMode {
+		title := fmt.Sprintf("Edit MCP - %s: %s", formType, editMCPName)
+		return title, EditInstructionText
+	}
+	title := fmt.Sprintf("Add New MCP - %s", formType)
+	return title, AddInstructionText
+}
+
+func buildModalContent(title, content, footer string) string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#7C3AED")).
 		MarginBottom(1)
 
-	// Footer with instructions
 	footerStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#888888")).
 		MarginTop(1)
 
-	// Combine all elements
-	modalContent := lipgloss.JoinVertical(
+	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		titleStyle.Render(title),
 		content,
 		footerStyle.Render(footer),
 	)
+}
 
-	// Create the modal
-	modal := modalStyle.Render(modalContent)
-
-	// Use lipgloss.Place to center the modal
-	centeredModal := lipgloss.Place(
+func centerModal(modal string, width, height int) string {
+	return lipgloss.Place(
 		width,
 		height,
 		lipgloss.Center,
 		lipgloss.Center,
 		modal,
 	)
-
-	return centeredModal
 }
 
 // renderTypeSelectionContent renders the MCP type selection interface
@@ -174,10 +206,10 @@ func renderCommandFormContent(model types.Model) string {
 	var lines []string
 
 	// Name field
-	nameLabel := "Name: (required)"
+	nameLabel := NameRequiredLabel
 	nameValue := model.FormData.Name
 	if model.FormData.ActiveField == 0 {
-		nameValue = nameValue + "_"  // Show cursor
+		nameValue += "_"  // Show cursor
 		nameLabel = "> " + nameLabel // Show focus
 	}
 	lines = append(lines, nameLabel)
@@ -191,7 +223,7 @@ func renderCommandFormContent(model types.Model) string {
 	commandLabel := "Command: (required)"
 	commandValue := model.FormData.Command
 	if model.FormData.ActiveField == 1 {
-		commandValue = commandValue + "_"
+		commandValue += "_"
 		commandLabel = "> " + commandLabel
 	}
 	lines = append(lines, commandLabel)
@@ -205,7 +237,7 @@ func renderCommandFormContent(model types.Model) string {
 	argsLabel := "Args: (optional)"
 	argsValue := model.FormData.Args
 	if model.FormData.ActiveField == 2 {
-		argsValue = argsValue + "_"
+		argsValue += "_"
 		argsLabel = "> " + argsLabel
 	}
 	lines = append(lines, argsLabel)
@@ -213,10 +245,10 @@ func renderCommandFormContent(model types.Model) string {
 	lines = append(lines, "")
 
 	// Environment Variables field
-	envLabel := "Environment: (optional)"
+	envLabel := EnvironmentOptionalLabel
 	envValue := model.FormData.Environment
 	if model.FormData.ActiveField == 3 {
-		envValue = envValue + "_"
+		envValue += "_"
 		envLabel = "> " + envLabel
 	}
 	lines = append(lines, envLabel)
@@ -231,10 +263,10 @@ func renderSSEFormContent(model types.Model) string {
 	var lines []string
 
 	// Name field
-	nameLabel := "Name: (required)"
+	nameLabel := NameRequiredLabel
 	nameValue := model.FormData.Name
 	if model.FormData.ActiveField == 0 {
-		nameValue = nameValue + "_"
+		nameValue += "_"
 		nameLabel = "> " + nameLabel
 	}
 	lines = append(lines, nameLabel)
@@ -248,7 +280,7 @@ func renderSSEFormContent(model types.Model) string {
 	urlLabel := "URL: (required)"
 	urlValue := model.FormData.URL
 	if model.FormData.ActiveField == 1 {
-		urlValue = urlValue + "_"
+		urlValue += "_"
 		urlLabel = "> " + urlLabel
 	}
 	lines = append(lines, urlLabel)
@@ -259,10 +291,10 @@ func renderSSEFormContent(model types.Model) string {
 	lines = append(lines, "")
 
 	// Environment Variables field
-	envLabel := "Environment: (optional)"
+	envLabel := EnvironmentOptionalLabel
 	envValue := model.FormData.Environment
 	if model.FormData.ActiveField == 2 {
-		envValue = envValue + "_"
+		envValue += "_"
 		envLabel = "> " + envLabel
 	}
 	lines = append(lines, envLabel)
@@ -279,10 +311,10 @@ func renderJSONFormContent(model types.Model) string {
 	var lines []string
 
 	// Name field
-	nameLabel := "Name: (required)"
+	nameLabel := NameRequiredLabel
 	nameValue := model.FormData.Name
 	if model.FormData.ActiveField == 0 {
-		nameValue = nameValue + "_"
+		nameValue += "_"
 		nameLabel = "> " + nameLabel
 	}
 	lines = append(lines, nameLabel)
@@ -296,7 +328,7 @@ func renderJSONFormContent(model types.Model) string {
 	jsonLabel := "JSON Configuration: (required)"
 	jsonValue := model.FormData.JSONConfig
 	if model.FormData.ActiveField == 1 {
-		jsonValue = jsonValue + "_"
+		jsonValue += "_"
 		jsonLabel = "> " + jsonLabel
 	}
 	lines = append(lines, jsonLabel)
@@ -315,10 +347,10 @@ func renderJSONFormContent(model types.Model) string {
 	lines = append(lines, "")
 
 	// Environment Variables field
-	envLabel := "Environment: (optional)"
+	envLabel := EnvironmentOptionalLabel
 	envValue := model.FormData.Environment
 	if model.FormData.ActiveField == 2 {
-		envValue = envValue + "_"
+		envValue += "_"
 		envLabel = "> " + envLabel
 	}
 	lines = append(lines, envLabel)

@@ -6,130 +6,166 @@ import (
 	"cc-mcp-manager/internal/ui/types"
 )
 
+// Test icon constants
+const (
+	InactiveIcon = "○"
+	ActiveIcon   = "●"
+)
+
 func TestGetEnhancedStatusIndicator_ToggleStates(t *testing.T) {
-	// Create test MCP item
-	mcpItem := types.MCPItem{
+	mcpItem := getTestMCPItem()
+	
+	testCases := getStatusIndicatorTestCases()
+	
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			model := buildTestModel(tc.toggleState, tc.toggleMCPName)
+			mcp := getMCPForTest(mcpItem, tc.mcpActive, tc.mcpName)
+			
+			icon := getEnhancedStatusIndicator(model, mcp)
+			assertIconEquals(t, icon, tc.expected, tc.description)
+		})
+	}
+}
+
+func getTestMCPItem() types.MCPItem {
+	return types.MCPItem{
 		Name:   "test-mcp",
 		Active: false,
 	}
+}
 
-	t.Run("Default inactive state", func(t *testing.T) {
-		model := types.Model{
-			ToggleState:   types.ToggleIdle,
-			ToggleMCPName: "",
-		}
+type statusIndicatorTestCase struct {
+	name          string
+	toggleState   types.ToggleOperationState
+	toggleMCPName string
+	mcpName       string
+	mcpActive     bool
+	expected      string
+	description   string
+}
 
-		icon := getEnhancedStatusIndicator(model, mcpItem)
-		expected := "○"
-		if icon != expected {
-			t.Errorf("Expected %s for inactive state, got %s", expected, icon)
-		}
-	})
+func getStatusIndicatorTestCases() []statusIndicatorTestCase {
+	cases := make([]statusIndicatorTestCase, 0)
+	cases = append(cases, getDefaultStateTestCases()...)
+	cases = append(cases, getTransitionStateTestCases()...)
+	cases = append(cases, getSuccessStateTestCases()...)
+	cases = append(cases, getErrorAndEdgeTestCases()...)
+	return cases
+}
 
-	t.Run("Default active state", func(t *testing.T) {
-		activeMCP := mcpItem
-		activeMCP.Active = true
+func getDefaultStateTestCases() []statusIndicatorTestCase {
+	return []statusIndicatorTestCase{
+		{
+			name:          "Default inactive state",
+			toggleState:   types.ToggleIdle,
+			toggleMCPName: "",
+			mcpName:       "test-mcp",
+			mcpActive:     false,
+			expected:      InactiveIcon,
+			description:   "inactive state",
+		},
+		{
+			name:          "Default active state",
+			toggleState:   types.ToggleIdle,
+			toggleMCPName: "",
+			mcpName:       "test-mcp",
+			mcpActive:     true,
+			expected:      ActiveIcon,
+			description:   "active state",
+		},
+	}
+}
 
-		model := types.Model{
-			ToggleState:   types.ToggleIdle,
-			ToggleMCPName: "",
-		}
+func getTransitionStateTestCases() []statusIndicatorTestCase {
+	return []statusIndicatorTestCase{
+		{
+			name:          "Loading state",
+			toggleState:   types.ToggleLoading,
+			toggleMCPName: "test-mcp",
+			mcpName:       "test-mcp",
+			mcpActive:     false,
+			expected:      "⏳",
+			description:   "loading state",
+		},
+		{
+			name:          "Retry state",
+			toggleState:   types.ToggleRetrying,
+			toggleMCPName: "test-mcp",
+			mcpName:       "test-mcp",
+			mcpActive:     false,
+			expected:      "🔄",
+			description:   "retry state",
+		},
+	}
+}
 
-		icon := getEnhancedStatusIndicator(model, activeMCP)
-		expected := "●"
-		if icon != expected {
-			t.Errorf("Expected %s for active state, got %s", expected, icon)
-		}
-	})
+func getSuccessStateTestCases() []statusIndicatorTestCase {
+	return []statusIndicatorTestCase{
+		{
+			name:          "Success state - activation",
+			toggleState:   types.ToggleSuccess,
+			toggleMCPName: "test-mcp",
+			mcpName:       "test-mcp",
+			mcpActive:     true,
+			expected:      "✅",
+			description:   "successful activation",
+		},
+		{
+			name:          "Success state - deactivation",
+			toggleState:   types.ToggleSuccess,
+			toggleMCPName: "test-mcp",
+			mcpName:       "test-mcp",
+			mcpActive:     false,
+			expected:      types.BulletChar,
+			description:   "successful deactivation",
+		},
+	}
+}
 
-	t.Run("Loading state", func(t *testing.T) {
-		model := types.Model{
-			ToggleState:   types.ToggleLoading,
-			ToggleMCPName: "test-mcp",
-		}
+func getErrorAndEdgeTestCases() []statusIndicatorTestCase {
+	return []statusIndicatorTestCase{
+		{
+			name:          "Error state",
+			toggleState:   types.ToggleError,
+			toggleMCPName: "test-mcp",
+			mcpName:       "test-mcp",
+			mcpActive:     false,
+			expected:      "✗",
+			description:   "error state",
+		},
+		{
+			name:          "Different MCP not affected by toggle state",
+			toggleState:   types.ToggleSuccess,
+			toggleMCPName: "test-mcp",
+			mcpName:       "different-mcp",
+			mcpActive:     true,
+			expected:      ActiveIcon,
+			description:   "different MCP (normal active state)",
+		},
+	}
+}
 
-		icon := getEnhancedStatusIndicator(model, mcpItem)
-		expected := "⏳"
-		if icon != expected {
-			t.Errorf("Expected %s for loading state, got %s", expected, icon)
-		}
-	})
+func buildTestModel(toggleState types.ToggleOperationState, toggleMCPName string) types.Model {
+	return types.Model{
+		ToggleState:   toggleState,
+		ToggleMCPName: toggleMCPName,
+	}
+}
 
-	t.Run("Retry state", func(t *testing.T) {
-		model := types.Model{
-			ToggleState:   types.ToggleRetrying,
-			ToggleMCPName: "test-mcp",
-		}
+func getMCPForTest(baseMCP types.MCPItem, active bool, mcpName string) types.MCPItem {
+	mcp := baseMCP
+	mcp.Active = active
+	if mcpName != "" && mcpName != baseMCP.Name {
+		mcp.Name = mcpName
+	}
+	return mcp
+}
 
-		icon := getEnhancedStatusIndicator(model, mcpItem)
-		expected := "🔄"
-		if icon != expected {
-			t.Errorf("Expected %s for retry state, got %s", expected, icon)
-		}
-	})
-
-	t.Run("Success state - activation", func(t *testing.T) {
-		activeMCP := mcpItem
-		activeMCP.Active = true
-
-		model := types.Model{
-			ToggleState:   types.ToggleSuccess,
-			ToggleMCPName: "test-mcp",
-		}
-
-		icon := getEnhancedStatusIndicator(model, activeMCP)
-		expected := "✅"
-		if icon != expected {
-			t.Errorf("Expected %s for successful activation, got %s", expected, icon)
-		}
-	})
-
-	t.Run("Success state - deactivation", func(t *testing.T) {
-		inactiveMCP := mcpItem
-		inactiveMCP.Active = false
-
-		model := types.Model{
-			ToggleState:   types.ToggleSuccess,
-			ToggleMCPName: "test-mcp",
-		}
-
-		icon := getEnhancedStatusIndicator(model, inactiveMCP)
-		expected := "◦"
-		if icon != expected {
-			t.Errorf("Expected %s for successful deactivation, got %s", expected, icon)
-		}
-	})
-
-	t.Run("Error state", func(t *testing.T) {
-		model := types.Model{
-			ToggleState:   types.ToggleError,
-			ToggleMCPName: "test-mcp",
-		}
-
-		icon := getEnhancedStatusIndicator(model, mcpItem)
-		expected := "✗"
-		if icon != expected {
-			t.Errorf("Expected %s for error state, got %s", expected, icon)
-		}
-	})
-
-	t.Run("Different MCP not affected by toggle state", func(t *testing.T) {
-		differentMCP := types.MCPItem{
-			Name:   "different-mcp",
-			Active: true,
-		}
-
-		model := types.Model{
-			ToggleState:   types.ToggleSuccess,
-			ToggleMCPName: "test-mcp", // Different MCP is being toggled
-		}
-
-		icon := getEnhancedStatusIndicator(model, differentMCP)
-		expected := "●" // Should show normal active state
-		if icon != expected {
-			t.Errorf("Expected %s for different MCP (normal active state), got %s", expected, icon)
-		}
-	})
+func assertIconEquals(t *testing.T, actual, expected, description string) {
+	if actual != expected {
+		t.Errorf("Expected %s for %s, got %s", expected, description, actual)
+	}
 }
 
 func TestToggleVisualFix_ConfusingCheckmark(t *testing.T) {
@@ -155,7 +191,7 @@ func TestToggleVisualFix_ConfusingCheckmark(t *testing.T) {
 		}
 
 		// Should be the new clear deactivation success icon
-		expected := "◦"
+		expected := types.BulletChar
 		if icon != expected {
 			t.Errorf("Expected %s for successful removal/deactivation, got %s", expected, icon)
 		}

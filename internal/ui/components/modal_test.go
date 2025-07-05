@@ -7,6 +7,11 @@ import (
 	"cc-mcp-manager/internal/ui/types"
 )
 
+// Test message constants
+const (
+	NoMCPSelected = "No MCP selected"
+)
+
 func TestOverlayModal(t *testing.T) {
 	model := types.NewModel()
 	model.ActiveModal = types.AddCommandForm
@@ -392,8 +397,8 @@ func TestRenderEditModalContentNoSelection(t *testing.T) {
 
 	result := renderEditModalContent(model)
 
-	if result != "No MCP selected" {
-		t.Errorf("Expected 'No MCP selected', got: %s", result)
+	if result != NoMCPSelected {
+		t.Errorf("Expected '%s', got: %s", NoMCPSelected, result)
 	}
 }
 
@@ -455,8 +460,8 @@ func TestRenderDeleteModalContentNoSelection(t *testing.T) {
 
 	result := renderDeleteModalContent(model)
 
-	if result != "No MCP selected" {
-		t.Errorf("Expected 'No MCP selected', got: %s", result)
+	if result != NoMCPSelected {
+		t.Errorf("Expected '%s', got: %s", NoMCPSelected, result)
 	}
 }
 
@@ -481,8 +486,22 @@ func TestRenderDeleteModalContentWithSearch(t *testing.T) {
 }
 
 func TestModalFieldFocus(t *testing.T) {
-	// Test that different active fields show cursor in correct position
-	tests := []struct {
+	tests := getModalFieldFocusTestCases()
+
+	for _, tt := range tests {
+		model := setupModalFieldFocusTest(tt)
+		result := renderModalForFocusTest(model, tt.modalType)
+		assertModalFieldFocus(t, result, tt)
+	}
+}
+
+func getModalFieldFocusTestCases() []struct {
+	modalType    types.ModalType
+	activeField  int
+	fieldValue   string
+	expectCursor bool
+} {
+	return []struct {
 		modalType    types.ModalType
 		activeField  int
 		fieldValue   string
@@ -499,61 +518,96 @@ func TestModalFieldFocus(t *testing.T) {
 		{types.AddJSONForm, 1, "json-value", true},
 		{types.AddJSONForm, 2, "env-value", true},
 	}
+}
 
-	for _, tt := range tests {
-		model := types.NewModel()
-		model.ActiveModal = tt.modalType
-		model.FormData.ActiveField = tt.activeField
+func setupModalFieldFocusTest(tt struct {
+	modalType    types.ModalType
+	activeField  int
+	fieldValue   string
+	expectCursor bool
+}) types.Model {
+	model := types.NewModel()
+	model.ActiveModal = tt.modalType
+	model.FormData.ActiveField = tt.activeField
 
-		// Set appropriate field value
-		switch tt.modalType {
-		case types.AddCommandForm:
-			switch tt.activeField {
-			case 0:
-				model.FormData.Name = tt.fieldValue
-			case 1:
-				model.FormData.Command = tt.fieldValue
-			case 2:
-				model.FormData.Args = tt.fieldValue
-			case 3:
-				model.FormData.Environment = tt.fieldValue
-			}
-		case types.AddSSEForm:
-			switch tt.activeField {
-			case 0:
-				model.FormData.Name = tt.fieldValue
-			case 1:
-				model.FormData.URL = tt.fieldValue
-			case 2:
-				model.FormData.Environment = tt.fieldValue
-			}
-		case types.AddJSONForm:
-			switch tt.activeField {
-			case 0:
-				model.FormData.Name = tt.fieldValue
-			case 1:
-				model.FormData.JSONConfig = tt.fieldValue
-			case 2:
-				model.FormData.Environment = tt.fieldValue
-			}
-		}
+	setModalFieldValue(&model, tt.modalType, tt.activeField, tt.fieldValue)
+	return model
+}
 
-		var result string
-		switch tt.modalType {
-		case types.AddCommandForm:
-			result = renderCommandFormContent(model)
-		case types.AddSSEForm:
-			result = renderSSEFormContent(model)
-		case types.AddJSONForm:
-			result = renderJSONFormContent(model)
-		}
+func setModalFieldValue(model *types.Model, modalType types.ModalType, activeField int, fieldValue string) {
+	switch modalType {
+	case types.AddCommandForm:
+		setCommandFormFieldValue(model, activeField, fieldValue)
+	case types.AddSSEForm:
+		setSSEFormFieldValue(model, activeField, fieldValue)
+	case types.AddJSONForm:
+		setJSONFormFieldValue(model, activeField, fieldValue)
+	case types.NoModal, types.AddModal, types.AddMCPTypeSelection, types.EditModal, types.DeleteModal:
+		// These modal types don't have form fields to set
+	}
+}
 
-		if tt.expectCursor {
-			expectedCursor := tt.fieldValue + "_"
-			if !strings.Contains(result, expectedCursor) {
-				t.Errorf("Modal %v field %d should show cursor, expected '%s' in result",
-					tt.modalType, tt.activeField, expectedCursor)
-			}
+func setCommandFormFieldValue(model *types.Model, activeField int, fieldValue string) {
+	switch activeField {
+	case 0:
+		model.FormData.Name = fieldValue
+	case 1:
+		model.FormData.Command = fieldValue
+	case 2:
+		model.FormData.Args = fieldValue
+	case 3:
+		model.FormData.Environment = fieldValue
+	}
+}
+
+func setSSEFormFieldValue(model *types.Model, activeField int, fieldValue string) {
+	switch activeField {
+	case 0:
+		model.FormData.Name = fieldValue
+	case 1:
+		model.FormData.URL = fieldValue
+	case 2:
+		model.FormData.Environment = fieldValue
+	}
+}
+
+func setJSONFormFieldValue(model *types.Model, activeField int, fieldValue string) {
+	switch activeField {
+	case 0:
+		model.FormData.Name = fieldValue
+	case 1:
+		model.FormData.JSONConfig = fieldValue
+	case 2:
+		model.FormData.Environment = fieldValue
+	}
+}
+
+func renderModalForFocusTest(model types.Model, modalType types.ModalType) string {
+	switch modalType {
+	case types.AddCommandForm:
+		return renderCommandFormContent(model)
+	case types.AddSSEForm:
+		return renderSSEFormContent(model)
+	case types.AddJSONForm:
+		return renderJSONFormContent(model)
+	case types.NoModal, types.AddModal, types.AddMCPTypeSelection, types.EditModal, types.DeleteModal:
+		return ""
+	default:
+		return ""
+	}
+}
+
+func assertModalFieldFocus(t *testing.T, result string, tt struct {
+	modalType    types.ModalType
+	activeField  int
+	fieldValue   string
+	expectCursor bool
+}) {
+	if tt.expectCursor {
+		expectedCursor := tt.fieldValue + "_"
+		if !strings.Contains(result, expectedCursor) {
+			t.Errorf("Modal %v field %d should show cursor, expected '%s' in result",
+				tt.modalType, tt.activeField, expectedCursor)
 		}
 	}
 }

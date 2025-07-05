@@ -7,7 +7,25 @@ import (
 )
 
 func TestUpdateLayout(t *testing.T) {
-	tests := []struct {
+	tests := createUpdateLayoutTests()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := createLayoutTestModel(tt.width)
+			result := UpdateLayout(model)
+			assertLayoutResult(t, result, tt)
+		})
+	}
+}
+
+func createUpdateLayoutTests() []struct {
+	name                string
+	width               int
+	expectedColumns     int
+	expectedColumnCount int
+	expectedTitle       string
+} {
+	return []struct {
 		name                string
 		width               int
 		expectedColumns     int
@@ -18,79 +36,83 @@ func TestUpdateLayout(t *testing.T) {
 			name:                "Wide layout - 4 columns",
 			width:               150,
 			expectedColumns:     4,
-			expectedColumnCount: types.WIDE_COLUMNS,
+			expectedColumnCount: types.WideColumns,
 			expectedTitle:       "MCPs Column 1",
 		},
 		{
 			name:                "Wide layout boundary - exactly 120",
 			width:               120,
 			expectedColumns:     4,
-			expectedColumnCount: types.WIDE_COLUMNS,
+			expectedColumnCount: types.WideColumns,
 			expectedTitle:       "MCPs Column 1",
 		},
 		{
 			name:                "Medium layout - 2 columns",
 			width:               100,
 			expectedColumns:     2,
-			expectedColumnCount: types.MEDIUM_COLUMNS,
+			expectedColumnCount: types.MediumColumns,
 			expectedTitle:       "MCPs",
 		},
 		{
 			name:                "Medium layout boundary - exactly 80",
 			width:               80,
 			expectedColumns:     2,
-			expectedColumnCount: types.MEDIUM_COLUMNS,
+			expectedColumnCount: types.MediumColumns,
 			expectedTitle:       "MCPs",
 		},
 		{
 			name:                "Narrow layout - 1 column",
 			width:               70,
 			expectedColumns:     1,
-			expectedColumnCount: types.NARROW_COLUMNS,
+			expectedColumnCount: types.NarrowColumns,
 			expectedTitle:       "MCP Manager",
 		},
 		{
 			name:                "Very narrow layout",
 			width:               40,
 			expectedColumns:     1,
-			expectedColumnCount: types.NARROW_COLUMNS,
+			expectedColumnCount: types.NarrowColumns,
 			expectedTitle:       "MCP Manager",
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model := types.Model{
-				Width:        tt.width,
-				ActiveColumn: 0,
-			}
+func createLayoutTestModel(width int) types.Model {
+	return types.Model{
+		Width:        width,
+		ActiveColumn: 0,
+	}
+}
 
-			result := UpdateLayout(model)
+func assertLayoutResult(t *testing.T, result types.Model, tt struct {
+	name                string
+	width               int
+	expectedColumns     int
+	expectedColumnCount int
+	expectedTitle       string
+}) {
+	// Test column count
+	if result.ColumnCount != tt.expectedColumnCount {
+		t.Errorf("UpdateLayout() ColumnCount = %d, expected %d",
+			result.ColumnCount, tt.expectedColumnCount)
+	}
 
-			// Test column count
-			if result.ColumnCount != tt.expectedColumnCount {
-				t.Errorf("UpdateLayout() ColumnCount = %d, expected %d",
-					result.ColumnCount, tt.expectedColumnCount)
-			}
+	// Test actual columns array length
+	if len(result.Columns) != tt.expectedColumns {
+		t.Errorf("UpdateLayout() len(Columns) = %d, expected %d",
+			len(result.Columns), tt.expectedColumns)
+	}
 
-			// Test actual columns array length
-			if len(result.Columns) != tt.expectedColumns {
-				t.Errorf("UpdateLayout() len(Columns) = %d, expected %d",
-					len(result.Columns), tt.expectedColumns)
-			}
+	// Test first column title
+	if len(result.Columns) > 0 && result.Columns[0].Title != tt.expectedTitle {
+		t.Errorf("UpdateLayout() first column title = %s, expected %s",
+			result.Columns[0].Title, tt.expectedTitle)
+	}
 
-			// Test first column title
-			if len(result.Columns) > 0 && result.Columns[0].Title != tt.expectedTitle {
-				t.Errorf("UpdateLayout() first column title = %s, expected %s",
-					result.Columns[0].Title, tt.expectedTitle)
-			}
-
-			// Test that ActiveColumn is within bounds
-			if result.ActiveColumn >= result.ColumnCount {
-				t.Errorf("UpdateLayout() ActiveColumn %d should be < ColumnCount %d",
-					result.ActiveColumn, result.ColumnCount)
-			}
-		})
+	// Test that ActiveColumn is within bounds
+	if result.ActiveColumn >= result.ColumnCount {
+		t.Errorf("UpdateLayout() ActiveColumn %d should be < ColumnCount %d",
+			result.ActiveColumn, result.ColumnCount)
 	}
 }
 
@@ -203,12 +225,12 @@ func TestUpdateLayoutBreakpoints(t *testing.T) {
 		width    int
 		expected int
 	}{
-		{"Just below wide threshold", types.WIDE_LAYOUT_MIN - 1, types.MEDIUM_COLUMNS},
-		{"Exactly at wide threshold", types.WIDE_LAYOUT_MIN, types.WIDE_COLUMNS},
-		{"Just above wide threshold", types.WIDE_LAYOUT_MIN + 1, types.WIDE_COLUMNS},
-		{"Just below medium threshold", types.MEDIUM_LAYOUT_MIN - 1, types.NARROW_COLUMNS},
-		{"Exactly at medium threshold", types.MEDIUM_LAYOUT_MIN, types.MEDIUM_COLUMNS},
-		{"Just above medium threshold", types.MEDIUM_LAYOUT_MIN + 1, types.MEDIUM_COLUMNS},
+		{"Just below wide threshold", types.WideLayoutMin - 1, types.MediumColumns},
+		{"Exactly at wide threshold", types.WideLayoutMin, types.WideColumns},
+		{"Just above wide threshold", types.WideLayoutMin + 1, types.WideColumns},
+		{"Just below medium threshold", types.MediumLayoutMin - 1, types.NarrowColumns},
+		{"Exactly at medium threshold", types.MediumLayoutMin, types.MediumColumns},
+		{"Just above medium threshold", types.MediumLayoutMin + 1, types.MediumColumns},
 	}
 
 	for _, tt := range boundaryTests {
@@ -285,7 +307,7 @@ func TestUpdateLayoutEdgeCases(t *testing.T) {
 		result := UpdateLayout(model)
 
 		// Should default to narrow layout
-		if result.ColumnCount != types.NARROW_COLUMNS {
+		if result.ColumnCount != types.NarrowColumns {
 			t.Errorf("UpdateLayout() with zero width should use narrow layout")
 		}
 	})
@@ -295,7 +317,7 @@ func TestUpdateLayoutEdgeCases(t *testing.T) {
 		result := UpdateLayout(model)
 
 		// Should default to narrow layout
-		if result.ColumnCount != types.NARROW_COLUMNS {
+		if result.ColumnCount != types.NarrowColumns {
 			t.Errorf("UpdateLayout() with negative width should use narrow layout")
 		}
 	})
@@ -305,7 +327,7 @@ func TestUpdateLayoutEdgeCases(t *testing.T) {
 		result := UpdateLayout(model)
 
 		// Should use wide layout
-		if result.ColumnCount != types.WIDE_COLUMNS {
+		if result.ColumnCount != types.WideColumns {
 			t.Errorf("UpdateLayout() with very large width should use wide layout")
 		}
 
@@ -355,7 +377,7 @@ func TestUpdateLayoutConsistency(t *testing.T) {
 		}
 
 		// Should be medium layout
-		if result.ColumnCount != types.MEDIUM_COLUMNS {
+		if result.ColumnCount != types.MediumColumns {
 			t.Errorf("Layout transition should update to correct layout")
 		}
 	})

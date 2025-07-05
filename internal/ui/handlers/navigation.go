@@ -49,7 +49,7 @@ func handleNavigationKeys(model types.Model, key string) (types.Model, bool) {
 // handleSearchKeys handles search activation keys
 func handleSearchKeys(model types.Model, key string) (types.Model, bool) {
 	switch key {
-	case "tab", "/":
+	case KeyTab, "/":
 		// Activate search mode with navigation enabled
 		model.State = types.SearchActiveNavigation
 		model.SearchActive = true
@@ -190,13 +190,13 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 
 	// Priority 2: Search control keys (mode switching)
 	switch key {
-	case "enter":
+	case KeyEnter:
 		// Return to main navigation with search query preserved
 		model.State = types.MainNavigation
 		model.SearchActive = false
 		model.SearchInputActive = false
 		return model, nil
-	case "tab":
+	case KeyTab:
 		// Toggle between input and navigation modes
 		model.SearchInputActive = !model.SearchInputActive
 		return model, nil
@@ -209,7 +209,7 @@ func HandleSearchNavigationKeys(model types.Model, key string) (types.Model, tea
 			if len(model.SearchQuery) > 0 {
 				model.SearchQuery = model.SearchQuery[:len(model.SearchQuery)-1]
 			}
-		case "ctrl+v", "cmd+v", "⌘v", "command+v":
+		case KeyCtrlV, "cmd+v", "⌘v", "command+v":
 			// Paste clipboard content to search query
 			model = pasteToSearchQuery(model)
 		default:
@@ -333,11 +333,9 @@ func NavigateRight(model types.Model) types.Model {
 				model.SelectedItem++
 			}
 		}
-	} else {
+	} else if model.ActiveColumn < model.ColumnCount-1 {
 		// For other layouts, move between columns
-		if model.ActiveColumn < model.ColumnCount-1 {
-			model.ActiveColumn++
-		}
+		model.ActiveColumn++
 	}
 	return model
 }

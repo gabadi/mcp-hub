@@ -2,12 +2,19 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"testing"
 	"time"
 
 	"cc-mcp-manager/internal/ui/types"
+)
+
+// Test platform constants
+const (
+	TestMCPName = "test-mcp"
 )
 
 func TestNewClaudeService(t *testing.T) {
@@ -64,11 +71,9 @@ func TestDetectClaudeCliWithTimeout(t *testing.T) {
 	if status.Available {
 		// If Claude is very fast and available, that's okay
 		t.Logf("Claude detected even with short timeout")
-	} else {
+	} else if status.Error == "" {
 		// Should have error message
-		if status.Error == "" {
-			t.Error("Expected error message when detection fails")
-		}
+		t.Error("Expected error message when detection fails")
 	}
 }
 
@@ -142,8 +147,22 @@ func TestGetClaudeVersion(t *testing.T) {
 
 func TestParseActiveMCPs(t *testing.T) {
 	service := NewClaudeService()
+	tests := createParseActiveMCPsTests()
 
-	tests := []struct {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := service.parseActiveMCPs(tt.input)
+			assertParseActiveMCPsResult(t, result, tt.expected)
+		})
+	}
+}
+
+func createParseActiveMCPsTests() []struct {
+	name     string
+	input    string
+	expected []string
+} {
+	return []struct {
 		name     string
 		input    string
 		expected []string
@@ -199,18 +218,15 @@ func TestParseActiveMCPs(t *testing.T) {
 			expected: []string{"github-mcp", "context7"},
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := service.parseActiveMCPs(tt.input)
-			// For empty cases, both nil and empty slice are acceptable
-			if len(tt.expected) == 0 && len(result) == 0 {
-				return // Both are empty, test passes
-			}
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("parseActiveMCPs() = %v, want %v", result, tt.expected)
-			}
-		})
+func assertParseActiveMCPsResult(t *testing.T, result []string, expected []string) {
+	// For empty cases, both nil and empty slice are acceptable
+	if len(expected) == 0 && len(result) == 0 {
+		return // Both are empty, test passes
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("parseActiveMCPs() = %v, want %v", result, expected)
 	}
 }
 
@@ -229,11 +245,11 @@ func TestGetInstallationGuide(t *testing.T) {
 
 	// Should contain some platform-appropriate information
 	switch runtime.GOOS {
-	case "darwin":
+	case PlatformDarwin:
 		if !contains(guide, "Homebrew") && !contains(guide, "brew") && !contains(guide, "PATH") {
 			t.Error("macOS guide should mention Homebrew, brew, or PATH")
 		}
-	case "windows":
+	case PlatformWindows:
 		if !contains(guide, "PATH") && !contains(guide, "Restart") {
 			t.Error("Windows guide should mention PATH or Restart")
 		}
@@ -552,8 +568,8 @@ func BenchmarkFormatClaudeStatusForDisplay(b *testing.B) {
 func TestToggleResultStruct(t *testing.T) {
 	result := &ToggleResult{
 		Success:   true,
-		MCPName:   "test-mcp",
-		NewState:  "active",
+		MCPName:   TestMCPName,
+		NewState:  TestActiveStatus,
 		ErrorType: "",
 		ErrorMsg:  "",
 		Retryable: false,
@@ -563,7 +579,7 @@ func TestToggleResultStruct(t *testing.T) {
 	if !result.Success {
 		t.Error("Expected Success to be true")
 	}
-	if result.MCPName != "test-mcp" {
+	if result.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 	}
 	if result.NewState != "active" {
@@ -639,8 +655,53 @@ func TestErrorMessages(t *testing.T) {
 
 func TestClassifyError(t *testing.T) {
 	service := NewClaudeService()
+	testCases := getClassifyErrorTestCases()
 
-	testCases := []struct {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a mock error
+			mockErr := &mockError{msg: tc.errMsg}
+			result := service.classifyError(mockErr, tc.output)
+			if result != tc.expected {
+				t.Errorf("classifyError() = %s, expected %s", result, tc.expected)
+			}
+		})
+	}
+}
+
+func getClassifyErrorTestCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	timeoutCases := getTimeoutErrorCases()
+	permissionCases := getPermissionErrorCases()
+	unavailableCases := getUnavailableErrorCases()
+	unknownCases := getUnknownErrorCases()
+	
+	var allCases []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}
+	
+	allCases = append(allCases, timeoutCases...)
+	allCases = append(allCases, permissionCases...)
+	allCases = append(allCases, unavailableCases...)
+	allCases = append(allCases, unknownCases...)
+	
+	return allCases
+}
+
+func getTimeoutErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
 		name     string
 		errMsg   string
 		output   string
@@ -658,6 +719,21 @@ func TestClassifyError(t *testing.T) {
 			output:   "",
 			expected: ErrorTypeNetworkTimeout,
 		},
+	}
+}
+
+func getPermissionErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "permission denied in output",
 			errMsg:   "exit status 1",
@@ -676,6 +752,21 @@ func TestClassifyError(t *testing.T) {
 			output:   "authentication failed",
 			expected: ErrorTypePermissionError,
 		},
+	}
+}
+
+func getUnavailableErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "executable not found",
 			errMsg:   "executable file not found in $PATH",
@@ -694,23 +785,27 @@ func TestClassifyError(t *testing.T) {
 			output:   "'claude' is not recognized as an internal or external command",
 			expected: ErrorTypeClaudeUnavailable,
 		},
+	}
+}
+
+func getUnknownErrorCases() []struct {
+	name     string
+	errMsg   string
+	output   string
+	expected string
+} {
+	return []struct {
+		name     string
+		errMsg   string
+		output   string
+		expected string
+	}{
 		{
 			name:     "unknown error",
 			errMsg:   "some other error",
 			output:   "unexpected output",
 			expected: ErrorTypeUnknownError,
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Create a mock error
-			mockErr := &mockError{msg: tc.errMsg}
-			result := service.classifyError(mockErr, tc.output)
-			if result != tc.expected {
-				t.Errorf("classifyError() = %s, expected %s", result, tc.expected)
-			}
-		})
 	}
 }
 
@@ -733,13 +828,13 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
+	result, err := service.ToggleMCPStatus(ctxShort, TestMCPName, true, testMCP)
 
 	// Should return result, not error
 	if err != nil {
@@ -762,7 +857,7 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 			t.Error("Error message should not be empty when toggle fails")
 		}
 
-		if result.MCPName != "test-mcp" {
+		if result.MCPName != TestMCPName {
 			t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 		}
 	}
@@ -781,32 +876,32 @@ func TestToggleMCPStatusSuccessCase(t *testing.T) {
 	// Test activation
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.ToggleMCPStatus(ctx, "test-mcp", true, testMCP)
+	result, err := service.ToggleMCPStatus(ctx, TestMCPName, true, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
 	if result == nil {
 		t.Fatal("ToggleMCPStatus should return result")
 	}
-	if result.MCPName != "test-mcp" {
+	if result.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result.MCPName)
 	}
 
 	// Test deactivation
-	result2, err := service.ToggleMCPStatus(ctx, "test-mcp", false, testMCP)
+	result2, err := service.ToggleMCPStatus(ctx, TestMCPName, false, testMCP)
 	if err != nil {
 		t.Errorf("ToggleMCPStatus should not return error, got: %v", err)
 	}
 	if result2 == nil {
 		t.Fatal("ToggleMCPStatus should return result")
 	}
-	if result2.MCPName != "test-mcp" {
+	if result2.MCPName != TestMCPName {
 		t.Errorf("Expected MCPName to be 'test-mcp', got %s", result2.MCPName)
 	}
 }
@@ -819,13 +914,13 @@ func TestRetryToggleOperation(t *testing.T) {
 	expiredStart := time.Now().Add(-25 * time.Second)
 	// Create test MCP config
 	testMCP := &types.MCPItem{
-		Name:    "test-mcp",
+		Name:    TestMCPName,
 		Type:    "CMD",
 		Command: "echo",
 		Args:    []string{"test"},
 	}
 
-	result, err := service.retryToggleOperation(ctx, "test-mcp", true, testMCP, expiredStart)
+	result, err := service.retryToggleOperation(ctx, TestMCPName, true, testMCP, expiredStart)
 
 	if err == nil {
 		t.Error("Expected error when time budget exceeded")
@@ -854,13 +949,13 @@ func BenchmarkToggleMCPStatus(b *testing.B) {
 		ctxShort, cancel := context.WithTimeout(ctx, 1*time.Nanosecond)
 		// Create test MCP config
 		testMCP := &types.MCPItem{
-			Name:    "test-mcp",
+			Name:    TestMCPName,
 			Type:    "CMD",
 			Command: "echo",
 			Args:    []string{"test"},
 		}
 
-		_, _ = service.ToggleMCPStatus(ctxShort, "test-mcp", true, testMCP)
+		_, _ = service.ToggleMCPStatus(ctxShort, TestMCPName, true, testMCP)
 		cancel()
 	}
 }
@@ -873,5 +968,334 @@ func BenchmarkClassifyError(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = service.classifyError(mockErr, output)
+	}
+}
+
+// Epic 2 Story 5 Tests - Project Context Display
+
+func TestGetProjectContext(t *testing.T) {
+	// Create test model with MCP items
+	model := types.NewModel()
+	model.MCPItems = []types.MCPItem{
+		{Name: "test1", Active: true},
+		{Name: "test2", Active: false},
+		{Name: "test3", Active: true},
+	}
+	model.LastClaudeSync = time.Now().Add(-5 * time.Minute)
+
+	projectContext := GetProjectContext(model)
+
+	// Test basic structure
+	if projectContext.CurrentPath == "" {
+		t.Error("CurrentPath should not be empty")
+	}
+	if projectContext.DisplayPath == "" {
+		t.Error("DisplayPath should not be empty")
+	}
+	if projectContext.ActiveMCPs != 2 {
+		t.Errorf("Expected 2 active MCPs, got %d", projectContext.ActiveMCPs)
+	}
+	if projectContext.TotalMCPs != 3 {
+		t.Errorf("Expected 3 total MCPs, got %d", projectContext.TotalMCPs)
+	}
+	if projectContext.LastSyncTime.IsZero() {
+		t.Error("LastSyncTime should be set from model")
+	}
+	if projectContext.SyncStatusText == "" {
+		t.Error("SyncStatusText should not be empty")
+	}
+}
+
+func TestFormatPathForDisplay(t *testing.T) {
+	testCases := []struct {
+		name      string
+		path      string
+		maxLength int
+		expected  bool // Whether result should be different from input
+	}{
+		{
+			name:      "short path",
+			path:      "/home/user",
+			maxLength: 50,
+			expected:  false, // Should be unchanged
+		},
+		{
+			name:      "exact length",
+			path:      "/home/user/project",
+			maxLength: 18,
+			expected:  false, // Should be unchanged
+		},
+		{
+			name:      "long path",
+			path:      "/very/long/path/to/some/deeply/nested/project/directory",
+			maxLength: 30,
+			expected:  true, // Should be truncated
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := FormatPathForDisplay(tc.path, tc.maxLength)
+
+			if len(result) > tc.maxLength {
+				t.Errorf("Result length %d exceeds maxLength %d: %s", len(result), tc.maxLength, result)
+			}
+
+			changed := result != tc.path
+			if changed != tc.expected {
+				t.Errorf("Expected changed=%v, got changed=%v. Input: %s, Output: %s", tc.expected, changed, tc.path, result)
+			}
+
+			// For truncated paths, should contain ellipsis
+			if tc.expected && len(tc.path) > tc.maxLength {
+				if !contains(result, "...") && !contains(result, "~/") {
+					t.Errorf("Long path should be truncated with ellipsis or use home dir: %s", result)
+				}
+			}
+		})
+	}
+}
+
+func TestGetSyncStatus(t *testing.T) {
+	baseTime := time.Now()
+	testCases := createGetSyncStatusTests(baseTime)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetSyncStatus(tc.model)
+			assertSyncStatusResult(t, result, tc.expected)
+		})
+	}
+}
+
+func createGetSyncStatusTests(baseTime time.Time) []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	var tests []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}
+	
+	tests = append(tests, createErrorStatusTests()...)
+	tests = append(tests, createValidStatusTests(baseTime)...)
+	
+	return tests
+}
+
+func createErrorStatusTests() []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	return []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}{
+		{
+			name: "claude unavailable",
+			model: types.Model{
+				ClaudeAvailable: false,
+			},
+			expected: types.SyncStatusError,
+		},
+		{
+			name: "claude sync error",
+			model: types.Model{
+				ClaudeAvailable: true,
+				ClaudeSyncError: "connection failed",
+			},
+			expected: types.SyncStatusError,
+		},
+		{
+			name: "no sync performed",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync: time.Time{}, // Zero time
+			},
+			expected: types.SyncStatusUnknown,
+		},
+	}
+}
+
+func createValidStatusTests(baseTime time.Time) []struct {
+	name     string
+	model    types.Model
+	expected types.SyncStatus
+} {
+	return []struct {
+		name     string
+		model    types.Model
+		expected types.SyncStatus
+	}{
+		{
+			name: "in sync",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: false},
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test1"},
+				},
+			},
+			expected: types.SyncStatusInSync,
+		},
+		{
+			name: "out of sync - different active count",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: true}, // Both active locally
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test1"}, // Only one active in Claude
+				},
+			},
+			expected: types.SyncStatusOutOfSync,
+		},
+		{
+			name: "out of sync - different active MCPs",
+			model: types.Model{
+				ClaudeAvailable: true,
+				LastClaudeSync:  baseTime,
+				MCPItems: []types.MCPItem{
+					{Name: "test1", Active: true},
+					{Name: "test2", Active: false},
+				},
+				ClaudeStatus: types.ClaudeStatus{
+					ActiveMCPs: []string{"test2"}, // Different MCP active in Claude
+				},
+			},
+			expected: types.SyncStatusOutOfSync,
+		},
+	}
+}
+
+func assertSyncStatusResult(t *testing.T, result types.SyncStatus, expected types.SyncStatus) {
+	if result != expected {
+		t.Errorf("GetSyncStatus() = %v, expected %v", result, expected)
+	}
+}
+
+func TestFormatSyncStatusText(t *testing.T) {
+	testCases := []struct {
+		status   types.SyncStatus
+		expected string
+	}{
+		{types.SyncStatusInSync, "In Sync"},
+		{types.SyncStatusOutOfSync, "Out of Sync"},
+		{types.SyncStatusError, "Error"},
+		{types.SyncStatusUnknown, "Unknown"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.expected, func(t *testing.T) {
+			result := FormatSyncStatusText(tc.status)
+			if result != tc.expected {
+				t.Errorf("FormatSyncStatusText(%v) = %s, expected %s", tc.status, result, tc.expected)
+			}
+		})
+	}
+}
+
+func TestUpdateProjectContext(t *testing.T) {
+	// Create test model
+	model := types.NewModel()
+	model.MCPItems = []types.MCPItem{
+		{Name: "test1", Active: true},
+		{Name: "test2", Active: false},
+	}
+
+	// Update project context
+	updatedModel := UpdateProjectContext(model)
+
+	// Verify project context was updated
+	if updatedModel.ProjectContext.TotalMCPs != 2 {
+		t.Errorf("Expected 2 total MCPs in project context, got %d", updatedModel.ProjectContext.TotalMCPs)
+	}
+	if updatedModel.ProjectContext.ActiveMCPs != 1 {
+		t.Errorf("Expected 1 active MCP in project context, got %d", updatedModel.ProjectContext.ActiveMCPs)
+	}
+	if updatedModel.ProjectContext.CurrentPath == "" {
+		t.Error("CurrentPath should be set in project context")
+	}
+	if updatedModel.ProjectContext.DisplayPath == "" {
+		t.Error("DisplayPath should be set in project context")
+	}
+}
+
+func TestHasDirectoryChanged(t *testing.T) {
+	// Test with empty path
+	if HasDirectoryChanged("") {
+		t.Error("Empty path should not indicate directory change")
+	}
+
+	// Test with current directory (should not have changed)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		t.Skip("Cannot get current directory for test")
+	}
+
+	if HasDirectoryChanged(currentDir) {
+		t.Error("Current directory should not indicate change")
+	}
+
+	// Test with different directory
+	if !HasDirectoryChanged("/non/existent/path") {
+		t.Error("Different directory should indicate change")
+	}
+}
+
+// Benchmark tests for project context functions
+func BenchmarkGetProjectContext(b *testing.B) {
+	model := types.NewModel()
+	model.MCPItems = make([]types.MCPItem, 50)
+	for i := range model.MCPItems {
+		model.MCPItems[i] = types.MCPItem{
+			Name:   fmt.Sprintf("mcp-%d", i),
+			Active: i%2 == 0,
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetProjectContext(model)
+	}
+}
+
+func BenchmarkFormatPathForDisplay(b *testing.B) {
+	longPath := "/very/long/path/to/some/deeply/nested/project/directory/with/many/subdirectories"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = FormatPathForDisplay(longPath, 30)
+	}
+}
+
+func BenchmarkGetSyncStatus(b *testing.B) {
+	model := types.Model{
+		ClaudeAvailable: true,
+		LastClaudeSync:  time.Now(),
+		MCPItems: []types.MCPItem{
+			{Name: "test1", Active: true},
+			{Name: "test2", Active: false},
+			{Name: "test3", Active: true},
+		},
+		ClaudeStatus: types.ClaudeStatus{
+			ActiveMCPs: []string{"test1", "test3"},
+		},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = GetSyncStatus(model)
 	}
 }

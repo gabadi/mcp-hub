@@ -1,3 +1,4 @@
+// Package main provides a debug tool for testing key bindings and clipboard functionality.
 package main
 
 import (
@@ -25,17 +26,16 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		keyStr := msg.String()
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		keyStr := keyMsg.String()
 		m.keys = append(m.keys, keyStr)
 
 		// Enhanced logging
-		f, err := os.OpenFile("key_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile("key_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err == nil {
-			fmt.Fprintf(f, "Key: '%s' Type: %d Alt: %t Runes: %v\n", keyStr, msg.Type, msg.Alt, msg.Runes)
-			fmt.Fprintf(f, "Terminal: %s\n", os.Getenv("TERM_PROGRAM"))
-			f.Close()
+			_, _ = fmt.Fprintf(f, "Key: '%s' Type: %d Alt: %t Runes: %v\n", keyStr, keyMsg.Type, keyMsg.Alt, keyMsg.Runes)
+			_, _ = fmt.Fprintf(f, "Terminal: %s\n", os.Getenv("TERM_PROGRAM"))
+			_ = f.Close()
 		}
 
 		// Test clipboard functionality when cmd+v or ctrl+v is pressed
@@ -95,11 +95,12 @@ func (m model) View() string {
 	}
 
 	s += "\n📋 Clipboard Test Results:\n"
-	if m.clipboardError != "" {
+	switch {
+	case m.clipboardError != "":
 		s += fmt.Sprintf("❌ Error: %s\n", m.clipboardError)
-	} else if m.clipboardTest != "" {
+	case m.clipboardTest != "":
 		s += fmt.Sprintf("✅ Content: %q\n", m.clipboardTest)
-	} else {
+	default:
 		s += "⏳ Press Cmd+V or Ctrl+V to test enhanced clipboard\n"
 		s += "⏳ Press 'c' to test basic clipboard\n"
 	}
@@ -126,7 +127,7 @@ func (m model) View() string {
 }
 
 func main() {
-	os.Remove("key_debug.log")
+	_ = os.Remove("key_debug.log")
 	p := tea.NewProgram(model{})
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

@@ -9,16 +9,39 @@ import (
 )
 
 func TestRenderFourColumnGrid(t *testing.T) {
-	tests := []struct {
-		name         string
-		mcpItems     []types.MCPItem
-		selectedItem int
-		searchQuery  string
-		width        int
-		height       int
-		expected     []string
-		notExpected  []string
-	}{
+	tests := getFourColumnGridTestCases()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := buildGridTestModel(tt)
+			result := RenderFourColumnGrid(model)
+			assertGridContains(t, result, tt.expected)
+			assertGridNotContains(t, result, tt.notExpected)
+		})
+	}
+}
+
+type gridTestCase struct {
+	name         string
+	mcpItems     []types.MCPItem
+	selectedItem int
+	searchQuery  string
+	width        int
+	height       int
+	expected     []string
+	notExpected  []string
+}
+
+func getFourColumnGridTestCases() []gridTestCase {
+	cases := make([]gridTestCase, 0)
+	cases = append(cases, getBasicGridTestCases()...)
+	cases = append(cases, getFilteredGridTestCases()...)
+	cases = append(cases, getMultiRowGridTestCases()...)
+	return cases
+}
+
+func getBasicGridTestCases() []gridTestCase {
+	return []gridTestCase{
 		{
 			name: "Basic grid rendering with selected item",
 			mcpItems: []types.MCPItem{
@@ -48,6 +71,11 @@ func TestRenderFourColumnGrid(t *testing.T) {
 				"No MCPs found matching your search",
 			},
 		},
+	}
+}
+
+func getFilteredGridTestCases() []gridTestCase {
+	return []gridTestCase{
 		{
 			name: "Filtered results show only matching MCPs",
 			mcpItems: []types.MCPItem{
@@ -67,6 +95,11 @@ func TestRenderFourColumnGrid(t *testing.T) {
 				"context7",
 			},
 		},
+	}
+}
+
+func getMultiRowGridTestCases() []gridTestCase {
+	return []gridTestCase{
 		{
 			name: "Grid with many items fills multiple rows",
 			mcpItems: []types.MCPItem{
@@ -88,31 +121,32 @@ func TestRenderFourColumnGrid(t *testing.T) {
 			},
 		},
 	}
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model := testutil.NewTestModel().
-				WithWindowSize(tt.width, tt.height).
-				WithSelectedItem(tt.selectedItem).
-				WithSearchQuery(tt.searchQuery).
-				Build()
+func buildGridTestModel(tt gridTestCase) types.Model {
+	model := testutil.NewTestModel().
+		WithWindowSize(tt.width, tt.height).
+		WithSelectedItem(tt.selectedItem).
+		WithSearchQuery(tt.searchQuery).
+		Build()
 
-			model.MCPItems = tt.mcpItems
+	model.MCPItems = tt.mcpItems
+	return model
+}
 
-			result := RenderFourColumnGrid(model)
+func assertGridContains(t *testing.T, result string, expected []string) {
+	for _, exp := range expected {
+		if !strings.Contains(result, exp) {
+			t.Errorf("RenderFourColumnGrid() should contain %q\nActual: %s", exp, result)
+		}
+	}
+}
 
-			for _, expected := range tt.expected {
-				if !strings.Contains(result, expected) {
-					t.Errorf("RenderFourColumnGrid() should contain %q\nActual: %s", expected, result)
-				}
-			}
-
-			for _, notExpected := range tt.notExpected {
-				if strings.Contains(result, notExpected) {
-					t.Errorf("RenderFourColumnGrid() should not contain %q\nActual: %s", notExpected, result)
-				}
-			}
-		})
+func assertGridNotContains(t *testing.T, result string, notExpected []string) {
+	for _, notExp := range notExpected {
+		if strings.Contains(result, notExp) {
+			t.Errorf("RenderFourColumnGrid() should not contain %q\nActual: %s", notExp, result)
+		}
 	}
 }
 

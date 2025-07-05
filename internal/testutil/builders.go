@@ -1,3 +1,4 @@
+// Package testutil provides utilities for building test models and data.
 package testutil
 
 import (
@@ -70,7 +71,7 @@ func (b *TestModelBuilder) WithMCPs(mcps []types.MCPItem) *TestModelBuilder {
 }
 
 // WithTempStorage is a placeholder for storage configuration (for testing with temp directories)
-func (b *TestModelBuilder) WithTempStorage(tempDir string) *TestModelBuilder {
+func (b *TestModelBuilder) WithTempStorage(_ string) *TestModelBuilder {
 	// This is used for testing but doesn't modify the model directly
 	// The tempDir is handled by test code when calling storage functions
 	return b
@@ -82,7 +83,7 @@ func (b *TestModelBuilder) Build() types.Model {
 }
 
 // BuildAndUpdate returns the model after applying a bubbletea message
-func (b *TestModelBuilder) BuildAndUpdate(msg tea.Msg) types.Model {
+func (b *TestModelBuilder) BuildAndUpdate(_ tea.Msg) types.Model {
 	// This will be implemented when we refactor the update logic
 	return b.model
 }
@@ -90,9 +91,10 @@ func (b *TestModelBuilder) BuildAndUpdate(msg tea.Msg) types.Model {
 // updateLayout updates the column layout based on terminal width
 func (b *TestModelBuilder) updateLayout() {
 	// Responsive breakpoints as specified in acceptance criteria
-	if b.model.Width >= types.WIDE_LAYOUT_MIN {
+	switch {
+	case b.model.Width >= types.WideLayoutMin:
 		// Wide: 4-column MCP grid for maximum information density
-		b.model.ColumnCount = types.WIDE_COLUMNS
+		b.model.ColumnCount = types.WideColumns
 		columnWidth := (b.model.Width - 10) / 4 // Account for spacing between 4 columns
 		b.model.Columns = []types.Column{
 			{Title: "MCPs Column 1", Width: columnWidth},
@@ -100,19 +102,22 @@ func (b *TestModelBuilder) updateLayout() {
 			{Title: "MCPs Column 3", Width: columnWidth},
 			{Title: "MCPs Column 4", Width: columnWidth},
 		}
-	} else if b.model.Width >= types.MEDIUM_LAYOUT_MIN {
-		// Medium: 2 columns (MCPs + Status/Details)
-		b.model.ColumnCount = types.MEDIUM_COLUMNS
+	case b.model.Width >= types.MediumLayoutMin:
+		// Medium: 3 columns (MCPs + Status/Details)
+		b.model.ColumnCount = 3
+		columnWidth := (b.model.Width - 8) / 3
+		b.model.Columns = []types.Column{
+			{Title: "MCPs", Width: columnWidth},
+			{Title: "Status", Width: columnWidth},
+			{Title: "Details", Width: columnWidth},
+		}
+	default:
+		// Narrow: 2 columns (all in one)
+		b.model.ColumnCount = 2
 		columnWidth := (b.model.Width - 6) / 2
 		b.model.Columns = []types.Column{
 			{Title: "MCPs", Width: columnWidth},
-			{Title: "Status & Details", Width: columnWidth},
-		}
-	} else {
-		// Narrow: 1 column (all in one)
-		b.model.ColumnCount = types.NARROW_COLUMNS
-		b.model.Columns = []types.Column{
-			{Title: "MCP Manager", Width: b.model.Width - 4},
+			{Title: "Status", Width: columnWidth},
 		}
 	}
 
