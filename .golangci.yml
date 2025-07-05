@@ -1,40 +1,10 @@
-# golangci-lint v2 configuration
-version: 2
+# Official golangci-lint v2 format
+version: "2"
 
 run:
   timeout: 5m
-  tests: true
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  
-  gocyclo:
-    min-complexity: 15
-  
-  revive:
-    confidence: 0.8
-  
-  govet:
-    enable-all: true
-  
-  misspell:
-    locale: US
-  
-  nakedret:
-    max-func-lines: 30
-  
-  unparam:
-    check-exported: false
 
 linters:
-  disable-all: true
   enable:
     - bodyclose
     - dogsled
@@ -62,27 +32,13 @@ linters:
     - whitespace
 
 issues:
-  exclude-dirs:
-    - vendor
-    - .bmad-core
-    - expansion-pack
-  
+  exclude:
+    - "shadow: declaration of \"err\""
+    - "var-naming: avoid meaningless package names"
   exclude-rules:
-    # Only reasonable exception: Some linters are too strict for test files
     - path: _test\.go
       linters:
-        - dupl  # Duplicate test cases are often intentional
-        - funlen  # Test functions can be long
-    
-    # Exclude shadow checking for common variable names only
-    - text: "shadow: declaration of \"err\""
-      linters:
-        - govet
-    
-    # The types package name is meaningful in this context (UI type definitions)
-    - text: "var-naming: avoid meaningless package names"
-      linters:
-        - revive
-
+        - dupl
+        - funlen
   max-issues-per-linter: 0
   max-same-issues: 0

@@ -47,7 +47,7 @@ jobs:
     - name: Run linting
       uses: golangci/golangci-lint-action@v7
       with:
-        version: v1.60.1
+        version: v2.2.1
         args: --timeout=5m
 
     - name: Build binary
