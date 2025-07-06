@@ -3,8 +3,8 @@ package handlers
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
@@ -110,7 +110,7 @@ func TestHandleSearchNavigationKeys(t *testing.T) {
 		// Test character input
 		key := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")}
 		newModel, cmd := HandleSearchNavigationKeys(model, key.String())
-		
+
 		assert.NotNil(t, newModel)
 		assert.Equal(t, "a", newModel.SearchQuery)
 		_ = cmd
@@ -127,7 +127,7 @@ func TestHandleSearchNavigationKeys(t *testing.T) {
 
 		key := tea.KeyMsg{Type: tea.KeyBackspace}
 		newModel, cmd := HandleSearchNavigationKeys(model, key.String())
-		
+
 		assert.NotNil(t, newModel)
 		assert.Equal(t, "tes", newModel.SearchQuery)
 		_ = cmd
@@ -366,7 +366,7 @@ func TestSearchHandling(t *testing.T) {
 			Build()
 
 		specialChars := []string{"@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "+", "="}
-		
+
 		for _, char := range specialChars {
 			key := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(char)}
 			newModel, _ := HandleSearchNavigationKeys(model, key.String())

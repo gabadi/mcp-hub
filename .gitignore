@@ -11,6 +11,12 @@
 # Project-specific binaries
 mcp-manager
 cc-mcp-manager
+mcp-hub
+mcp-hub-*
+
+# Build artifacts and distribution
+dist/
+bin/mcp-hub*
 
 # Test binary, built with `go test -c`
 *.test

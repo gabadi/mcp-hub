@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 
-	"cc-mcp-manager/internal/ui/handlers"
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/handlers"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -65,8 +65,8 @@ func (m Model) Init() tea.Cmd {
 		handlers.StartupLoadingCmd(),
 		handlers.StartupLoadingTimerCmd(0),
 		handlers.LoadingSpinnerCmd(types.LoadingStartup),
-		ProjectContextCheckCmd(),           // Start project context monitoring
-		DelayedClaudeStatusRefreshCmd(),    // Auto-detect Claude CLI after UI loads
+		ProjectContextCheckCmd(),        // Start project context monitoring
+		DelayedClaudeStatusRefreshCmd(), // Auto-detect Claude CLI after UI loads
 	)
 }
 
@@ -138,7 +138,7 @@ func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) (tea.Model, t
 	if m.LoadingOverlay != nil && m.LoadingOverlay.Active && m.LoadingOverlay.Type == types.LoadingClaude {
 		m.StopLoadingOverlay()
 	}
-	
+
 	// Update model with Claude status
 	m.Model = services.UpdateModelWithClaudeStatus(m.Model, msg.Status)
 
@@ -200,7 +200,7 @@ func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) (Model, tea.Cmd
 		// Start timer for error state
 		return m, handlers.TimerCmd("success_timer")
 	}
-	
+
 	m.ToggleState = types.ToggleSuccess
 	activationState := "deactivated"
 	if msg.Activate {
@@ -419,7 +419,7 @@ type StartClaudeDetectionMsg struct{}
 func (m Model) handleStartClaudeDetectionMsg(_ StartClaudeDetectionMsg) (tea.Model, tea.Cmd) {
 	// Start Claude detection loading overlay
 	m.StartLoadingOverlay(types.LoadingClaude)
-	
+
 	// Return command to refresh Claude status and spinner
 	return m, tea.Batch(
 		RefreshClaudeStatusCmd(),

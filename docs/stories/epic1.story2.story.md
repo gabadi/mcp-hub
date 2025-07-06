@@ -88,7 +88,7 @@ type MCPItem struct {
 ### File Locations
 [Source: Project Structure Analysis]
 - Config file should be stored using Go's os/user.UserConfigDir() for cross-platform support
-- Target location: ~/.config/cc-mcp-manager/inventory.json (Linux/macOS) or equivalent Windows path
+- Target location: ~/.config/mcp-hub/inventory.json (Linux/macOS) or equivalent Windows path
 - Create directory structure if it doesn't exist
 - New storage service should be added to: `internal/ui/services/storage_service.go`
 
@@ -263,7 +263,7 @@ No debug issues encountered during implementation. All logging functionality wor
 ### TD-001: Configuration File Location Strategy
 **Decision:** Use Go's os/user.UserConfigDir() with application subdirectory
 **Implementation:**
-- Location: ~/.config/cc-mcp-manager/inventory.json (Unix) or equivalent Windows AppData
+- Location: ~/.config/mcp-hub/inventory.json (Unix) or equivalent Windows AppData
 - Create directory structure as needed with appropriate permissions
 - Log full path for user reference and debugging
 **Rationale:** Follows OS conventions, provides user control, enables easy backup/sharing

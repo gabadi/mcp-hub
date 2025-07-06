@@ -270,13 +270,9 @@ type DirectoryChangeMsg struct {
 }
 
 // getDefaultMCPs returns the default MCP items for fallback
-// For MVP, we start with an empty inventory so users only add MCPs they actually have configured
+// MCPs must be explicitly added by users, no defaults are provided
 func getDefaultMCPs() []MCPItem {
-	return []MCPItem{
-		{Name: "github-mcp", Type: "CMD", Active: true, Command: "github"},
-		{Name: "docker-tools", Type: "SSE", Active: false, Command: "docker"},
-		{Name: "context7", Type: "JSON", Active: true, Command: "context7"},
-	}
+	return []MCPItem{}
 }
 
 // NewModel creates a new application model

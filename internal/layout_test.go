@@ -3,8 +3,8 @@ package internal
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/ui"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

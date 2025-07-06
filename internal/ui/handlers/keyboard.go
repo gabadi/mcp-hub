@@ -1,23 +1,23 @@
 package handlers
 
 import (
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 // Keyboard key constants
 const (
-	KeyTab     = "tab"
-	KeyEsc     = "esc"
-	KeyEnter   = "enter"
-	KeyCtrlC   = "ctrl+c"
-	KeyCtrlV   = "ctrl+v"
-	KeyDown    = "down"
-	KeyUp      = "up"
-	KeyBackspace = "backspace"
-	KeyCmdC    = "cmd+c"
-	KeyCmdV    = "cmd+v"
+	KeyTab        = "tab"
+	KeyEsc        = "esc"
+	KeyEnter      = "enter"
+	KeyCtrlC      = "ctrl+c"
+	KeyCtrlV      = "ctrl+v"
+	KeyDown       = "down"
+	KeyUp         = "up"
+	KeyBackspace  = "backspace"
+	KeyCmdC       = "cmd+c"
+	KeyCmdV       = "cmd+v"
 	KeyCmdSymbolC = "⌘c"
 	KeyCmdSymbolV = "⌘v"
 )
@@ -25,7 +25,7 @@ const (
 // HandleKeyPress processes keyboard input based on current state
 func HandleKeyPress(model types.Model, msg tea.KeyMsg) (types.Model, tea.Cmd) {
 	key := msg.String()
-	
+
 	// Handle special key types for search states
 	if model.State == types.SearchActiveNavigation && model.SearchInputActive && msg.Type == tea.KeyRunes && len(msg.Runes) > 0 && key != KeyEnter && key != KeyTab && key != KeyEsc {
 		// Add runes to search query (only if not a special command key)

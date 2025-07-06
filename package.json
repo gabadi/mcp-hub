@@ -1,0 +1,29 @@
+{
+  "name": "mcp-hub-tui",
+  "version": "1.0.0",
+  "description": "TUI for managing Claude MCP configurations",
+  "bin": {
+    "mcp-hub-tui": "./index.js"
+  },
+  "files": [
+    "bin/",
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node test/index.test.js",
+    "test-platforms": "node -e \"console.log('Platform:', process.platform, 'Arch:', process.arch)\"",
+    "validate": "node -c index.js",
+    "prepack": "npm run validate && npm test"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "keywords": ["claude", "mcp", "terminal", "tui", "cli"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabadi/mcp-hub.git"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/gabadi/mcp-hub#readme"
+}

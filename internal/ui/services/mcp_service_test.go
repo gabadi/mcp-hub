@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test helpers for MCP service tests

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Use types.ClaudeStatus for consistency
@@ -21,11 +21,11 @@ import (
 const (
 	// ClaudeCommand is the command name for the Claude CLI
 	ClaudeCommand = "claude"
-	
+
 	// PlatformDarwin represents the macOS operating system identifier
-	PlatformDarwin   = "darwin"
-	// PlatformWindows represents the Windows operating system identifier  
-	PlatformWindows  = "windows"
+	PlatformDarwin = "darwin"
+	// PlatformWindows represents the Windows operating system identifier
+	PlatformWindows = "windows"
 	// TestActiveStatus represents the active status string for testing
 	TestActiveStatus = "active"
 )
@@ -51,13 +51,13 @@ type ToggleResult struct {
 const (
 	ErrorTypeClaudeUnavailable = "CLAUDE_UNAVAILABLE"
 	// Service string constants
-	UnknownStatus = "Unknown"
-	ErrorTypeNetworkTimeout    = "NETWORK_TIMEOUT"
-	ErrorTypePermissionError   = "PERMISSION_ERROR"
-	ErrorTypeMCPAlreadyExists  = "MCP_ALREADY_EXISTS"
-	ErrorTypeMCPNotFound       = "MCP_NOT_FOUND"
-	ErrorTypeInvalidCommand    = "INVALID_COMMAND"
-	ErrorTypeUnknownError      = "UNKNOWN_ERROR"
+	UnknownStatus             = "Unknown"
+	ErrorTypeNetworkTimeout   = "NETWORK_TIMEOUT"
+	ErrorTypePermissionError  = "PERMISSION_ERROR"
+	ErrorTypeMCPAlreadyExists = "MCP_ALREADY_EXISTS"
+	ErrorTypeMCPNotFound      = "MCP_NOT_FOUND"
+	ErrorTypeInvalidCommand   = "INVALID_COMMAND"
+	ErrorTypeUnknownError     = "UNKNOWN_ERROR"
 )
 
 // ErrorMessages provides templates for user-friendly error messages
@@ -546,7 +546,7 @@ func (cs *ClaudeService) validateMCPConfig(mcpConfig *types.MCPItem) error {
 	if !nameRegex.MatchString(mcpConfig.Name) {
 		return fmt.Errorf("invalid MCP name: contains unsafe characters")
 	}
-	
+
 	// Validate environment variable keys
 	envKeyRegex := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 	for key := range mcpConfig.Environment {
@@ -554,7 +554,7 @@ func (cs *ClaudeService) validateMCPConfig(mcpConfig *types.MCPItem) error {
 			return fmt.Errorf("invalid environment variable key: %s", key)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -564,7 +564,7 @@ func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.M
 	if err := cs.validateMCPConfig(mcpConfig); err != nil {
 		return nil, err
 	}
-	
+
 	args := []string{"mcp", "add", mcpConfig.Name}
 
 	// Add the command or URL
@@ -600,7 +600,7 @@ func (cs *ClaudeService) buildAddCommand(ctx context.Context, mcpConfig *types.M
 	if ClaudeCommand != "claude" {
 		return nil, fmt.Errorf("invalid command name")
 	}
-	
+
 	// Use a secure command executor
 	return createSecureCommand(ctx, ClaudeCommand, args...)
 }
@@ -611,7 +611,7 @@ func createSecureCommand(ctx context.Context, cmdName string, args ...string) (*
 	if !allowedCommands[cmdName] {
 		return nil, fmt.Errorf("command not allowed: %s", cmdName)
 	}
-	
+
 	// For extra security, ensure we only allow the specific command we expect
 	switch cmdName {
 	case "claude":

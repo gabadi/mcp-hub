@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui"
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

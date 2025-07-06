@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // GetFilteredMCPs returns MCPs filtered by search query

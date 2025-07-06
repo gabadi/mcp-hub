@@ -1,4 +1,4 @@
-module cc-mcp-manager
+module mcp-hub
 
 go 1.24
 

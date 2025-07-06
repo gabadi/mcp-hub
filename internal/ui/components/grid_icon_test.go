@@ -3,7 +3,7 @@ package components
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test icon constants
@@ -14,14 +14,14 @@ const (
 
 func TestGetEnhancedStatusIndicator_ToggleStates(t *testing.T) {
 	mcpItem := getTestMCPItem()
-	
+
 	testCases := getStatusIndicatorTestCases()
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			model := buildTestModel(tc.toggleState, tc.toggleMCPName)
 			mcp := getMCPForTest(mcpItem, tc.mcpActive, tc.mcpName)
-			
+
 			icon := getEnhancedStatusIndicator(model, mcp)
 			assertIconEquals(t, icon, tc.expected, tc.description)
 		})

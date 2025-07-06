@@ -43,9 +43,9 @@ func TestNewModel(t *testing.T) {
 		t.Errorf("Expected 1 column, got %d", len(model.Columns))
 	}
 
-	// Model now starts with default MCPs to facilitate initial testing and user onboarding
-	if len(model.MCPItems) != 3 {
-		t.Errorf("Expected MCPItems to have 3 default items, got %d items", len(model.MCPItems))
+	// Model now starts with empty MCPs - users must explicitly add MCPs
+	if len(model.MCPItems) != 0 {
+		t.Errorf("Expected MCPItems to be empty, got %d items", len(model.MCPItems))
 	}
 
 	if model.FormErrors == nil {
@@ -83,9 +83,9 @@ func TestNewModelWithMCPs(t *testing.T) {
 func TestGetDefaultMCPs(t *testing.T) {
 	defaults := getDefaultMCPs()
 
-	// Default MCPs now include common examples to facilitate user onboarding
-	if len(defaults) != 3 {
-		t.Errorf("Expected default MCPs to have 3 items for user onboarding, got %d items", len(defaults))
+	// Default MCPs are now empty - users must explicitly add MCPs
+	if len(defaults) != 0 {
+		t.Errorf("Expected default MCPs to be empty, got %d items", len(defaults))
 	}
 
 	// Verify it returns a valid slice (not nil)
@@ -492,19 +492,19 @@ func TestLoadingOverlayMethods(t *testing.T) {
 	t.Run("StartLoadingOverlay", func(t *testing.T) {
 		testStartLoadingOverlay(t)
 	})
-	
+
 	t.Run("UpdateLoadingMessage", func(t *testing.T) {
 		testUpdateLoadingMessage(t)
 	})
-	
+
 	t.Run("StopLoadingOverlay", func(t *testing.T) {
 		testStopLoadingOverlay(t)
 	})
-	
+
 	t.Run("AdvanceSpinner", func(t *testing.T) {
 		testAdvanceSpinner(t)
 	})
-	
+
 	t.Run("IsLoadingOverlayActive", func(t *testing.T) {
 		testIsLoadingOverlayActive(t)
 	})
@@ -512,9 +512,9 @@ func TestLoadingOverlayMethods(t *testing.T) {
 
 func testStartLoadingOverlay(t *testing.T) {
 	model := NewModel()
-	
+
 	model.StartLoadingOverlay(LoadingStartup)
-	
+
 	if !model.IsLoadingOverlayActive() {
 		t.Error("Loading overlay should be active after start")
 	}
@@ -530,16 +530,16 @@ func testUpdateLoadingMessage(t *testing.T) {
 	model := NewModel()
 	model.StartLoadingOverlay(LoadingRefresh)
 	oldMessage := model.LoadingOverlay.Message
-	
+
 	model.UpdateLoadingMessage("New message")
-	
+
 	if model.LoadingOverlay.Message != "New message" {
 		t.Errorf("Expected message 'New message', got '%s'", model.LoadingOverlay.Message)
 	}
 	if !model.IsLoadingOverlayActive() {
 		t.Error("Loading overlay should remain active")
 	}
-	
+
 	// Test that it changed from old message
 	if model.LoadingOverlay.Message == oldMessage {
 		t.Error("Message should have changed")
@@ -549,14 +549,14 @@ func testUpdateLoadingMessage(t *testing.T) {
 func testStopLoadingOverlay(t *testing.T) {
 	model := NewModel()
 	model.StartLoadingOverlay(LoadingStartup)
-	
+
 	// Ensure it's active first
 	if !model.IsLoadingOverlayActive() {
 		t.Error("Setup: Loading overlay should be active before stop")
 	}
-	
+
 	model.StopLoadingOverlay()
-	
+
 	if model.IsLoadingOverlayActive() {
 		t.Error("Loading overlay should be inactive after stop")
 	}
@@ -568,20 +568,20 @@ func testStopLoadingOverlay(t *testing.T) {
 func testAdvanceSpinner(t *testing.T) {
 	model := NewModel()
 	model.StartLoadingOverlay(LoadingStartup)
-	
+
 	initialSpinner := model.LoadingOverlay.Spinner
-	
+
 	model.AdvanceSpinner()
-	
+
 	if model.LoadingOverlay.Spinner == initialSpinner {
 		t.Error("Spinner should have advanced")
 	}
-	
+
 	// Test multiple advances to check wrap around
 	for i := 0; i < 10; i++ {
 		model.AdvanceSpinner()
 	}
-	
+
 	// Should still be a valid spinner value (0-3)
 	if model.LoadingOverlay.Spinner < 0 || model.LoadingOverlay.Spinner > 3 {
 		t.Errorf("Spinner should be between 0-3, got %d", model.LoadingOverlay.Spinner)
@@ -590,18 +590,18 @@ func testAdvanceSpinner(t *testing.T) {
 
 func testIsLoadingOverlayActive(t *testing.T) {
 	model := NewModel()
-	
+
 	// Initially inactive
 	if model.IsLoadingOverlayActive() {
 		t.Error("Loading overlay should be inactive initially")
 	}
-	
+
 	// Activate
 	model.StartLoadingOverlay(LoadingStartup)
 	if !model.IsLoadingOverlayActive() {
 		t.Error("Loading overlay should be active after start")
 	}
-	
+
 	// Deactivate
 	model.StopLoadingOverlay()
 	if model.IsLoadingOverlayActive() {
@@ -629,19 +629,19 @@ func TestLoadingMessageGeneration(t *testing.T) {
 	// Test loading startup message
 	model := NewModel()
 	model.StartLoadingOverlay(LoadingStartup)
-	
+
 	if model.LoadingOverlay.Message == "" {
 		t.Error("Startup loading message should not be empty")
 	}
-	
+
 	// Test loading refresh message
 	model2 := NewModel()
 	model2.StartLoadingOverlay(LoadingRefresh)
-	
+
 	if model2.LoadingOverlay.Message == "" {
 		t.Error("Refresh loading message should not be empty")
 	}
-	
+
 	// Messages should be different for different types
 	if model.LoadingOverlay.Message == model2.LoadingOverlay.Message {
 		t.Error("Different loading types should have different messages")
@@ -655,7 +655,7 @@ func TestMessageTypes(t *testing.T) {
 			t.Errorf("Expected ID 'timer-42', got '%s'", msg.ID)
 		}
 	})
-	
+
 	t.Run("LoadingProgressMsg", func(t *testing.T) {
 		msg := LoadingProgressMsg{
 			Type:    LoadingRefresh,
@@ -672,7 +672,7 @@ func TestMessageTypes(t *testing.T) {
 			t.Error("Expected Done to be false")
 		}
 	})
-	
+
 	t.Run("LoadingStepMsg", func(t *testing.T) {
 		msg := LoadingStepMsg{
 			Type: LoadingStartup,
@@ -685,20 +685,20 @@ func TestMessageTypes(t *testing.T) {
 			t.Errorf("Expected LoadingStartup, got %v", msg.Type)
 		}
 	})
-	
+
 	t.Run("LoadingSpinnerMsg", func(t *testing.T) {
 		msg := LoadingSpinnerMsg{Type: LoadingStartup}
 		if msg.Type != LoadingStartup {
 			t.Errorf("Expected LoadingStartup, got %v", msg.Type)
 		}
 	})
-	
+
 	t.Run("ProjectContextCheckMsg", func(_ *testing.T) {
 		msg := ProjectContextCheckMsg{}
 		// Empty struct, just test that it compiles and exists
 		_ = msg
 	})
-	
+
 	t.Run("DirectoryChangeMsg", func(t *testing.T) {
 		msg := DirectoryChangeMsg{NewPath: "/new/path"}
 		if msg.NewPath != "/new/path" {
@@ -725,7 +725,7 @@ func TestProjectContextStruct(t *testing.T) {
 		DisplayPath:    "/test/project",
 		SyncStatusText: "Synced",
 	}
-	
+
 	if ctx.CurrentPath != "/test/project" {
 		t.Error("ProjectContext CurrentPath not set correctly")
 	}
@@ -751,7 +751,7 @@ func TestLoadingOverlayStruct(t *testing.T) {
 		Cancellable: true,
 		Type:        LoadingStartup,
 	}
-	
+
 	if !overlay.Active {
 		t.Error("LoadingOverlay Active not set correctly")
 	}
@@ -779,7 +779,7 @@ func TestSpinnerCharGeneration(t *testing.T) {
 		{SpinnerFrame3, "◑"},
 		{SpinnerFrame4, "◒"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run("Spinner state", func(t *testing.T) {
 			result := tt.state.GetSpinnerChar()

@@ -9,21 +9,21 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 )
 
 // Modal string constants
 const (
 	// Key constants
-	KeyDownArrow = "down"
+	KeyDownArrow    = "down"
 	KeyBackspaceKey = "backspace"
-	KeyCmdCopy = "cmd+c"
-	KeyCmdPaste = "cmd+v"
-	
+	KeyCmdCopy      = "cmd+c"
+	KeyCmdPaste     = "cmd+v"
+
 	// Error message constants
 	ErrorNameRequired = "Name is required"
-	ErrorNameExists = "Name already exists"
+	ErrorNameExists   = "Name already exists"
 )
 
 // SuccessMsg represents a success message

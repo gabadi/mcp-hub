@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui"
-	"cc-mcp-manager/internal/ui/services"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui"
+	"mcp-hub/internal/ui/services"
+	"mcp-hub/internal/ui/types"
 )
 
 // Integration tests for complete user workflows
@@ -37,23 +37,23 @@ func TestCompleteUserWorkflow_InitializeAndNavigate(t *testing.T) {
 		assert.Equal(t, 0, model.GetSelectedItem())
 		assert.False(t, model.GetSearchActive())
 
-		// Verify MCP data is loaded
-		assert.Greater(t, len(model.MCPItems), 0, "MCPs should be loaded on initialization")
+		// Verify MCP data starts empty - users must explicitly add MCPs
+		assert.Equal(t, 0, len(model.MCPItems), "MCPs should start empty on initialization")
 
-		// Test navigation workflow
-		// In 4-column layout, right arrow key should move within the grid
+		// Test navigation workflow with empty MCPs
+		// Navigation should still work even with no MCPs
 		keyMsg := tea.KeyMsg{Type: tea.KeyRight}
 		updatedModel, cmd := model.Update(keyMsg)
 		m := updatedModel.(ui.Model)
 
-		// In 4-column layout, navigation moves within the grid, not between columns
-		assert.Equal(t, 1, m.GetSelectedItem(), "Should move to next item in grid")
+		// With empty MCPs, navigation should stay at 0
+		assert.Equal(t, 0, m.GetSelectedItem(), "Should stay at 0 with empty MCPs")
 		assert.Nil(t, cmd, "Navigation should not produce commands")
 
-		// Continue navigation
+		// Continue navigation with empty MCPs
 		updatedModel2, _ := m.Update(keyMsg)
 		m2 := updatedModel2.(ui.Model)
-		assert.Equal(t, 2, m2.GetSelectedItem(), "Should continue grid navigation")
+		assert.Equal(t, 0, m2.GetSelectedItem(), "Should stay at 0 with empty MCPs")
 	})
 }
 
@@ -218,8 +218,8 @@ func TestCompleteUserWorkflow_ErrorHandlingAndRecovery(t *testing.T) {
 
 		// Test that model still functions even with storage errors
 		// The application should gracefully handle storage issues
-		assert.NotNil(t, model.MCPItems, "MCPs should still be available from defaults")
-		assert.Greater(t, len(model.MCPItems), 0, "Should have default MCPs even with storage issues")
+		assert.NotNil(t, model.MCPItems, "MCPs should still be available (though empty)")
+		assert.Equal(t, 0, len(model.MCPItems), "Should have empty MCPs even with storage issues")
 
 		// Test that UI operations still work
 		searchKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("/")}
@@ -228,12 +228,12 @@ func TestCompleteUserWorkflow_ErrorHandlingAndRecovery(t *testing.T) {
 
 		assert.True(t, m.GetSearchActive(), "Search should still work with storage errors")
 
-		// Test navigation (in 4-column layout, right arrow moves SelectedItem)
+		// Test navigation with empty MCPs (should stay at 0)
 		rightKey := tea.KeyMsg{Type: tea.KeyRight}
 		updatedModel2, _ := m.Update(rightKey)
 		m2 := updatedModel2.(ui.Model)
 
-		assert.Equal(t, 1, m2.GetSelectedItem(), "Navigation should still work with storage errors")
+		assert.Equal(t, 0, m2.GetSelectedItem(), "Navigation should stay at 0 with empty MCPs")
 	})
 }
 

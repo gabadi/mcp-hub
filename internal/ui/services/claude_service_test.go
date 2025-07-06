@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // Test platform constants
@@ -329,12 +329,14 @@ func TestUpdateModelWithClaudeStatusError(t *testing.T) {
 }
 
 func TestSyncMCPStatus(t *testing.T) {
-	// Create model with some MCPs
-	model := types.NewModel()
-	// Set some MCPs as inactive initially
-	for i := range model.MCPItems {
-		model.MCPItems[i].Active = false
+	// Create model with test MCPs (since we now start with empty MCPs)
+	testMCPs := []types.MCPItem{
+		{Name: "github-mcp", Type: "CMD", Active: false, Command: "github"},
+		{Name: "docker-tools", Type: "SSE", Active: false, Command: "docker"},
+		{Name: "context7", Type: "JSON", Active: false, Command: "context7"},
+		{Name: "ht-mcp", Type: "CMD", Active: false, Command: "ht"},
 	}
+	model := types.NewModelWithMCPs(testMCPs)
 
 	// Simulate Claude reporting some MCPs as active
 	activeMCPs := []string{"github-mcp", "context7", "ht-mcp"}
@@ -679,19 +681,19 @@ func getClassifyErrorTestCases() []struct {
 	permissionCases := getPermissionErrorCases()
 	unavailableCases := getUnavailableErrorCases()
 	unknownCases := getUnknownErrorCases()
-	
+
 	var allCases []struct {
 		name     string
 		errMsg   string
 		output   string
 		expected string
 	}
-	
+
 	allCases = append(allCases, timeoutCases...)
 	allCases = append(allCases, permissionCases...)
 	allCases = append(allCases, unavailableCases...)
 	allCases = append(allCases, unknownCases...)
-	
+
 	return allCases
 }
 
@@ -1078,10 +1080,10 @@ func createGetSyncStatusTests(baseTime time.Time) []struct {
 		model    types.Model
 		expected types.SyncStatus
 	}
-	
+
 	tests = append(tests, createErrorStatusTests()...)
 	tests = append(tests, createValidStatusTests(baseTime)...)
-	
+
 	return tests
 }
 
@@ -1114,7 +1116,7 @@ func createErrorStatusTests() []struct {
 			name: "no sync performed",
 			model: types.Model{
 				ClaudeAvailable: true,
-				LastClaudeSync: time.Time{}, // Zero time
+				LastClaudeSync:  time.Time{}, // Zero time
 			},
 			expected: types.SyncStatusUnknown,
 		},

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/types"
 )
 
 func TestRenderFooter(t *testing.T) {
@@ -45,11 +45,11 @@ func getFooterTestCases() []footerTestCase {
 func getSearchActiveTestCases() []footerTestCase {
 	return []footerTestCase{
 		{
-			name:         "Search active shows search input with cursor",
-			searchActive: true,
-			searchQuery:  "test",
-			width:        120,
-			height:       40,
+			name:             "Search active shows search input with cursor",
+			searchActive:     true,
+			searchQuery:      "test",
+			width:            120,
+			height:           40,
 			expectedContains: []string{"Search:", "test"},
 		},
 		{
@@ -78,11 +78,11 @@ func getSearchActiveTestCases() []footerTestCase {
 func getSearchInactiveTestCases() []footerTestCase {
 	return []footerTestCase{
 		{
-			name:         "Search inactive with query shows search results info",
-			searchActive: false,
-			searchQuery:  "github",
-			width:        120,
-			height:       40,
+			name:             "Search inactive with query shows search results info",
+			searchActive:     false,
+			searchQuery:      "github",
+			width:            120,
+			height:           40,
 			expectedContains: []string{"Found", "matching 'github'", "ESC to clear", "Terminal: 120x40"},
 		},
 	}
@@ -91,11 +91,11 @@ func getSearchInactiveTestCases() []footerTestCase {
 func getDefaultFooterTestCases() []footerTestCase {
 	return []footerTestCase{
 		{
-			name:         "No search shows default footer with project context",
-			searchActive: false,
-			searchQuery:  "",
-			width:        100,
-			height:       30,
+			name:             "No search shows default footer with project context",
+			searchActive:     false,
+			searchQuery:      "",
+			width:            100,
+			height:           30,
 			expectedContains: []string{"📁", "MCPs", "R=Retry Claude"},
 		},
 	}

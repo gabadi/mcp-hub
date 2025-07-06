@@ -1,11 +1,11 @@
-// Package main provides the cc-mcp-manager CLI application for managing Claude MCP configurations.
+// Package main provides the mcp-hub CLI application for managing Claude MCP configurations.
 package main
 
 import (
 	"log"
 	"os"
 
-	"cc-mcp-manager/internal/ui"
+	"mcp-hub/internal/ui"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -19,7 +19,7 @@ func main() {
 func runApp() error {
 	// Redirect log output to a file to prevent interference with TUI
 	var logFile *os.File
-	if file, err := os.OpenFile("/tmp/cc-mcp-manager.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
+	if file, err := os.OpenFile("/tmp/mcp-hub.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
 		logFile = file
 		log.SetOutput(logFile)
 		defer func() {

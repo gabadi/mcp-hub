@@ -3,9 +3,9 @@ package ui
 import (
 	"testing"
 
-	"cc-mcp-manager/internal/testutil"
-	"cc-mcp-manager/internal/ui/handlers"
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/testutil"
+	"mcp-hub/internal/ui/handlers"
+	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -426,15 +426,15 @@ func TestModel_StateConsistency(t *testing.T) {
 
 func TestModel_HandleSuccessMsg(t *testing.T) {
 	model := NewModel()
-	
+
 	// Create a success message
 	successMsg := handlers.SuccessMsg{
 		Message: "Test success message",
 	}
-	
+
 	updatedModel, cmd := model.Update(successMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	if cmd != nil {
@@ -444,7 +444,7 @@ func TestModel_HandleSuccessMsg(t *testing.T) {
 
 func TestModel_HandleClaudeStatusMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a Claude status message
 	statusMsg := handlers.ClaudeStatusMsg{
 		Status: types.ClaudeStatus{
@@ -453,10 +453,10 @@ func TestModel_HandleClaudeStatusMsg(_ *testing.T) {
 			ActiveMCPs: []string{TestPlatformGithub, "docker"},
 		},
 	}
-	
+
 	updatedModel, cmd := model.Update(statusMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -464,17 +464,17 @@ func TestModel_HandleClaudeStatusMsg(_ *testing.T) {
 
 func TestModel_HandleToggleResultMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a toggle result message
 	toggleMsg := handlers.ToggleResultMsg{
 		MCPName: TestPlatformGithub,
 		Success: true,
 		Error:   "",
 	}
-	
+
 	updatedModel, cmd := model.Update(toggleMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -482,15 +482,15 @@ func TestModel_HandleToggleResultMsg(_ *testing.T) {
 
 func TestModel_HandleTimerTickMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a timer tick message
 	timerMsg := types.TimerTickMsg{
 		ID: "1",
 	}
-	
+
 	updatedModel, cmd := model.Update(timerMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -498,17 +498,17 @@ func TestModel_HandleTimerTickMsg(_ *testing.T) {
 
 func TestModel_HandleLoadingProgressMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a loading progress message
 	progressMsg := types.LoadingProgressMsg{
 		Type:    types.LoadingStartup,
 		Message: "Loading...",
 		Done:    false,
 	}
-	
+
 	updatedModel, cmd := model.Update(progressMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -516,16 +516,16 @@ func TestModel_HandleLoadingProgressMsg(_ *testing.T) {
 
 func TestModel_HandleLoadingStepMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a loading step message
 	stepMsg := types.LoadingStepMsg{
 		Type: types.LoadingStartup,
 		Step: 1,
 	}
-	
+
 	updatedModel, cmd := model.Update(stepMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -533,15 +533,15 @@ func TestModel_HandleLoadingStepMsg(_ *testing.T) {
 
 func TestModel_HandleLoadingSpinnerMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a loading spinner message
 	spinnerMsg := types.LoadingSpinnerMsg{
 		Type: types.LoadingStartup,
 	}
-	
+
 	updatedModel, cmd := model.Update(spinnerMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -549,13 +549,13 @@ func TestModel_HandleLoadingSpinnerMsg(_ *testing.T) {
 
 func TestModel_HandleProjectContextCheckMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a project context check message
 	contextMsg := types.ProjectContextCheckMsg{}
-	
+
 	updatedModel, cmd := model.Update(contextMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -563,15 +563,15 @@ func TestModel_HandleProjectContextCheckMsg(_ *testing.T) {
 
 func TestModel_HandleDirectoryChangeMsg(_ *testing.T) {
 	model := NewModel()
-	
+
 	// Create a directory change message
 	dirMsg := types.DirectoryChangeMsg{
 		NewPath: "/new/path",
 	}
-	
+
 	updatedModel, cmd := model.Update(dirMsg)
 	m := updatedModel.(Model)
-	
+
 	// Should update model state appropriately
 	_ = m
 	_ = cmd // May return command for follow-up actions
@@ -580,7 +580,7 @@ func TestModel_HandleDirectoryChangeMsg(_ *testing.T) {
 func TestPackageCommandGenerators(t *testing.T) {
 	t.Run("ProjectContextCheckCmd", func(_ *testing.T) {
 		cmd := ProjectContextCheckCmd()
-		
+
 		if cmd == nil {
 			t.Errorf("ProjectContextCheckCmd should return a valid command")
 		}
@@ -588,7 +588,7 @@ func TestPackageCommandGenerators(t *testing.T) {
 
 	t.Run("DirectoryChangeCmd", func(_ *testing.T) {
 		cmd := DirectoryChangeCmd("/test/path")
-		
+
 		if cmd == nil {
 			t.Errorf("DirectoryChangeCmd should return a valid command")
 		}
@@ -596,7 +596,7 @@ func TestPackageCommandGenerators(t *testing.T) {
 
 	t.Run("RefreshClaudeStatusCmd", func(_ *testing.T) {
 		cmd := RefreshClaudeStatusCmd()
-		
+
 		if cmd == nil {
 			t.Errorf("RefreshClaudeStatusCmd should return a valid command")
 		}
@@ -606,18 +606,18 @@ func TestPackageCommandGenerators(t *testing.T) {
 func TestModel_ErrorHandling(t *testing.T) {
 	t.Run("Model handles nil messages gracefully", func(_ *testing.T) {
 		model := NewModel()
-		
+
 		// Test with nil-like empty message
 		msg := struct{}{}
-		
+
 		updatedModel, cmd := model.Update(msg)
 		m := updatedModel.(Model)
-		
+
 		// Should return unchanged model
 		if m.GetState() != model.GetState() {
 			t.Errorf("Update() with nil message should preserve state")
 		}
-		
+
 		if cmd != nil {
 			t.Errorf("Update() with nil message should return nil cmd")
 		}
@@ -632,21 +632,21 @@ func TestModel_ErrorHandling(t *testing.T) {
 			WithSelectedItem(2).
 			WithActiveColumn(1).
 			Build()
-		
+
 		uiModel := Model{Model: model}
 		originalState := uiModel.GetState()
 		originalQuery := uiModel.GetSearchQuery()
-		
+
 		// Send unknown message
 		msg := struct{}{}
 		updatedModel, _ := uiModel.Update(msg)
 		m := updatedModel.(Model)
-		
+
 		// State should be preserved
 		if m.GetState() != originalState {
 			t.Errorf("State should be preserved after unknown message")
 		}
-		
+
 		if m.GetSearchQuery() != originalQuery {
 			t.Errorf("Search query should be preserved after unknown message")
 		}
@@ -692,7 +692,7 @@ func TestModel_Integration(t *testing.T) {
 			{Name: "postgres", Type: "CMD", Active: false, Command: "postgres-mcp"},
 			{Name: "gitlab-mcp", Type: "CMD", Active: false, Command: "gitlab-mcp"},
 		}
-		
+
 		model := Model{Model: types.NewModelWithMCPs(testMCPs)}
 
 		// Should have substantial test MCP data

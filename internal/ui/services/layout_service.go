@@ -1,7 +1,7 @@
 package services
 
 import (
-	"cc-mcp-manager/internal/ui/types"
+	"mcp-hub/internal/ui/types"
 )
 
 // UpdateLayout updates the column layout based on terminal width
