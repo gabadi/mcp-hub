@@ -51,21 +51,7 @@ release:
   prerelease: auto
   name_template: "{{.ProjectName}}-v{{.Version}}"
 
-# Custom NPM package creation using after hooks
-after:
-  hooks:
-    - mkdir -p dist/npm-package/bin
-    - cp index.js dist/npm-package/
-    - cp package.json dist/npm-package/
-    - cp README.md dist/npm-package/
-    - cp LICENSE dist/npm-package/
-    - cp dist/mcp-hub_linux_amd64_v1/mcp-hub dist/npm-package/bin/mcp-hub-linux-amd64
-    - cp dist/mcp-hub_linux_arm64/mcp-hub dist/npm-package/bin/mcp-hub-linux-arm64
-    - cp dist/mcp-hub_darwin_amd64_v1/mcp-hub dist/npm-package/bin/mcp-hub-darwin-amd64
-    - cp dist/mcp-hub_darwin_arm64/mcp-hub dist/npm-package/bin/mcp-hub-darwin-arm64
-    - cp dist/mcp-hub_windows_amd64_v1/mcp-hub.exe dist/npm-package/bin/mcp-hub-windows-amd64.exe
-    - cp dist/mcp-hub_windows_arm64/mcp-hub.exe dist/npm-package/bin/mcp-hub-windows-arm64.exe
-    - cd dist/npm-package && npm publish
+# NPM package will be created manually using GitHub Actions script
 
 changelog:
   sort: asc

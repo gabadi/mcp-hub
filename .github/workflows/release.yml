@@ -32,4 +32,33 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          
+      - name: Create NPM Package
+        run: |
+          # Create NPM package directory structure
+          mkdir -p npm-package/bin
+          
+          # Copy package files
+          cp index.js npm-package/
+          cp package.json npm-package/
+          cp README.md npm-package/
+          cp LICENSE npm-package/
+          
+          # Copy binaries from GoReleaser output
+          cp dist/mcp-hub_linux_amd64_v1/mcp-hub npm-package/bin/mcp-hub-linux-amd64
+          cp dist/mcp-hub_linux_arm64/mcp-hub npm-package/bin/mcp-hub-linux-arm64
+          cp dist/mcp-hub_darwin_amd64_v1/mcp-hub npm-package/bin/mcp-hub-darwin-amd64
+          cp dist/mcp-hub_darwin_arm64/mcp-hub npm-package/bin/mcp-hub-darwin-arm64
+          cp dist/mcp-hub_windows_amd64_v1/mcp-hub.exe npm-package/bin/mcp-hub-windows-amd64.exe
+          cp dist/mcp-hub_windows_arm64/mcp-hub.exe npm-package/bin/mcp-hub-windows-arm64.exe
+          
+          # Set executable permissions for Unix binaries
+          chmod +x npm-package/bin/mcp-hub-*
+          chmod +x npm-package/index.js
+          
+      - name: Publish to NPM
+        run: |
+          cd npm-package
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
