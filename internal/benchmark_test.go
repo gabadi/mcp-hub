@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/testutil"
 	"mcp-hub/internal/ui"
 	"mcp-hub/internal/ui/services"
@@ -72,11 +73,12 @@ func BenchmarkMCPService_FilterMCPs_EmptyQuery(b *testing.B) {
 
 func BenchmarkMCPService_ToggleMCPStatus(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
+	mockPlatform := platform.GetMockPlatformService()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		model := testutil.NewTestModel().WithMCPs(mcps).WithSelectedItem(i % len(mcps)).Build()
-		_ = services.ToggleMCPStatus(model)
+		_ = services.ToggleMCPStatus(model, mockPlatform)
 	}
 }
 
@@ -273,29 +275,32 @@ func BenchmarkUI_CompleteWorkflow_SearchAndNavigate(b *testing.B) {
 func BenchmarkStorage_SaveInventory_Small(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(10)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
+	mockPlatform := platform.GetMockPlatformService()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Note: This will attempt to save to actual config directory
 		// In a real benchmark environment, you'd want to use a temp directory
-		_ = services.SaveModelInventory(model)
+		_ = services.SaveModelInventory(model, mockPlatform)
 	}
 }
 
 func BenchmarkStorage_SaveInventory_Medium(b *testing.B) {
 	mcps := generateBenchmarkMCPDataset(100)
 	model := testutil.NewTestModel().WithMCPs(mcps).Build()
+	mockPlatform := platform.GetMockPlatformService()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = services.SaveModelInventory(model)
+		_ = services.SaveModelInventory(model, mockPlatform)
 	}
 }
 
 func BenchmarkStorage_LoadInventory(b *testing.B) {
+	mockPlatform := platform.GetMockPlatformService()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = services.LoadInventory()
+		_, _ = services.LoadInventory(mockPlatform)
 	}
 }
 

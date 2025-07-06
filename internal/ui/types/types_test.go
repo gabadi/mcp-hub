@@ -5,10 +5,13 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"mcp-hub/internal/platform"
 )
 
 func TestNewModel(t *testing.T) {
-	model := NewModel()
+	mockPlatform := platform.GetMockPlatformService()
+	model := NewModel(mockPlatform)
 
 	// Test initial state
 	if model.State != MainNavigation {
@@ -59,7 +62,8 @@ func TestNewModelWithMCPs(t *testing.T) {
 		{Name: "another-mcp", Type: "SSE", Active: false, URL: "http://example.com"},
 	}
 
-	model := NewModelWithMCPs(testMCPs)
+	mockPlatform := platform.GetMockPlatformService()
+	model := NewModelWithMCPs(testMCPs, mockPlatform)
 
 	// Test that provided MCPs are used
 	if len(model.MCPItems) != 2 {
@@ -323,7 +327,7 @@ func TestClaudeStatus(t *testing.T) {
 }
 
 func TestModelInit(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 	cmd := model.Init()
 
 	// Init should return nil command for types.Model
@@ -355,7 +359,7 @@ func TestLayoutConstants(t *testing.T) {
 }
 
 func TestModelComplexState(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 
 	// Test setting various states
 	model.State = SearchActiveNavigation
@@ -511,7 +515,7 @@ func TestLoadingOverlayMethods(t *testing.T) {
 }
 
 func testStartLoadingOverlay(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 
 	model.StartLoadingOverlay(LoadingStartup)
 
@@ -527,7 +531,7 @@ func testStartLoadingOverlay(t *testing.T) {
 }
 
 func testUpdateLoadingMessage(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 	model.StartLoadingOverlay(LoadingRefresh)
 	oldMessage := model.LoadingOverlay.Message
 
@@ -547,7 +551,7 @@ func testUpdateLoadingMessage(t *testing.T) {
 }
 
 func testStopLoadingOverlay(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 	model.StartLoadingOverlay(LoadingStartup)
 
 	// Ensure it's active first
@@ -566,7 +570,7 @@ func testStopLoadingOverlay(t *testing.T) {
 }
 
 func testAdvanceSpinner(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 	model.StartLoadingOverlay(LoadingStartup)
 
 	initialSpinner := model.LoadingOverlay.Spinner
@@ -589,7 +593,7 @@ func testAdvanceSpinner(t *testing.T) {
 }
 
 func testIsLoadingOverlayActive(t *testing.T) {
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 
 	// Initially inactive
 	if model.IsLoadingOverlayActive() {
@@ -627,7 +631,7 @@ func TestSpinnerTypes(t *testing.T) {
 
 func TestLoadingMessageGeneration(t *testing.T) {
 	// Test loading startup message
-	model := NewModel()
+	model := NewModel(platform.GetMockPlatformService())
 	model.StartLoadingOverlay(LoadingStartup)
 
 	if model.LoadingOverlay.Message == "" {
@@ -635,7 +639,7 @@ func TestLoadingMessageGeneration(t *testing.T) {
 	}
 
 	// Test loading refresh message
-	model2 := NewModel()
+	model2 := NewModel(platform.GetMockPlatformService())
 	model2.StartLoadingOverlay(LoadingRefresh)
 
 	if model2.LoadingOverlay.Message == "" {

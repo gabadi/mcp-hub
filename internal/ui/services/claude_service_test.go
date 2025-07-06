@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
@@ -18,7 +19,8 @@ const (
 )
 
 func TestNewClaudeService(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 
 	if service == nil {
 		t.Fatal("NewClaudeService() returned nil")
@@ -30,7 +32,8 @@ func TestNewClaudeService(t *testing.T) {
 }
 
 func TestDetectClaudeCLI(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// Test detection (will vary based on whether claude is actually installed)
@@ -59,7 +62,8 @@ func TestDetectClaudeCLI(t *testing.T) {
 }
 
 func TestDetectClaudeCliWithTimeout(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 
 	// Create a context with very short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
@@ -78,7 +82,8 @@ func TestDetectClaudeCliWithTimeout(t *testing.T) {
 }
 
 func TestGetClaudeVersion(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// This test will vary based on whether claude is actually installed
@@ -146,7 +151,8 @@ func TestGetClaudeVersion(t *testing.T) {
 }
 
 func TestParseActiveMCPs(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	tests := createParseActiveMCPsTests()
 
 	for _, tt := range tests {
@@ -231,7 +237,8 @@ func assertParseActiveMCPsResult(t *testing.T, result []string, expected []strin
 }
 
 func TestGetInstallationGuide(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	guide := service.getInstallationGuide()
 
 	if guide == "" {
@@ -245,11 +252,11 @@ func TestGetInstallationGuide(t *testing.T) {
 
 	// Should contain some platform-appropriate information
 	switch runtime.GOOS {
-	case PlatformDarwin:
+	case "darwin":
 		if !contains(guide, "Homebrew") && !contains(guide, "brew") && !contains(guide, "PATH") {
 			t.Error("macOS guide should mention Homebrew, brew, or PATH")
 		}
-	case PlatformWindows:
+	case "windows":
 		if !contains(guide, "PATH") && !contains(guide, "Restart") {
 			t.Error("Windows guide should mention PATH or Restart")
 		}
@@ -279,7 +286,8 @@ func TestGetInstallationGuide(t *testing.T) {
 }
 
 func TestUpdateModelWithClaudeStatus(t *testing.T) {
-	model := types.NewModel()
+	mockPlatform := platform.GetMockPlatformService()
+	model := types.NewModel(mockPlatform)
 	status := types.ClaudeStatus{
 		Available:    true,
 		Version:      "1.0.0",
@@ -309,7 +317,8 @@ func TestUpdateModelWithClaudeStatus(t *testing.T) {
 }
 
 func TestUpdateModelWithClaudeStatusError(t *testing.T) {
-	model := types.NewModel()
+	mockPlatform := platform.GetMockPlatformService()
+	model := types.NewModel(mockPlatform)
 	status := types.ClaudeStatus{
 		Available:    false,
 		Error:        "Claude CLI not found",
@@ -336,7 +345,8 @@ func TestSyncMCPStatus(t *testing.T) {
 		{Name: "context7", Type: "JSON", Active: false, Command: "context7"},
 		{Name: "ht-mcp", Type: "CMD", Active: false, Command: "ht"},
 	}
-	model := types.NewModelWithMCPs(testMCPs)
+	mockPlatform := platform.GetMockPlatformService()
+	model := types.NewModelWithMCPs(testMCPs, mockPlatform)
 
 	// Simulate Claude reporting some MCPs as active
 	activeMCPs := []string{"github-mcp", "context7", "ht-mcp"}
@@ -451,7 +461,8 @@ func TestGetRefreshKeyHint(t *testing.T) {
 }
 
 func TestRefreshClaudeStatus(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	status := service.RefreshClaudeStatus(ctx)
@@ -474,7 +485,8 @@ func TestRefreshClaudeStatus(t *testing.T) {
 
 // TestGetInstallationGuideEdgeCases tests edge cases in installation guide
 func TestGetInstallationGuideEdgeCases(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 
 	// Test that guide always provides helpful information
 	guide := service.getInstallationGuide()
@@ -497,7 +509,8 @@ func TestGetInstallationGuideEdgeCases(t *testing.T) {
 
 // TestClaudeServiceEdgeCases tests various edge cases
 func TestClaudeServiceEdgeCases(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// Test with canceled context
@@ -533,7 +546,8 @@ func containsInner(s, substr string) bool {
 
 // Benchmark tests
 func BenchmarkDetectClaudeCLI(b *testing.B) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -543,7 +557,8 @@ func BenchmarkDetectClaudeCLI(b *testing.B) {
 }
 
 func BenchmarkParseActiveMCPs(b *testing.B) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	input := "✓ github-mcp\n✓ context7\n✓ ht-mcp\n✓ filesystem\n✓ docker-mcp"
 
 	b.ResetTimer()
@@ -656,7 +671,8 @@ func TestErrorMessages(t *testing.T) {
 }
 
 func TestClassifyError(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	testCases := getClassifyErrorTestCases()
 
 	for _, tc := range testCases {
@@ -821,7 +837,8 @@ func (m *mockError) Error() string {
 }
 
 func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// Create a very short timeout context to simulate unavailable Claude
@@ -872,7 +889,8 @@ func TestToggleMCPStatusWithClaudeUnavailable(t *testing.T) {
 func TestToggleMCPStatusSuccessCase(t *testing.T) {
 	// This test can't easily test success without mocking the exec.Command
 	// So we test the structure and error paths
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// Test activation
@@ -909,7 +927,8 @@ func TestToggleMCPStatusSuccessCase(t *testing.T) {
 }
 
 func TestRetryToggleOperation(t *testing.T) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	// Test with already expired time budget
@@ -942,7 +961,8 @@ func TestRetryToggleOperation(t *testing.T) {
 }
 
 func BenchmarkToggleMCPStatus(b *testing.B) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -963,7 +983,8 @@ func BenchmarkToggleMCPStatus(b *testing.B) {
 }
 
 func BenchmarkClassifyError(b *testing.B) {
-	service := NewClaudeService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClaudeService(mockPlatform)
 	mockErr := &mockError{msg: "context deadline exceeded"}
 	output := "some command output"
 
@@ -977,7 +998,7 @@ func BenchmarkClassifyError(b *testing.B) {
 
 func TestGetProjectContext(t *testing.T) {
 	// Create test model with MCP items
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "test1", Active: true},
 		{Name: "test2", Active: false},
@@ -1210,7 +1231,7 @@ func TestFormatSyncStatusText(t *testing.T) {
 
 func TestUpdateProjectContext(t *testing.T) {
 	// Create test model
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "test1", Active: true},
 		{Name: "test2", Active: false},
@@ -1258,7 +1279,7 @@ func TestHasDirectoryChanged(t *testing.T) {
 
 // Benchmark tests for project context functions
 func BenchmarkGetProjectContext(b *testing.B) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = make([]types.MCPItem, 50)
 	for i := range model.MCPItems {
 		model.MCPItems[i] = types.MCPItem{

@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/handlers"
 	"mcp-hub/internal/ui/services"
 	"mcp-hub/internal/ui/types"
@@ -16,24 +17,29 @@ import (
 // Model is a wrapper around the types.Model to provide UI-specific methods
 type Model struct {
 	types.Model
+	PlatformService platform.PlatformService
 }
 
 // NewModel creates a new application model with inventory loaded from storage
 func NewModel() Model {
+	// Create platform service
+	platformService := platform.NewPlatformServiceFactoryDefault().CreatePlatformService()
+	
 	// Try to load inventory from storage
-	mcpItems, err := services.LoadInventory()
+	mcpItems, err := services.LoadInventory(platformService)
 	var model Model
 
 	switch {
 	case err != nil:
 		// Fall back to default model if loading fails
 		model = Model{
-			Model: types.NewModel(),
+			Model: types.NewModel(platformService),
+			PlatformService: platformService,
 		}
 	case len(mcpItems) == 0:
 		// First-time setup: save defaults to storage
-		defaultModel := types.NewModel()
-		if saveErr := services.SaveInventory(defaultModel.MCPItems); saveErr != nil {
+		defaultModel := types.NewModel(platformService)
+		if saveErr := services.SaveInventory(defaultModel.MCPItems, platformService); saveErr != nil {
 			// Log error but continue - the app should still work
 			// Error is already logged in SaveInventory
 			// Intentionally empty - we don't want to fail app startup due to save issues
@@ -41,11 +47,13 @@ func NewModel() Model {
 		}
 		model = Model{
 			Model: defaultModel,
+			PlatformService: platformService,
 		}
 	default:
 		// Use loaded inventory
 		model = Model{
-			Model: types.NewModelWithMCPs(mcpItems),
+			Model: types.NewModelWithMCPs(mcpItems, platformService),
+			PlatformService: platformService,
 		}
 	}
 
@@ -147,7 +155,7 @@ func (m Model) handleClaudeStatusMsg(msg handlers.ClaudeStatusMsg) (tea.Model, t
 	case msg.Status.Available && len(msg.Status.ActiveMCPs) > 0:
 		m.Model = services.SyncMCPStatus(m.Model, msg.Status.ActiveMCPs)
 		// Save updated inventory after sync
-		if err := services.SaveModelInventory(m.Model); err != nil {
+		if err := services.SaveModelInventory(m.Model, m.PlatformService); err != nil {
 			// Set error message but don't fail
 			m.SuccessMessage = fmt.Sprintf("Claude status updated, but failed to save inventory: %v", err)
 			m.SuccessTimer = 240 // Show error for 4 seconds
@@ -193,7 +201,7 @@ func (m Model) handleToggleSuccess(msg handlers.ToggleResultMsg) (Model, tea.Cmd
 		}
 	}
 
-	if err := services.SaveInventory(m.MCPItems); err != nil {
+	if err := services.SaveInventory(m.MCPItems, m.PlatformService); err != nil {
 		m.ToggleState = types.ToggleError
 		m.ToggleError = "MCP toggled but failed to save to storage"
 		m.SuccessTimer = 240

@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/services"
 	"mcp-hub/internal/ui/types"
 )
@@ -97,7 +98,7 @@ func handleTypeSelectionKeys(model types.Model, key string) (types.Model, tea.Cm
 		// JSON Configuration MCP type
 		model.ActiveModal = types.AddJSONForm
 		model.FormData.ActiveField = 0 // Focus on first field (Name)
-	case "up", "k":
+	case KeyUp, "k":
 		// Navigate up in type selection
 		if model.FormData.ActiveField > 1 {
 			model.FormData.ActiveField--
@@ -572,7 +573,7 @@ func addMCPToInventory(model types.Model, mcpItem types.MCPItem) (types.Model, t
 	model.MCPItems = append(model.MCPItems, mcpItem)
 
 	// Save to storage
-	if err := services.SaveInventory(model.MCPItems); err != nil {
+	if err := services.SaveInventory(model.MCPItems, model.PlatformService); err != nil {
 		// Show error message instead of success
 		model.SuccessMessage = fmt.Sprintf("Failed to save %s: %v", mcpItem.Name, err)
 		return model, hideSuccessMsg()
@@ -608,7 +609,7 @@ func updateMCPInInventory(model types.Model, updatedMCP types.MCPItem) (types.Mo
 	}
 
 	// Save to storage
-	if err := services.SaveInventory(model.MCPItems); err != nil {
+	if err := services.SaveInventory(model.MCPItems, model.PlatformService); err != nil {
 		// Show error message instead of success
 		model.SuccessMessage = fmt.Sprintf("Failed to update %s: %v", updatedMCP.Name, err)
 		return model, hideSuccessMsg()
@@ -694,7 +695,7 @@ func deleteMCPFromInventory(model types.Model) (types.Model, tea.Cmd) {
 	}
 
 	// Save to storage
-	if err := services.SaveInventory(model.MCPItems); err != nil {
+	if err := services.SaveInventory(model.MCPItems, model.PlatformService); err != nil {
 		model.SuccessMessage = fmt.Sprintf("Failed to delete %s: %v", mcpToDelete.Name, err)
 		return model, hideSuccessMsg()
 	}
@@ -709,6 +710,11 @@ func deleteMCPFromInventory(model types.Model) (types.Model, tea.Cmd) {
 // Supports both space-separated ("arg1 arg2 arg3") and quoted arguments
 func parseArgsString(argsStr string) []string {
 	if argsStr == "" {
+		return nil
+	}
+	
+	// Handle whitespace-only strings
+	if strings.TrimSpace(argsStr) == "" {
 		return nil
 	}
 
@@ -803,7 +809,7 @@ func copyActiveFieldToClipboard(model types.Model) types.Model {
 		return model
 	}
 
-	clipboardService := services.NewClipboardService()
+	clipboardService := services.NewClipboardService(model.PlatformService)
 	if err := clipboardService.Copy(content); err != nil {
 		model.SuccessMessage = "Failed to copy to clipboard: " + err.Error()
 		model.SuccessTimer = 180 // Show error message for 3 seconds (60 ticks per second)
@@ -882,7 +888,7 @@ func getJSONFormFieldContent(model types.Model) string {
 
 // pasteFromClipboardToActiveField pastes clipboard content to the active field
 func pasteFromClipboardToActiveField(model types.Model) types.Model {
-	content, err := getClipboardContent()
+	content, err := getClipboardContent(model.PlatformService)
 	if err != nil {
 		return handleClipboardError(model, err)
 	}
@@ -891,8 +897,8 @@ func pasteFromClipboardToActiveField(model types.Model) types.Model {
 	return addPasteSuccessMessage(model)
 }
 
-func getClipboardContent() (string, error) {
-	clipboardService := services.NewClipboardService()
+func getClipboardContent(platformService platform.PlatformService) (string, error) {
+	clipboardService := services.NewClipboardService(platformService)
 	return clipboardService.EnhancedPaste()
 }
 

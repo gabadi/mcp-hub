@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/services"
 
 	"github.com/atotto/clipboard"
@@ -41,7 +42,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Test clipboard functionality when cmd+v or ctrl+v is pressed
 		if keyStr == "cmd+v" || keyStr == "ctrl+v" || keyStr == "⌘v" || keyStr == "command+v" {
 			// Test with enhanced clipboard service
-			clipboardService := services.NewClipboardService()
+			platformService := platform.NewPlatformServiceFactoryDefault().CreatePlatformService()
+			clipboardService := services.NewClipboardService(platformService)
 			m.diagnosticInfo = clipboardService.GetDiagnosticInfo()
 
 			content, clipErr := clipboardService.EnhancedPaste()

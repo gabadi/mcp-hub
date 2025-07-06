@@ -2,10 +2,13 @@ package services
 
 import (
 	"testing"
+
+	"mcp-hub/internal/platform"
 )
 
 func TestNewClipboardService(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	if service == nil {
 		t.Fatal("NewClipboardService() returned nil")
@@ -13,7 +16,8 @@ func TestNewClipboardService(t *testing.T) {
 }
 
 func TestClipboardServiceCopy(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test copy operation - this may fail on headless systems
 	err := service.Copy("test content")
@@ -26,7 +30,8 @@ func TestClipboardServiceCopy(t *testing.T) {
 }
 
 func TestClipboardServicePaste(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test paste operation - this may fail on headless systems
 	content, err := service.Paste()
@@ -42,7 +47,8 @@ func TestClipboardServicePaste(t *testing.T) {
 }
 
 func TestClipboardServiceIsAvailable(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test availability check
 	available := service.IsAvailable()
@@ -52,7 +58,8 @@ func TestClipboardServiceIsAvailable(t *testing.T) {
 }
 
 func TestClipboardServiceEnhancedPaste(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test enhanced paste with diagnostics
 	content, err := service.EnhancedPaste()
@@ -73,7 +80,8 @@ func TestClipboardServiceEnhancedPaste(t *testing.T) {
 }
 
 func TestClipboardServiceGetDiagnosticInfo(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test diagnostic info
 	info := service.GetDiagnosticInfo()
@@ -98,7 +106,8 @@ func TestClipboardServiceGetDiagnosticInfo(t *testing.T) {
 
 // Test clipboard integration scenarios
 func TestClipboardServiceIntegration(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test copy then paste workflow
 	testContent := "integration test content"
@@ -125,7 +134,8 @@ func TestClipboardServiceIntegration(t *testing.T) {
 }
 
 func TestClipboardServiceErrorHandling(t *testing.T) {
-	service := NewClipboardService()
+	mockPlatform := platform.GetMockPlatformService()
+	service := NewClipboardService(mockPlatform)
 
 	// Test with empty content
 	err := service.Copy("")

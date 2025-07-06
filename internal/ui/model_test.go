@@ -3,6 +3,7 @@ package ui
 import (
 	"testing"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/testutil"
 	"mcp-hub/internal/ui/handlers"
 	"mcp-hub/internal/ui/types"
@@ -693,7 +694,8 @@ func TestModel_Integration(t *testing.T) {
 			{Name: "gitlab-mcp", Type: "CMD", Active: false, Command: "gitlab-mcp"},
 		}
 
-		model := Model{Model: types.NewModelWithMCPs(testMCPs)}
+		mockPlatform := platform.GetMockPlatformService()
+		model := Model{Model: types.NewModelWithMCPs(testMCPs, mockPlatform)}
 
 		// Should have substantial test MCP data
 		if len(model.MCPItems) < 10 {

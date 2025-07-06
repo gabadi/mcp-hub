@@ -9,10 +9,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"time"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
@@ -22,10 +22,6 @@ const (
 	// ClaudeCommand is the command name for the Claude CLI
 	ClaudeCommand = "claude"
 
-	// PlatformDarwin represents the macOS operating system identifier
-	PlatformDarwin = "darwin"
-	// PlatformWindows represents the Windows operating system identifier
-	PlatformWindows = "windows"
 	// TestActiveStatus represents the active status string for testing
 	TestActiveStatus = "active"
 )
@@ -71,15 +67,17 @@ var ErrorMessages = map[string]string{
 	ErrorTypeUnknownError:      "MCP toggle failed. Press 'R' to refresh and try again.",
 }
 
-// ClaudeService handles Claude CLI interactions
+// ClaudeService handles Claude CLI interactions with platform abstraction
 type ClaudeService struct {
-	timeout time.Duration
+	timeout         time.Duration
+	platformService platform.PlatformService
 }
 
-// NewClaudeService creates a new Claude service instance
-func NewClaudeService() *ClaudeService {
+// NewClaudeService creates a new Claude service instance with platform abstraction
+func NewClaudeService(platformService platform.PlatformService) *ClaudeService {
 	return &ClaudeService{
-		timeout: 10 * time.Second, // 10 second timeout for commands
+		timeout:         10 * time.Second, // 10 second timeout for commands
+		platformService: platformService,
 	}
 }
 
@@ -90,14 +88,10 @@ func (cs *ClaudeService) DetectClaudeCLI(ctx context.Context) types.ClaudeStatus
 		LastCheck: time.Now(),
 	}
 
-	// Try to detect Claude CLI using which/where command
+	// Try to detect Claude CLI using platform-specific command detection
 	var cmd *exec.Cmd
-	switch runtime.GOOS {
-	case "windows":
-		cmd = exec.CommandContext(ctx, "where", "claude")
-	default:
-		cmd = exec.CommandContext(ctx, "which", "claude")
-	}
+	detectionCmd := cs.platformService.GetCommandDetectionCommand()
+	cmd = exec.CommandContext(ctx, detectionCmd, "claude")
 
 	// Run with timeout
 	timeoutCtx, cancel := context.WithTimeout(ctx, cs.timeout)
@@ -287,13 +281,15 @@ func (cs *ClaudeService) RefreshClaudeStatus(ctx context.Context) types.ClaudeSt
 
 // getInstallationGuide returns platform-specific installation guidance
 func (cs *ClaudeService) getInstallationGuide() string {
-	switch runtime.GOOS {
-	case PlatformDarwin:
+	switch cs.platformService.GetPlatform() {
+	case platform.PlatformDarwin:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Or use Homebrew: brew install claude-cli\n• Ensure it's in your PATH"
-	case "windows":
+	case platform.PlatformWindows:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Add to your system PATH\n• Restart your terminal after installation"
-	case "linux":
+	case platform.PlatformLinux:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Make executable: chmod +x claude\n• Add to PATH: sudo mv claude /usr/local/bin/\n• Or use package manager if available"
+	case platform.PlatformUnknown:
+		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Follow platform-specific installation instructions\n• Ensure it's available in your system PATH"
 	default:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Follow platform-specific installation instructions\n• Ensure it's available in your system PATH"
 	}

@@ -4,6 +4,7 @@ package handlers
 import (
 	"testing"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/services"
 	"mcp-hub/internal/ui/types"
 
@@ -55,7 +56,7 @@ func TestClaudeStatusMsgStructure(t *testing.T) {
 }
 
 func TestHandleMainNavigationKeysWithRefresh(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 
 	// Test 'r' key
 	updatedModel, cmd := HandleMainNavigationKeys(model, "r")
@@ -78,7 +79,7 @@ func TestHandleMainNavigationKeysWithRefresh(t *testing.T) {
 }
 
 func TestHandleSearchNavigationKeysWithRefresh(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.State = types.SearchActiveNavigation
 	model.SearchActive = true
 
@@ -105,7 +106,8 @@ func TestClaudeIntegrationFlow(t *testing.T) {
 		{Name: "docker-tools", Type: "SSE", Active: false, Command: "docker"},
 		{Name: "context7", Type: "JSON", Active: false, Command: "context7"},
 	}
-	model := types.NewModelWithMCPs(testMCPs)
+	mockPlatform := platform.GetMockPlatformService()
+	model := types.NewModelWithMCPs(testMCPs, mockPlatform)
 
 	// Simulate receiving a Claude status message
 	status := types.ClaudeStatus{

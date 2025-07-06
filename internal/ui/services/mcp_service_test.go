@@ -3,14 +3,16 @@ package services
 import (
 	"testing"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
 // Test helpers for MCP service tests
 func createTestModel() types.Model {
 	return types.Model{
-		SearchQuery:  "",
-		SelectedItem: 0,
+		SearchQuery:     "",
+		SelectedItem:    0,
+		PlatformService: platform.GetMockPlatformService(),
 		MCPItems: []types.MCPItem{
 			{Name: "context7", Type: "SSE", Active: true, Command: "npx @context7/mcp-server"},
 			{Name: "github-mcp", Type: "CMD", Active: true, Command: "github-mcp"},
@@ -136,7 +138,7 @@ func TestToggleMCPStatus(t *testing.T) {
 			model.ClaudeAvailable = tt.claudeAvailable
 			model.ToggleState = types.ToggleIdle // Start with idle state
 
-			updatedModel := ToggleMCPStatus(model)
+			updatedModel := ToggleMCPStatus(model, platform.GetMockPlatformService())
 
 			if updatedModel.ToggleState != tt.expectedState {
 				t.Errorf("ToggleMCPStatus() state = %v, expected %v", updatedModel.ToggleState, tt.expectedState)
@@ -190,7 +192,10 @@ func TestGetActiveMCPCount(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model := types.Model{MCPItems: tt.mcpItems}
+			model := types.Model{
+				MCPItems:        tt.mcpItems,
+				PlatformService: platform.GetMockPlatformService(),
+			}
 			count := GetActiveMCPCount(model)
 
 			if count != tt.expectedCount {
@@ -257,11 +262,12 @@ func TestGetSelectedMCP(t *testing.T) {
 func TestMCPServiceEdgeCases(t *testing.T) {
 	t.Run("ToggleMCPStatus with empty MCPs list", func(t *testing.T) {
 		model := types.Model{
-			MCPItems:     []types.MCPItem{},
-			SelectedItem: 0,
+			MCPItems:        []types.MCPItem{},
+			SelectedItem:    0,
+			PlatformService: platform.GetMockPlatformService(),
 		}
 
-		result := ToggleMCPStatus(model)
+		result := ToggleMCPStatus(model, platform.GetMockPlatformService())
 
 		// Should not panic and return unchanged model
 		if len(result.MCPItems) != 0 {
@@ -282,8 +288,9 @@ func TestMCPServiceEdgeCases(t *testing.T) {
 
 	t.Run("GetSelectedMCP with empty MCPs list", func(t *testing.T) {
 		model := types.Model{
-			MCPItems:     []types.MCPItem{},
-			SelectedItem: 0,
+			MCPItems:        []types.MCPItem{},
+			SelectedItem:    0,
+			PlatformService: platform.GetMockPlatformService(),
 		}
 
 		selected := GetSelectedMCP(model)
@@ -302,7 +309,7 @@ func TestMCPServiceBoundaryConditions(t *testing.T) {
 		model.ClaudeAvailable = true
 		model.ToggleState = types.ToggleIdle
 
-		result := ToggleMCPStatus(model)
+		result := ToggleMCPStatus(model, platform.GetMockPlatformService())
 
 		// Enhanced toggle should set loading state, not immediately toggle
 		if result.ToggleState != types.ToggleLoading {
@@ -401,7 +408,7 @@ func validateToggleMCPStatusTestCase(t *testing.T, tt struct {
 	model := createTestModelWithClaudeStatus(tt.claudeAvailable)
 	model.SelectedItem = tt.selectedItem
 
-	result := ToggleMCPStatus(model)
+	result := ToggleMCPStatus(model, platform.GetMockPlatformService())
 
 	if result.ToggleState != tt.expectedState {
 		t.Errorf("ToggleMCPStatus() state = %v, expected %v", result.ToggleState, tt.expectedState)
@@ -486,7 +493,7 @@ func TestLegacyToggleMCPStatus(t *testing.T) {
 	model := createTestModel()
 	originalActive := model.MCPItems[0].Active
 
-	result := LegacyToggleMCPStatus(model)
+	result := LegacyToggleMCPStatus(model, platform.GetMockPlatformService())
 
 	// Should toggle the first MCP
 	if result.MCPItems[0].Active == originalActive {
@@ -500,7 +507,7 @@ func BenchmarkToggleMCPStatusEnhanced(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = ToggleMCPStatus(model)
+		_ = ToggleMCPStatus(model, platform.GetMockPlatformService())
 	}
 }
 

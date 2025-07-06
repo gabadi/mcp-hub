@@ -2,6 +2,7 @@
 package testutil
 
 import (
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,7 +16,7 @@ type TestModelBuilder struct {
 // NewTestModel creates a new TestModelBuilder with default values
 func NewTestModel() *TestModelBuilder {
 	return &TestModelBuilder{
-		model: types.NewModel(),
+		model: types.NewModel(platform.GetMockPlatformService()),
 	}
 }
 

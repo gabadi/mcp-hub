@@ -4,7 +4,9 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,14 +19,23 @@ func main() {
 }
 
 func runApp() error {
-	// Redirect log output to a file to prevent interference with TUI
+	// Create platform service for dynamic path resolution
+	platformService := platform.NewPlatformServiceFactoryDefault().CreatePlatformService()
+
+	// Redirect log output to a platform-specific file to prevent interference with TUI
 	var logFile *os.File
-	if file, err := os.OpenFile("/tmp/mcp-hub.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
-		logFile = file
-		log.SetOutput(logFile)
-		defer func() {
-			_ = logFile.Close()
-		}()
+	logPath := filepath.Join(platformService.GetLogPath(), "mcp-hub.log")
+	
+	// Ensure log directory exists
+	logDir := filepath.Dir(logPath)
+	if err := os.MkdirAll(logDir, platformService.GetDefaultDirectoryPermissions()); err == nil {
+		if file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, platformService.GetDefaultFilePermissions()); err == nil {
+			logFile = file
+			log.SetOutput(logFile)
+			defer func() {
+				_ = logFile.Close()
+			}()
+		}
 	}
 
 	model := ui.NewModel()

@@ -4,6 +4,8 @@ package types
 import (
 	"time"
 
+	"mcp-hub/internal/platform"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -149,6 +151,9 @@ type Model struct {
 
 	// Project context state (Epic 2 Story 5)
 	ProjectContext ProjectContext
+
+	// Platform abstraction service (Epic 4 Story 1)
+	PlatformService platform.PlatformService
 }
 
 // ModalType represents the type of modal being displayed
@@ -276,7 +281,7 @@ func getDefaultMCPs() []MCPItem {
 }
 
 // NewModel creates a new application model
-func NewModel() Model {
+func NewModel(platformService platform.PlatformService) Model {
 	return Model{
 		State:             MainNavigation,
 		ActiveColumn:      0,
@@ -288,12 +293,13 @@ func NewModel() Model {
 		ColumnCount:       1,
 		MCPItems:          getDefaultMCPs(), // This will be replaced by storage loading
 		FormErrors:        make(map[string]string),
+		PlatformService:   platformService,
 	}
 }
 
 // NewModelWithMCPs creates a new application model with provided MCP items
-func NewModelWithMCPs(mcpItems []MCPItem) Model {
-	model := NewModel()
+func NewModelWithMCPs(mcpItems []MCPItem, platformService platform.PlatformService) Model {
+	model := NewModel(platformService)
 	model.MCPItems = mcpItems
 	model.FormErrors = make(map[string]string)
 	return model
