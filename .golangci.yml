@@ -5,6 +5,7 @@ run:
   timeout: 5m
 
 linters:
+  default: standard
   enable:
     - bodyclose
     - dogsled
@@ -27,43 +28,46 @@ linters:
     - unparam
     - unused
     - whitespace
-
-linters-settings:
-  funlen:
-    lines: 100
-    statements: 50
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  gosec:
-    excludes:
-      - G204 # subprocess launched with variable (acceptable in tests)
-      - G301 # directory permissions (acceptable in tests)
-      - G302 # file permissions (acceptable in tests)
-      - G304 # file inclusion via variable (acceptable in tests)
+  settings:
+    funlen:
+      lines: 100
+      statements: 50
+    dupl:
+      threshold: 100
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    gosec:
+      excludes:
+        - G204 # subprocess launched with variable (acceptable in tests)
+        - G301 # directory permissions (acceptable in tests)
+        - G302 # file permissions (acceptable in tests)
+        - G304 # file inclusion via variable (acceptable in tests)
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+    rules:
+      # Exclude security checks for test files
+      - path: "_test\\.go"
+        linters:
+          - gosec
+      # Exclude function length checks for test files
+      - path: "_test\\.go"
+        linters:
+          - funlen
+      # Exclude duplicate code checks for test files (common test patterns)
+      - path: "_test\\.go"
+        linters:
+          - dupl
+      # Allow specific gosec rules in main files for necessary operations
+      - linters:
+          - gosec
+        text: "G304.*file inclusion via variable"
+      - linters:
+          - gosec
+        text: "G204.*subprocess launched with variable"
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Exclude security checks for test files
-    - path: "_test\\.go"
-      linters:
-        - gosec
-    # Exclude function length checks for test files
-    - path: "_test\\.go"
-      linters:
-        - funlen
-    # Exclude duplicate code checks for test files (common test patterns)
-    - path: "_test\\.go"
-      linters:
-        - dupl
-    # Allow specific gosec rules in main files for necessary operations
-    - linters:
-        - gosec
-      text: "G304.*file inclusion via variable"
-    - linters:
-        - gosec
-      text: "G204.*subprocess launched with variable"

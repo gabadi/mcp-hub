@@ -98,7 +98,7 @@ func handleTypeSelectionKeys(model types.Model, key string) (types.Model, tea.Cm
 		// JSON Configuration MCP type
 		model.ActiveModal = types.AddJSONForm
 		model.FormData.ActiveField = 0 // Focus on first field (Name)
-	case "up", "k":
+	case KeyUp, "k":
 		// Navigate up in type selection
 		if model.FormData.ActiveField > 1 {
 			model.FormData.ActiveField--
