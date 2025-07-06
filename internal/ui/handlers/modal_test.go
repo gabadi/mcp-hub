@@ -10,6 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Test constants
+const (
+	pastedContent = "pasted-content"
+)
+
+
 // Epic 1 Story 4 Tests - Edit MCP Functionality
 
 func TestEditMCPFormPrePopulation(t *testing.T) {
@@ -373,7 +379,7 @@ func TestEditModeValidation(t *testing.T) {
 	model.EditMode = true
 	model.EditMCPName = "existing-mcp"
 	model.FormData.Name = "existing-mcp" // Same name as original
-	model.FormData.Command = "test"      // Required field
+	model.FormData.Command = TestString      // Required field
 
 	// This should be valid (keeping the same name)
 	newModel, valid := validateCommandForm(model)
@@ -1777,7 +1783,7 @@ func TestClipboardOperations(t *testing.T) {
 		model.ActiveModal = types.AddCommandForm
 		model.FormData.ActiveField = 0
 
-		content := "pasted-content"
+		content := pastedContent
 		updatedModel := pasteContentToActiveField(model, content)
 		assert.Equal(t, content, updatedModel.FormData.Name)
 	})
@@ -1789,7 +1795,7 @@ func TestClipboardOperations(t *testing.T) {
 			Build()
 		model.ActiveModal = types.AddCommandForm
 
-		content := "pasted-content"
+		content := pastedContent
 
 		// Test pasting to each field
 		model.FormData.ActiveField = 0
@@ -1816,7 +1822,7 @@ func TestClipboardOperations(t *testing.T) {
 			Build()
 		model.ActiveModal = types.AddSSEForm
 
-		content := "pasted-content"
+		content := pastedContent
 
 		// Test pasting to each field
 		model.FormData.ActiveField = 0
@@ -1839,7 +1845,7 @@ func TestClipboardOperations(t *testing.T) {
 			Build()
 		model.ActiveModal = types.AddJSONForm
 
-		content := "pasted-content"
+		content := pastedContent
 
 		// Test pasting to each field
 		model.FormData.ActiveField = 0

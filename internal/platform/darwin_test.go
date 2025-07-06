@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+
 func TestNewDarwinPlatformService(t *testing.T) {
 	service := NewDarwinPlatformService(nil)
 
@@ -57,8 +58,8 @@ func TestDarwinPlatformService_GetCommandDetectionCommand(t *testing.T) {
 	service := NewDarwinPlatformService(nil)
 	cmd := service.GetCommandDetectionCommand()
 
-	if cmd != "which" {
-		t.Errorf("GetCommandDetectionCommand() = %v, want %v", cmd, "which")
+	if cmd != whichCmd {
+		t.Errorf("GetCommandDetectionCommand() = %v, want %v", cmd, whichCmd)
 	}
 }
 

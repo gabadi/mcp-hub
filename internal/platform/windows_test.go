@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+
 func TestNewWindowsPlatformService(t *testing.T) {
 	service := NewWindowsPlatformService(nil)
 	
@@ -55,7 +56,6 @@ func TestWindowsPlatformService_GetLogPath(t *testing.T) {
 	}()
 	
 	// Test with APPDATA set
-	testAppData := "/test/appdata"
 	if err := os.Setenv("APPDATA", testAppData); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -95,7 +95,6 @@ func TestWindowsPlatformService_GetConfigPath(t *testing.T) {
 	}()
 	
 	// Test with APPDATA set
-	testAppData := "/test/appdata"
 	if err := os.Setenv("APPDATA", testAppData); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -173,7 +172,6 @@ func TestWindowsPlatformService_GetCachePath(t *testing.T) {
 	if err := os.Unsetenv("LOCALAPPDATA"); err != nil {
 		t.Errorf("Failed to unset environment variable: %v", err)
 	}
-	testAppData := "/test/appdata"
 	if err := os.Setenv("APPDATA", testAppData); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -199,7 +197,7 @@ func TestWindowsPlatformService_GetCommandDetectionMethod(t *testing.T) {
 	service := NewWindowsPlatformService(nil)
 	method := service.GetCommandDetectionMethod()
 	
-	if method != "where" {
+	if method != whereCmd {
 		t.Errorf("GetCommandDetectionMethod() = %s, want 'where'", method)
 	}
 }
@@ -208,7 +206,7 @@ func TestWindowsPlatformService_GetCommandDetectionCommand(t *testing.T) {
 	service := NewWindowsPlatformService(nil)
 	cmd := service.GetCommandDetectionCommand()
 	
-	if cmd != "where" {
+	if cmd != whereCmd {
 		t.Errorf("GetCommandDetectionCommand() = %s, want 'where'", cmd)
 	}
 }

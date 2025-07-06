@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+
 func TestNewMockPlatformService(t *testing.T) {
 	mock := NewMockPlatformService()
 	
@@ -18,7 +19,7 @@ func TestNewMockPlatformService(t *testing.T) {
 		t.Errorf("Expected default platform to be PlatformDarwin, got %v", mock.GetPlatform())
 	}
 	
-	if mock.GetPlatformName() != "darwin" {
+	if mock.GetPlatformName() != darwinOS {
 		t.Errorf("Expected platform name to be 'darwin', got %s", mock.GetPlatformName())
 	}
 	

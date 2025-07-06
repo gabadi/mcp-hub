@@ -72,12 +72,12 @@ func (g *GenericPlatformService) GetCachePath() string {
 
 // GetCommandDetectionMethod returns the command detection method for generic platform
 func (g *GenericPlatformService) GetCommandDetectionMethod() string {
-	return "which"
+	return whichCmd
 }
 
 // GetCommandDetectionCommand returns the command detection command for generic platform
 func (g *GenericPlatformService) GetCommandDetectionCommand() string {
-	return "which"
+	return whichCmd
 }
 
 // SupportsClipboard returns false as generic platform doesn't support clipboard operations

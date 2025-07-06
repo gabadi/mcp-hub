@@ -90,12 +90,12 @@ func (l *LinuxPlatformService) GetCachePath() string {
 
 // GetCommandDetectionMethod returns the command detection method for Linux
 func (l *LinuxPlatformService) GetCommandDetectionMethod() string {
-	return "which"
+	return whichCmd
 }
 
 // GetCommandDetectionCommand returns the command detection command for Linux
 func (l *LinuxPlatformService) GetCommandDetectionCommand() string {
-	return "which"
+	return whichCmd
 }
 
 // SupportsClipboard returns true if clipboard operations are supported on Linux

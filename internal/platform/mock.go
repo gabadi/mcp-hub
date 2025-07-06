@@ -8,6 +8,11 @@ import (
 	"runtime"
 )
 
+// Mock platform constants
+const (
+	unknownPlatform = "unknown"
+)
+
 // MockPlatformService provides a mock implementation of PlatformService for testing
 type MockPlatformService struct {
 	platform        PlatformType
@@ -63,8 +68,8 @@ func NewMockPlatformServiceForOS(osName string) *MockPlatformService {
 	case "darwin":
 		mock.platform = PlatformDarwin
 		mock.platformName = "darwin"
-		mock.detectionMethod = "which"
-		mock.detectionCmd = "which"
+		mock.detectionMethod = whichCmd
+		mock.detectionCmd = whichCmd
 		mock.supportsClip = true
 		mock.clipboardMethod = ClipboardPbcopy
 	case "windows":
@@ -81,8 +86,8 @@ func NewMockPlatformServiceForOS(osName string) *MockPlatformService {
 	case "linux":
 		mock.platform = PlatformLinux
 		mock.platformName = "linux"
-		mock.detectionMethod = "which"
-		mock.detectionCmd = "which"
+		mock.detectionMethod = whichCmd
+		mock.detectionCmd = whichCmd
 		mock.supportsClip = true
 		mock.clipboardMethod = ClipboardXclip
 		mock.logPath = filepath.Join(mock.homeDir, ".local", "share", "mcp-hub", "logs")
@@ -91,9 +96,9 @@ func NewMockPlatformServiceForOS(osName string) *MockPlatformService {
 		mock.cachePath = filepath.Join(mock.homeDir, ".cache", "mcp-hub")
 	default:
 		mock.platform = PlatformUnknown
-		mock.platformName = "unknown"
-		mock.detectionMethod = "which"
-		mock.detectionCmd = "which"
+		mock.platformName = unknownPlatform
+		mock.detectionMethod = whichCmd
+		mock.detectionCmd = whichCmd
 		mock.supportsClip = false
 		mock.clipboardMethod = ClipboardUnsupported
 	}

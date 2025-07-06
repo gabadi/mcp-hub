@@ -77,12 +77,12 @@ func (w *WindowsPlatformService) GetCachePath() string {
 
 // GetCommandDetectionMethod returns the command detection method for Windows
 func (w *WindowsPlatformService) GetCommandDetectionMethod() string {
-	return "where"
+	return whereCmd
 }
 
 // GetCommandDetectionCommand returns the command detection command for Windows
 func (w *WindowsPlatformService) GetCommandDetectionCommand() string {
-	return "where"
+	return whereCmd
 }
 
 // SupportsClipboard returns true as Windows supports clipboard operations

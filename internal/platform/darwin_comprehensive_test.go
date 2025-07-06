@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+
 func TestDarwinPlatformService_GetLogPath_ErrorScenarios(t *testing.T) {
 	service := NewDarwinPlatformService(nil)
 	
@@ -25,13 +26,13 @@ func TestDarwinPlatformService_GetLogPath_ErrorScenarios(t *testing.T) {
 	}
 	logPath := service.GetLogPath()
 	
-	if logPath != "/tmp/mcp-hub" {
-		t.Errorf("Expected fallback to /tmp/mcp-hub, got %s", logPath)
+	if logPath != tmpMcpHub {
+		t.Errorf("Expected fallback to %s, got %s", tmpMcpHub, logPath)
 	}
 }
 
 func TestDarwinPlatformService_GetConfigPath_ErrorScenarios(t *testing.T) {
-	if runtime.GOOS != "darwin" {
+	if runtime.GOOS != darwinOS {
 		t.Skip("Skipping Darwin-specific test on non-Darwin platform")
 	}
 	
@@ -52,7 +53,7 @@ func TestDarwinPlatformService_GetConfigPath_ErrorScenarios(t *testing.T) {
 	configPath := service.GetConfigPath()
 	
 	// Should fallback to /tmp/mcp-hub when home directory is not available
-	if configPath != "/tmp/mcp-hub" {
+	if configPath != tmpMcpHub {
 		t.Errorf("Expected fallback to /tmp/mcp-hub, got %s", configPath)
 	}
 }
@@ -103,7 +104,7 @@ func TestDarwinPlatformService_GetCommandDetectionMethod(t *testing.T) {
 	service := NewDarwinPlatformService(nil)
 	
 	method := service.GetCommandDetectionMethod()
-	if method != "which" {
+	if method != whichCmd {
 		t.Errorf("Expected 'which', got %s", method)
 	}
 }
@@ -141,7 +142,7 @@ func TestDarwinPlatformService_GetHomeDirectory_ErrorScenarios(t *testing.T) {
 	}()
 	
 	// Test fallback to HOME environment variable
-	expectedHome := "/test/home"
+	expectedHome := testHome
 	if err := os.Setenv("HOME", expectedHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -164,7 +165,7 @@ func TestDarwinPlatformService_GetCurrentUser_ErrorScenarios(t *testing.T) {
 	}()
 	
 	// Test fallback to USER environment variable
-	expectedUser := "testuser"
+	expectedUser := testUser
 	if err := os.Setenv("USER", expectedUser); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -201,7 +202,7 @@ func TestDarwinPlatformService_AllMethods(t *testing.T) {
 		t.Error("GetPlatform() should return PlatformDarwin")
 	}
 	
-	if service.GetPlatformName() != "macOS" {
+	if service.GetPlatformName() != macOSName {
 		t.Error("GetPlatformName() should return 'macOS'")
 	}
 	

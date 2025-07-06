@@ -7,6 +7,7 @@ import (
 	"testing"
 )
 
+
 func TestNewGenericPlatformService(t *testing.T) {
 	service := NewGenericPlatformService(nil)
 	
@@ -55,7 +56,6 @@ func TestGenericPlatformService_GetLogPath(t *testing.T) {
 	}()
 	
 	// Test with HOME set
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -96,7 +96,6 @@ func TestGenericPlatformService_GetConfigPath(t *testing.T) {
 	}()
 	
 	// Test with HOME set
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -150,7 +149,6 @@ func TestGenericPlatformService_GetCachePath(t *testing.T) {
 	}()
 	
 	// Test with HOME set
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -177,7 +175,7 @@ func TestGenericPlatformService_GetCommandDetectionMethod(t *testing.T) {
 	service := NewGenericPlatformService(nil)
 	method := service.GetCommandDetectionMethod()
 	
-	if method != "which" {
+	if method != whichCmd {
 		t.Errorf("GetCommandDetectionMethod() = %s, want 'which'", method)
 	}
 }
@@ -186,7 +184,7 @@ func TestGenericPlatformService_GetCommandDetectionCommand(t *testing.T) {
 	service := NewGenericPlatformService(nil)
 	cmd := service.GetCommandDetectionCommand()
 	
-	if cmd != "which" {
+	if cmd != whichCmd {
 		t.Errorf("GetCommandDetectionCommand() = %s, want 'which'", cmd)
 	}
 }
@@ -257,7 +255,6 @@ func TestGenericPlatformService_GetHomeDirectory(t *testing.T) {
 	}()
 	
 	// Test fallback to HOME environment variable
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -298,7 +295,6 @@ func TestGenericPlatformService_GetCurrentUser(t *testing.T) {
 	}()
 	
 	// Test fallback to USER environment variable
-	testUser := "testuser"
 	if err := os.Setenv("USER", testUser); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}

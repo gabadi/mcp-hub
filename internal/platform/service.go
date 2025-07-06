@@ -69,15 +69,15 @@ type PlatformService interface {
 func (pt PlatformType) String() string {
 	switch pt {
 	case PlatformDarwin:
-		return "darwin"
+		return osDarwin
 	case PlatformWindows:
-		return "windows"
+		return osWindows
 	case PlatformLinux:
-		return "linux"
+		return osLinux
 	case PlatformUnknown:
-		return "unknown"
+		return unknownPlatform
 	default:
-		return "unknown"
+		return unknownPlatform
 	}
 }
 

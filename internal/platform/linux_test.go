@@ -80,7 +80,6 @@ func TestLinuxPlatformService_GetLogPath(t *testing.T) {
 	if err := os.Unsetenv("XDG_DATA_HOME"); err != nil {
 		t.Errorf("Failed to unset environment variable: %v", err)
 	}
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -146,7 +145,6 @@ func TestLinuxPlatformService_GetConfigPath(t *testing.T) {
 	if err := os.Unsetenv("XDG_CONFIG_HOME"); err != nil {
 		t.Errorf("Failed to unset environment variable: %v", err)
 	}
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -163,7 +161,7 @@ func TestLinuxPlatformService_GetConfigPath(t *testing.T) {
 	}
 	configPath = service.GetConfigPath()
 	
-	expectedPath = "/tmp/mcp-hub"
+	expectedPath = tmpMcpHub
 	if configPath != expectedPath {
 		t.Errorf("GetConfigPath() final fallback = %s, want %s", configPath, expectedPath)
 	}
@@ -225,7 +223,6 @@ func TestLinuxPlatformService_GetCachePath(t *testing.T) {
 	if err := os.Unsetenv("XDG_CACHE_HOME"); err != nil {
 		t.Errorf("Failed to unset environment variable: %v", err)
 	}
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -252,7 +249,7 @@ func TestLinuxPlatformService_GetCommandDetectionMethod(t *testing.T) {
 	service := NewLinuxPlatformService(nil)
 	method := service.GetCommandDetectionMethod()
 	
-	if method != "which" {
+	if method != whichCmd {
 		t.Errorf("GetCommandDetectionMethod() = %s, want 'which'", method)
 	}
 }
@@ -261,7 +258,7 @@ func TestLinuxPlatformService_GetCommandDetectionCommand(t *testing.T) {
 	service := NewLinuxPlatformService(nil)
 	cmd := service.GetCommandDetectionCommand()
 	
-	if cmd != "which" {
+	if cmd != whichCmd {
 		t.Errorf("GetCommandDetectionCommand() = %s, want 'which'", cmd)
 	}
 }
@@ -351,7 +348,6 @@ func TestLinuxPlatformService_GetHomeDirectory(t *testing.T) {
 	}()
 	
 	// Test fallback to HOME environment variable
-	testHome := "/test/home"
 	if err := os.Setenv("HOME", testHome); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}
@@ -392,7 +388,6 @@ func TestLinuxPlatformService_GetCurrentUser(t *testing.T) {
 	}()
 	
 	// Test fallback to USER environment variable
-	testUser := "testuser"
 	if err := os.Setenv("USER", testUser); err != nil {
 		t.Errorf("Failed to set environment variable: %v", err)
 	}

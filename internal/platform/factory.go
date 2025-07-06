@@ -6,6 +6,13 @@ import (
 	"runtime"
 )
 
+// Platform OS constants
+const (
+	osWindows = "windows"
+	osLinux   = "linux"
+	osDarwin  = "darwin"
+)
+
 // PlatformServiceFactory creates platform-specific service instances
 type PlatformServiceFactory struct {
 	logger *log.Logger
@@ -33,11 +40,11 @@ func (f *PlatformServiceFactory) CreatePlatformService() PlatformService {
 // CreatePlatformServiceForOS creates a platform-specific service instance for the given OS
 func (f *PlatformServiceFactory) CreatePlatformServiceForOS(osName string) PlatformService {
 	switch osName {
-	case "darwin":
+	case osDarwin:
 		return NewDarwinPlatformService(f.logger)
-	case "windows":
+	case osWindows:
 		return NewWindowsPlatformService(f.logger)
-	case "linux":
+	case osLinux:
 		return NewLinuxPlatformService(f.logger)
 	default:
 		return NewGenericPlatformService(f.logger)
@@ -47,11 +54,11 @@ func (f *PlatformServiceFactory) CreatePlatformServiceForOS(osName string) Platf
 // GetPlatformTypeFromOS converts an OS name to a PlatformType
 func GetPlatformTypeFromOS(osName string) PlatformType {
 	switch osName {
-	case "darwin":
+	case osDarwin:
 		return PlatformDarwin
-	case "windows":
+	case osWindows:
 		return PlatformWindows
-	case "linux":
+	case osLinux:
 		return PlatformLinux
 	default:
 		return PlatformUnknown

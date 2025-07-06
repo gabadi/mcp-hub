@@ -39,7 +39,7 @@ func (d *DarwinPlatformService) GetLogPath() string {
 	homeDir := d.GetHomeDirectory()
 	if homeDir == "" {
 		// Fallback to /tmp if home directory is not available
-		return "/tmp/mcp-hub"
+		return tmpMcpHub
 	}
 	return filepath.Join(homeDir, "Library", "Logs", "mcp-hub")
 }
@@ -53,7 +53,7 @@ func (d *DarwinPlatformService) GetConfigPath() string {
 		if homeDir != "" {
 			return filepath.Join(homeDir, ".config", "mcp-hub")
 		}
-		return "/tmp/mcp-hub"
+		return tmpMcpHub
 	}
 	return filepath.Join(configDir, "mcp-hub")
 }
@@ -75,12 +75,12 @@ func (d *DarwinPlatformService) GetCachePath() string {
 
 // GetCommandDetectionMethod returns the command detection method for macOS
 func (d *DarwinPlatformService) GetCommandDetectionMethod() string {
-	return "which"
+	return whichCmd
 }
 
 // GetCommandDetectionCommand returns the command detection command for macOS
 func (d *DarwinPlatformService) GetCommandDetectionCommand() string {
-	return "which"
+	return whichCmd
 }
 
 // SupportsClipboard returns true as macOS supports clipboard operations
