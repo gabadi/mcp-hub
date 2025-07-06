@@ -14,11 +14,15 @@ func TestDarwinPlatformService_GetLogPath_ErrorScenarios(t *testing.T) {
 	// Test with modified environment to trigger fallback
 	originalHome := os.Getenv("HOME")
 	defer func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Errorf("Failed to set environment variable: %v", err)
+		}
 	}()
 	
 	// Test fallback to /tmp when home directory is not available
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	logPath := service.GetLogPath()
 	
 	if logPath != "/tmp/mcp-hub" {
@@ -36,11 +40,15 @@ func TestDarwinPlatformService_GetConfigPath_ErrorScenarios(t *testing.T) {
 	// Test with modified environment to trigger fallback
 	originalHome := os.Getenv("HOME")
 	defer func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Errorf("Failed to set environment variable: %v", err)
+		}
 	}()
 	
 	// Test fallback behavior when UserConfigDir fails by setting HOME to empty
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	configPath := service.GetConfigPath()
 	
 	// Should fallback to /tmp/mcp-hub when home directory is not available
@@ -55,11 +63,15 @@ func TestDarwinPlatformService_GetCachePath_ErrorScenarios(t *testing.T) {
 	// Test with modified environment to trigger fallback
 	originalHome := os.Getenv("HOME")
 	defer func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Errorf("Failed to set environment variable: %v", err)
+		}
 	}()
 	
 	// Test fallback to temp path when home directory is not available
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	cachePath := service.GetCachePath()
 	
 	// Should fallback to temp path
@@ -123,12 +135,16 @@ func TestDarwinPlatformService_GetHomeDirectory_ErrorScenarios(t *testing.T) {
 	// Test with modified environment to trigger fallback
 	originalHome := os.Getenv("HOME")
 	defer func() {
-		os.Setenv("HOME", originalHome)
+		if err := os.Setenv("HOME", originalHome); err != nil {
+			t.Errorf("Failed to set environment variable: %v", err)
+		}
 	}()
 	
 	// Test fallback to HOME environment variable
 	expectedHome := "/test/home"
-	os.Setenv("HOME", expectedHome)
+	if err := os.Setenv("HOME", expectedHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	homeDir := service.GetHomeDirectory()
 	
 	if !strings.Contains(homeDir, expectedHome) && homeDir != expectedHome {
@@ -142,12 +158,16 @@ func TestDarwinPlatformService_GetCurrentUser_ErrorScenarios(t *testing.T) {
 	// Test with modified environment to trigger fallback
 	originalUser := os.Getenv("USER")
 	defer func() {
-		os.Setenv("USER", originalUser)
+		if err := os.Setenv("USER", originalUser); err != nil {
+			t.Errorf("Failed to set environment variable: %v", err)
+		}
 	}()
 	
 	// Test fallback to USER environment variable
 	expectedUser := "testuser"
-	os.Setenv("USER", expectedUser)
+	if err := os.Setenv("USER", expectedUser); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	currentUser := service.GetCurrentUser()
 	
 	// Should return either the actual user or fallback to environment variable

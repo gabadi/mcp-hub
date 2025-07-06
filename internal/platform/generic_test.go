@@ -44,15 +44,21 @@ func TestGenericPlatformService_GetLogPath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with HOME set
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	logPath := service.GetLogPath()
 	
 	expectedPath := filepath.Join(testHome, ".mcp-hub", "logs")
@@ -61,7 +67,9 @@ func TestGenericPlatformService_GetLogPath(t *testing.T) {
 	}
 	
 	// Test fallback to temp directory
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	logPath = service.GetLogPath()
 	
 	// Should contain mcp-hub/logs in temp directory
@@ -77,15 +85,21 @@ func TestGenericPlatformService_GetConfigPath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with HOME set
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	configPath := service.GetConfigPath()
 	
 	expectedPath := filepath.Join(testHome, ".mcp-hub")
@@ -94,7 +108,9 @@ func TestGenericPlatformService_GetConfigPath(t *testing.T) {
 	}
 	
 	// Test fallback to temp directory
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	configPath = service.GetConfigPath()
 	
 	// Should contain mcp-hub in temp directory
@@ -123,15 +139,21 @@ func TestGenericPlatformService_GetCachePath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with HOME set
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	cachePath := service.GetCachePath()
 	
 	expectedPath := filepath.Join(testHome, ".mcp-hub", "cache")
@@ -140,7 +162,9 @@ func TestGenericPlatformService_GetCachePath(t *testing.T) {
 	}
 	
 	// Test fallback to temp path
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	cachePath = service.GetCachePath()
 	
 	expectedTempPath := service.GetTempPath()
@@ -222,15 +246,21 @@ func TestGenericPlatformService_GetHomeDirectory(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to HOME environment variable
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	homeDir := service.GetHomeDirectory()
 	
 	if homeDir == "" {
@@ -238,7 +268,9 @@ func TestGenericPlatformService_GetHomeDirectory(t *testing.T) {
 	}
 	
 	// Test with HOME unset
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	homeDir = service.GetHomeDirectory()
 	
 	// Should return empty string as fallback
@@ -255,15 +287,21 @@ func TestGenericPlatformService_GetCurrentUser(t *testing.T) {
 	originalUser := os.Getenv("USER")
 	defer func() {
 		if originalUser != "" {
-			os.Setenv("USER", originalUser)
+			if err := os.Setenv("USER", originalUser); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("USER")
+			if err := os.Unsetenv("USER"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to USER environment variable
 	testUser := "testuser"
-	os.Setenv("USER", testUser)
+	if err := os.Setenv("USER", testUser); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	currentUser := service.GetCurrentUser()
 	
 	if currentUser == "" {

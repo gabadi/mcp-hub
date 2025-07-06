@@ -45,20 +45,30 @@ func TestLinuxPlatformService_GetLogPath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalXdgDataHome != "" {
-			os.Setenv("XDG_DATA_HOME", originalXdgDataHome)
+			if err := os.Setenv("XDG_DATA_HOME", originalXdgDataHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("XDG_DATA_HOME")
+			if err := os.Unsetenv("XDG_DATA_HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with XDG_DATA_HOME set
 	testXdgDataHome := "/test/xdg/data"
-	os.Setenv("XDG_DATA_HOME", testXdgDataHome)
+	if err := os.Setenv("XDG_DATA_HOME", testXdgDataHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	logPath := service.GetLogPath()
 	
 	expectedPath := filepath.Join(testXdgDataHome, "mcp-hub", "logs")
@@ -67,9 +77,13 @@ func TestLinuxPlatformService_GetLogPath(t *testing.T) {
 	}
 	
 	// Test fallback to HOME/.local/share
-	os.Unsetenv("XDG_DATA_HOME")
+	if err := os.Unsetenv("XDG_DATA_HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	logPath = service.GetLogPath()
 	
 	expectedPath = filepath.Join(testHome, ".local", "share", "mcp-hub", "logs")
@@ -78,7 +92,9 @@ func TestLinuxPlatformService_GetLogPath(t *testing.T) {
 	}
 	
 	// Test final fallback to /tmp
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	logPath = service.GetLogPath()
 	
 	expectedPath = "/tmp/mcp-hub/logs"
@@ -95,20 +111,30 @@ func TestLinuxPlatformService_GetConfigPath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalXdgConfigHome != "" {
-			os.Setenv("XDG_CONFIG_HOME", originalXdgConfigHome)
+			if err := os.Setenv("XDG_CONFIG_HOME", originalXdgConfigHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("XDG_CONFIG_HOME")
+			if err := os.Unsetenv("XDG_CONFIG_HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with XDG_CONFIG_HOME set
 	testXdgConfigHome := "/test/xdg/config"
-	os.Setenv("XDG_CONFIG_HOME", testXdgConfigHome)
+	if err := os.Setenv("XDG_CONFIG_HOME", testXdgConfigHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	configPath := service.GetConfigPath()
 	
 	expectedPath := filepath.Join(testXdgConfigHome, "mcp-hub")
@@ -117,9 +143,13 @@ func TestLinuxPlatformService_GetConfigPath(t *testing.T) {
 	}
 	
 	// Test fallback to HOME/.config
-	os.Unsetenv("XDG_CONFIG_HOME")
+	if err := os.Unsetenv("XDG_CONFIG_HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	configPath = service.GetConfigPath()
 	
 	expectedPath = filepath.Join(testHome, ".config", "mcp-hub")
@@ -128,7 +158,9 @@ func TestLinuxPlatformService_GetConfigPath(t *testing.T) {
 	}
 	
 	// Test final fallback to /tmp
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	configPath = service.GetConfigPath()
 	
 	expectedPath = "/tmp/mcp-hub"
@@ -158,20 +190,30 @@ func TestLinuxPlatformService_GetCachePath(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalXdgCacheHome != "" {
-			os.Setenv("XDG_CACHE_HOME", originalXdgCacheHome)
+			if err := os.Setenv("XDG_CACHE_HOME", originalXdgCacheHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("XDG_CACHE_HOME")
+			if err := os.Unsetenv("XDG_CACHE_HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with XDG_CACHE_HOME set
 	testXdgCacheHome := "/test/xdg/cache"
-	os.Setenv("XDG_CACHE_HOME", testXdgCacheHome)
+	if err := os.Setenv("XDG_CACHE_HOME", testXdgCacheHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	cachePath := service.GetCachePath()
 	
 	expectedPath := filepath.Join(testXdgCacheHome, "mcp-hub")
@@ -180,9 +222,13 @@ func TestLinuxPlatformService_GetCachePath(t *testing.T) {
 	}
 	
 	// Test fallback to HOME/.cache
-	os.Unsetenv("XDG_CACHE_HOME")
+	if err := os.Unsetenv("XDG_CACHE_HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	cachePath = service.GetCachePath()
 	
 	expectedPath = filepath.Join(testHome, ".cache", "mcp-hub")
@@ -191,7 +237,9 @@ func TestLinuxPlatformService_GetCachePath(t *testing.T) {
 	}
 	
 	// Test final fallback to temp path
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	cachePath = service.GetCachePath()
 	
 	expectedTempPath := service.GetTempPath()
@@ -292,15 +340,21 @@ func TestLinuxPlatformService_GetHomeDirectory(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	defer func() {
 		if originalHome != "" {
-			os.Setenv("HOME", originalHome)
+			if err := os.Setenv("HOME", originalHome); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOME")
+			if err := os.Unsetenv("HOME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to HOME environment variable
 	testHome := "/test/home"
-	os.Setenv("HOME", testHome)
+	if err := os.Setenv("HOME", testHome); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	homeDir := service.GetHomeDirectory()
 	
 	if homeDir == "" {
@@ -308,7 +362,9 @@ func TestLinuxPlatformService_GetHomeDirectory(t *testing.T) {
 	}
 	
 	// Test with HOME unset
-	os.Unsetenv("HOME")
+	if err := os.Unsetenv("HOME"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	homeDir = service.GetHomeDirectory()
 	
 	// Should return empty string as fallback
@@ -325,15 +381,21 @@ func TestLinuxPlatformService_GetCurrentUser(t *testing.T) {
 	originalUser := os.Getenv("USER")
 	defer func() {
 		if originalUser != "" {
-			os.Setenv("USER", originalUser)
+			if err := os.Setenv("USER", originalUser); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("USER")
+			if err := os.Unsetenv("USER"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to USER environment variable
 	testUser := "testuser"
-	os.Setenv("USER", testUser)
+	if err := os.Setenv("USER", testUser); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	currentUser := service.GetCurrentUser()
 	
 	if currentUser == "" {

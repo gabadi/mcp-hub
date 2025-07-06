@@ -44,15 +44,21 @@ func TestWindowsPlatformService_GetLogPath(t *testing.T) {
 	originalAppData := os.Getenv("APPDATA")
 	defer func() {
 		if originalAppData != "" {
-			os.Setenv("APPDATA", originalAppData)
+			if err := os.Setenv("APPDATA", originalAppData); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("APPDATA")
+			if err := os.Unsetenv("APPDATA"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with APPDATA set
 	testAppData := "/test/appdata"
-	os.Setenv("APPDATA", testAppData)
+	if err := os.Setenv("APPDATA", testAppData); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	logPath := service.GetLogPath()
 	
 	expectedPath := filepath.Join(testAppData, "mcp-hub", "logs")
@@ -61,7 +67,9 @@ func TestWindowsPlatformService_GetLogPath(t *testing.T) {
 	}
 	
 	// Test fallback when APPDATA is not set
-	os.Unsetenv("APPDATA")
+	if err := os.Unsetenv("APPDATA"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	logPath = service.GetLogPath()
 	
 	if !strings.Contains(logPath, "mcp-hub") {
@@ -76,15 +84,21 @@ func TestWindowsPlatformService_GetConfigPath(t *testing.T) {
 	originalAppData := os.Getenv("APPDATA")
 	defer func() {
 		if originalAppData != "" {
-			os.Setenv("APPDATA", originalAppData)
+			if err := os.Setenv("APPDATA", originalAppData); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("APPDATA")
+			if err := os.Unsetenv("APPDATA"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with APPDATA set
 	testAppData := "/test/appdata"
-	os.Setenv("APPDATA", testAppData)
+	if err := os.Setenv("APPDATA", testAppData); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	configPath := service.GetConfigPath()
 	
 	expectedPath := filepath.Join(testAppData, "mcp-hub")
@@ -93,7 +107,9 @@ func TestWindowsPlatformService_GetConfigPath(t *testing.T) {
 	}
 	
 	// Test fallback when APPDATA is not set
-	os.Unsetenv("APPDATA")
+	if err := os.Unsetenv("APPDATA"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	configPath = service.GetConfigPath()
 	
 	if !strings.Contains(configPath, "mcp-hub") {
@@ -122,20 +138,30 @@ func TestWindowsPlatformService_GetCachePath(t *testing.T) {
 	originalAppData := os.Getenv("APPDATA")
 	defer func() {
 		if originalLocalAppData != "" {
-			os.Setenv("LOCALAPPDATA", originalLocalAppData)
+			if err := os.Setenv("LOCALAPPDATA", originalLocalAppData); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("LOCALAPPDATA")
+			if err := os.Unsetenv("LOCALAPPDATA"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalAppData != "" {
-			os.Setenv("APPDATA", originalAppData)
+			if err := os.Setenv("APPDATA", originalAppData); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("APPDATA")
+			if err := os.Unsetenv("APPDATA"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test with LOCALAPPDATA set
 	testLocalAppData := "/test/localappdata"
-	os.Setenv("LOCALAPPDATA", testLocalAppData)
+	if err := os.Setenv("LOCALAPPDATA", testLocalAppData); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	cachePath := service.GetCachePath()
 	
 	expectedPath := filepath.Join(testLocalAppData, "mcp-hub", "cache")
@@ -144,9 +170,13 @@ func TestWindowsPlatformService_GetCachePath(t *testing.T) {
 	}
 	
 	// Test fallback to APPDATA when LOCALAPPDATA is not set
-	os.Unsetenv("LOCALAPPDATA")
+	if err := os.Unsetenv("LOCALAPPDATA"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	testAppData := "/test/appdata"
-	os.Setenv("APPDATA", testAppData)
+	if err := os.Setenv("APPDATA", testAppData); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	cachePath = service.GetCachePath()
 	
 	expectedPath = filepath.Join(testAppData, "mcp-hub", "cache")
@@ -155,7 +185,9 @@ func TestWindowsPlatformService_GetCachePath(t *testing.T) {
 	}
 	
 	// Test final fallback to temp directory
-	os.Unsetenv("APPDATA")
+	if err := os.Unsetenv("APPDATA"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	cachePath = service.GetCachePath()
 	
 	if !strings.Contains(cachePath, "mcp-hub") {
@@ -240,25 +272,39 @@ func TestWindowsPlatformService_GetHomeDirectory(t *testing.T) {
 	
 	defer func() {
 		if originalUserProfile != "" {
-			os.Setenv("USERPROFILE", originalUserProfile)
+			if err := os.Setenv("USERPROFILE", originalUserProfile); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("USERPROFILE")
+			if err := os.Unsetenv("USERPROFILE"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalHomeDrive != "" {
-			os.Setenv("HOMEDRIVE", originalHomeDrive)
+			if err := os.Setenv("HOMEDRIVE", originalHomeDrive); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOMEDRIVE")
+			if err := os.Unsetenv("HOMEDRIVE"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 		if originalHomePath != "" {
-			os.Setenv("HOMEPATH", originalHomePath)
+			if err := os.Setenv("HOMEPATH", originalHomePath); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("HOMEPATH")
+			if err := os.Unsetenv("HOMEPATH"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to USERPROFILE
 	testUserProfile := "/test/userprofile"
-	os.Setenv("USERPROFILE", testUserProfile)
+	if err := os.Setenv("USERPROFILE", testUserProfile); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	homeDir := service.GetHomeDirectory()
 	
 	if homeDir == "" {
@@ -266,11 +312,17 @@ func TestWindowsPlatformService_GetHomeDirectory(t *testing.T) {
 	}
 	
 	// Test fallback to HOMEDRIVE + HOMEPATH
-	os.Unsetenv("USERPROFILE")
+	if err := os.Unsetenv("USERPROFILE"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	testHomeDrive := "C:"
 	testHomePath := "/Users/Test"
-	os.Setenv("HOMEDRIVE", testHomeDrive)
-	os.Setenv("HOMEPATH", testHomePath)
+	if err := os.Setenv("HOMEDRIVE", testHomeDrive); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
+	if err := os.Setenv("HOMEPATH", testHomePath); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	homeDir = service.GetHomeDirectory()
 	
 	if homeDir == "" {
@@ -278,8 +330,12 @@ func TestWindowsPlatformService_GetHomeDirectory(t *testing.T) {
 	}
 	
 	// Test final fallback (all env vars unset)
-	os.Unsetenv("HOMEDRIVE")
-	os.Unsetenv("HOMEPATH")
+	if err := os.Unsetenv("HOMEDRIVE"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
+	if err := os.Unsetenv("HOMEPATH"); err != nil {
+		t.Errorf("Failed to unset environment variable: %v", err)
+	}
 	homeDir = service.GetHomeDirectory()
 	
 	// Should return empty string as final fallback
@@ -296,15 +352,21 @@ func TestWindowsPlatformService_GetCurrentUser(t *testing.T) {
 	originalUsername := os.Getenv("USERNAME")
 	defer func() {
 		if originalUsername != "" {
-			os.Setenv("USERNAME", originalUsername)
+			if err := os.Setenv("USERNAME", originalUsername); err != nil {
+				t.Errorf("Failed to set environment variable: %v", err)
+			}
 		} else {
-			os.Unsetenv("USERNAME")
+			if err := os.Unsetenv("USERNAME"); err != nil {
+				t.Errorf("Failed to unset environment variable: %v", err)
+			}
 		}
 	}()
 	
 	// Test fallback to USERNAME environment variable
 	testUsername := "testuser"
-	os.Setenv("USERNAME", testUsername)
+	if err := os.Setenv("USERNAME", testUsername); err != nil {
+		t.Errorf("Failed to set environment variable: %v", err)
+	}
 	currentUser := service.GetCurrentUser()
 	
 	if currentUser == "" {
