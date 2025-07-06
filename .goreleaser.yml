@@ -51,44 +51,21 @@ release:
   prerelease: auto
   name_template: "{{.ProjectName}}-v{{.Version}}"
 
-# NPM package configuration
-npm:
-  - ids:
-      - mcp-hub
-    package_name: mcp-hub-tui
-    registry: https://registry.npmjs.org/
-    folder: npm-package
-    package_template: |
-      {
-        "name": "mcp-hub-tui",
-        "version": "{{ .Version }}",
-        "description": "TUI for managing Claude MCP configurations",
-        "bin": {
-          "mcp-hub-tui": "./index.js"
-        },
-        "files": [
-          "bin/",
-          "index.js",
-          "README.md"
-        ],
-        "engines": {
-          "node": ">=14.0.0"
-        },
-        "keywords": ["claude", "mcp", "terminal", "tui", "cli"],
-        "repository": {
-          "type": "git",
-          "url": "git+https://github.com/gabadi/cc-mcp-manager.git"
-        },
-        "license": "MIT",
-        "homepage": "https://github.com/gabadi/cc-mcp-manager#readme"
-      }
-    extra_files:
-      - glob: index.js
-        name_template: index.js
-      - glob: package.json
-        name_template: package.json
-      - glob: README.md
-        name_template: README.md
+# Custom NPM package creation using after hooks
+after:
+  hooks:
+    - mkdir -p dist/npm-package/bin
+    - cp index.js dist/npm-package/
+    - cp package.json dist/npm-package/
+    - cp README.md dist/npm-package/
+    - cp LICENSE dist/npm-package/
+    - cp dist/mcp-hub_linux_amd64_v1/mcp-hub dist/npm-package/bin/mcp-hub-linux-amd64
+    - cp dist/mcp-hub_linux_arm64/mcp-hub dist/npm-package/bin/mcp-hub-linux-arm64
+    - cp dist/mcp-hub_darwin_amd64_v1/mcp-hub dist/npm-package/bin/mcp-hub-darwin-amd64
+    - cp dist/mcp-hub_darwin_arm64/mcp-hub dist/npm-package/bin/mcp-hub-darwin-arm64
+    - cp dist/mcp-hub_windows_amd64_v1/mcp-hub.exe dist/npm-package/bin/mcp-hub-windows-amd64.exe
+    - cp dist/mcp-hub_windows_arm64/mcp-hub.exe dist/npm-package/bin/mcp-hub-windows-arm64.exe
+    - cd dist/npm-package && npm publish
 
 changelog:
   sort: asc
