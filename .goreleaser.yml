@@ -35,7 +35,7 @@ nfpms:
   - id: packages
     package_name: mcp-hub
     vendor: MCP Hub
-    homepage: https://github.com/gabadi/cc-mcp-manager
+    homepage: https://github.com/gabadi/mcp-hub
     maintainer: Gabriel Adomnicai <gabadi@users.noreply.github.com>
     description: TUI for managing Claude MCP configurations
     license: MIT
@@ -46,7 +46,7 @@ nfpms:
 release:
   github:
     owner: gabadi
-    name: cc-mcp-manager
+    name: mcp-hub
   draft: false
   prerelease: auto
   name_template: "{{.ProjectName}}-v{{.Version}}"
