@@ -3,13 +3,12 @@ package services
 import (
 	"encoding/json"
 	"fmt"
-
-	// "log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
@@ -23,7 +22,6 @@ type InventoryData struct {
 const (
 	configFileName = "inventory.json"
 	appName        = "mcp-hub"
-	oldAppName     = "cc-mcp-manager"  // For backward compatibility
 	configVersion  = "1.0"
 )
 
@@ -32,130 +30,69 @@ var allowedFilePatterns = []string{
 	"inventory.json",
 }
 
-// migrateLegacyConfig migrates config from old cc-mcp-manager directory to new mcp-hub directory
-func migrateLegacyConfig(baseDir string) error {
-	userConfigDir := baseDir
-	if baseDir == "" {
-		var err error
-		userConfigDir, err = os.UserConfigDir()
-		if err != nil {
-			return fmt.Errorf("failed to get user config directory: %w", err)
-		}
-	}
-	
-	// Check if old config directory exists
-	oldConfigDir := filepath.Join(userConfigDir, oldAppName)
-	oldConfigPath := filepath.Join(oldConfigDir, configFileName)
-	
-	// Check if new config directory exists
-	newConfigDir := filepath.Join(userConfigDir, appName)
-	newConfigPath := filepath.Join(newConfigDir, configFileName)
-	
-	// If old config exists but new doesn't, migrate
-	if _, err := os.Stat(oldConfigPath); err == nil {
-		if _, err := os.Stat(newConfigPath); os.IsNotExist(err) {
-			// Create new config directory
-			if err := os.MkdirAll(newConfigDir, 0700); err != nil {
-				return fmt.Errorf("failed to create new config directory: %w", err)
-			}
-			
-			// Copy old config to new location
-			// #nosec G304 - This is a safe file read for config migration; oldConfigPath is constructed from safe functions
-			oldData, err := os.ReadFile(oldConfigPath)
-			if err != nil {
-				return fmt.Errorf("failed to read old config: %w", err)
-			}
-			
-			if err := os.WriteFile(newConfigPath, oldData, 0600); err != nil {
-				return fmt.Errorf("failed to write new config: %w", err)
-			}
-			
-			// Log successful migration (commented out for now)
-			// log.Printf("Successfully migrated config from %s to %s", oldConfigPath, newConfigPath)
-		}
-	}
-	
-	return nil
-}
 
 // GetConfigPath returns the full path to the config file
-func GetConfigPath() (string, error) {
-	return getConfigPathWithBase("")
+func GetConfigPath(platformService platform.PlatformService) (string, error) {
+	return getConfigPathWithBase("", platformService)
 }
 
 // getConfigPathWithBase allows overriding the base directory for testing
-func getConfigPathWithBase(baseDir string) (string, error) {
+func getConfigPathWithBase(baseDir string, platformService platform.PlatformService) (string, error) {
 	var appConfigDir string
 
 	if baseDir != "" {
 		// Use provided base directory (for testing)
 		appConfigDir = filepath.Join(baseDir, appName)
 	} else {
-		// Use system config directory
-		userConfigDir, err := os.UserConfigDir()
-		if err != nil {
-			return "", fmt.Errorf("failed to get user config directory: %w", err)
-		}
-		appConfigDir = filepath.Join(userConfigDir, appName)
+		// Use platform-specific config directory
+		appConfigDir = platformService.GetConfigPath()
 	}
 
 	configPath := filepath.Join(appConfigDir, configFileName)
-	// log.Printf("Config file path: %s", configPath)
 	return configPath, nil
 }
 
 // EnsureConfigDir creates the config directory if it doesn't exist
-func EnsureConfigDir() error {
-	return ensureConfigDirWithBase("")
+func EnsureConfigDir(platformService platform.PlatformService) error {
+	return ensureConfigDirWithBase("", platformService)
 }
 
 // ensureConfigDirWithBase allows overriding the base directory for testing
-func ensureConfigDirWithBase(baseDir string) error {
-	// First attempt to migrate legacy config
-	if err := migrateLegacyConfig(baseDir); err != nil {
-		// Migration failure shouldn't prevent app from working
-		// log.Printf("Failed to migrate legacy config: %v", err)
-		_ = err // Acknowledge but continue
-	}
-
+func ensureConfigDirWithBase(baseDir string, platformService platform.PlatformService) error {
 	var appConfigDir string
 
 	if baseDir != "" {
 		// Use provided base directory (for testing)
 		appConfigDir = filepath.Join(baseDir, appName)
 	} else {
-		// Use system config directory
-		userConfigDir, err := os.UserConfigDir()
-		if err != nil {
-			return fmt.Errorf("failed to get user config directory: %w", err)
-		}
-		appConfigDir = filepath.Join(userConfigDir, appName)
+		// Use platform-specific config directory
+		appConfigDir = platformService.GetConfigPath()
 	}
 
-	// Create directory with user read/write/execute permissions only
-	err := os.MkdirAll(appConfigDir, 0700)
+	// Create directory with platform-specific permissions
+	perms := platformService.GetDefaultDirectoryPermissions()
+	err := os.MkdirAll(appConfigDir, perms)
 	if err != nil {
 		return fmt.Errorf("failed to create config directory %s: %w", appConfigDir, err)
 	}
 
-	// log.Printf("Config directory ensured: %s", appConfigDir)
 	return nil
 }
 
 // SaveInventory saves the inventory to the JSON config file
-func SaveInventory(mcpItems []types.MCPItem) error {
-	return saveInventoryWithBase(mcpItems, "")
+func SaveInventory(mcpItems []types.MCPItem, platformService platform.PlatformService) error {
+	return saveInventoryWithBase(mcpItems, "", platformService)
 }
 
 // saveInventoryWithBase allows overriding the base directory for testing
-func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
-	configPath, err := getConfigPathWithBase(baseDir)
+func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string, platformService platform.PlatformService) error {
+	configPath, err := getConfigPathWithBase(baseDir, platformService)
 	if err != nil {
 		return fmt.Errorf("failed to get config path: %w", err)
 	}
 
 	// Ensure config directory exists
-	if err := ensureConfigDirWithBase(baseDir); err != nil {
+	if err := ensureConfigDirWithBase(baseDir, platformService); err != nil {
 		return fmt.Errorf("failed to ensure config directory: %w", err)
 	}
 
@@ -174,7 +111,8 @@ func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
 
 	// Write to temporary file first for atomic operation
 	tempPath := configPath + ".tmp"
-	err = os.WriteFile(tempPath, jsonData, 0600) // User read/write only
+	filePerms := platformService.GetDefaultFilePermissions()
+	err = os.WriteFile(tempPath, jsonData, filePerms)
 	if err != nil {
 		return fmt.Errorf("failed to write temporary config file %s: %w", tempPath, err)
 	}
@@ -192,12 +130,12 @@ func saveInventoryWithBase(mcpItems []types.MCPItem, baseDir string) error {
 }
 
 // LoadInventory loads the inventory from the JSON config file
-func LoadInventory() ([]types.MCPItem, error) {
-	return loadInventoryWithBase("")
+func LoadInventory(platformService platform.PlatformService) ([]types.MCPItem, error) {
+	return loadInventoryWithBase("", platformService)
 }
 
 // safeReadFile safely reads a file with additional security checks
-func safeReadFile(filePath string, baseDir string) ([]byte, error) {
+func safeReadFile(filePath string, baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	// Check if file exists and is regular file
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
@@ -226,13 +164,13 @@ func safeReadFile(filePath string, baseDir string) ([]byte, error) {
 
 	// Production case - create literal file path to avoid G304
 	// First, ensure the file path is exactly what we expect
-	expectedPath := getExpectedConfigPath(filePath)
+	expectedPath := getExpectedConfigPath(filePath, platformService)
 	if expectedPath != filePath {
 		return nil, fmt.Errorf("unexpected file path")
 	}
 
 	// Use literal path construction to avoid G304
-	data, err := readConfigFile(expectedPath, baseDir)
+	data, err := readConfigFile(expectedPath, baseDir, platformService)
 	if err != nil {
 		return nil, err
 	}
@@ -241,58 +179,58 @@ func safeReadFile(filePath string, baseDir string) ([]byte, error) {
 }
 
 // getExpectedConfigPath returns the expected config path for validation
-func getExpectedConfigPath(_ string) string {
-	// Get the standard config directory
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
+func getExpectedConfigPath(_ string, platformService platform.PlatformService) string {
+	// Get the platform-specific config directory
+	configDir := platformService.GetConfigPath()
+	if configDir == "" {
 		return ""
 	}
 
 	// Build the expected path
-	expectedPath := filepath.Join(userConfigDir, appName, configFileName)
+	expectedPath := filepath.Join(configDir, configFileName)
 	return expectedPath
 }
 
 // readConfigFile reads the config file using a literal path
-func readConfigFile(configPath string, baseDir string) ([]byte, error) {
+func readConfigFile(configPath string, baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	// Only read if the path matches exactly our expected config file
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
+	expectedPath := getExpectedConfigPath("", platformService)
+	if expectedPath == "" {
+		return nil, fmt.Errorf("failed to get expected config path")
 	}
 
-	expectedPath := filepath.Join(userConfigDir, appName, configFileName)
 	if configPath != expectedPath {
 		return nil, fmt.Errorf("invalid config file path")
 	}
 
 	// Read only the exact expected config file to avoid G304
-	return readSpecificConfigFile(baseDir)
+	return readSpecificConfigFile(baseDir, platformService)
 }
 
 // readSpecificConfigFile reads the specific config file using a literal path construction
-func readSpecificConfigFile(baseDir string) ([]byte, error) {
+func readSpecificConfigFile(baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	var configDir string
-	var err error
 
 	if baseDir != "" {
 		// Test case
 		configDir = baseDir
 	} else {
-		// Production case
-		configDir, err = os.UserConfigDir()
-		if err != nil {
-			return nil, err
+		// Production case - use platform-specific config directory
+		configDir = platformService.GetConfigPath()
+		if configDir == "" {
+			return nil, fmt.Errorf("failed to get config directory")
 		}
+		// Extract the parent directory
+		configDir = filepath.Dir(configDir)
 	}
 
 	// Build path with string literals to avoid G304
 	// Use a path function that only accepts known safe patterns
-	return readAllowedConfigFile(configDir)
+	return readAllowedConfigFile(configDir, platformService)
 }
 
 // readAllowedConfigFile reads only the allowed config file pattern
-func readAllowedConfigFile(baseDir string) ([]byte, error) {
+func readAllowedConfigFile(baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	// Only read the specific config file we know about
 	path := filepath.Join(baseDir, appName, "inventory.json")
 
@@ -302,11 +240,11 @@ func readAllowedConfigFile(baseDir string) ([]byte, error) {
 	}
 
 	// Use secure file reader
-	return secureReadFile(path, baseDir)
+	return secureReadFile(path, baseDir, platformService)
 }
 
 // secureReadFile reads files only if they match allowed patterns
-func secureReadFile(filePath string, baseDir string) ([]byte, error) {
+func secureReadFile(filePath string, baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	// Extract just the filename for pattern matching
 	fileName := filepath.Base(filePath)
 
@@ -326,14 +264,14 @@ func secureReadFile(filePath string, baseDir string) ([]byte, error) {
 	// For security, only allow reading specific known files
 	switch fileName {
 	case "inventory.json":
-		return readInventoryFile(filePath, baseDir)
+		return readInventoryFile(filePath, baseDir, platformService)
 	default:
 		return nil, fmt.Errorf("unknown file pattern: %s", fileName)
 	}
 }
 
 // readInventoryFile reads specifically the inventory.json file
-func readInventoryFile(filePath string, baseDir string) ([]byte, error) {
+func readInventoryFile(filePath string, baseDir string, platformService platform.PlatformService) ([]byte, error) {
 	// Double check that this is an inventory file
 	if !strings.HasSuffix(filePath, "inventory.json") {
 		return nil, fmt.Errorf("not an inventory file")
@@ -345,20 +283,20 @@ func readInventoryFile(filePath string, baseDir string) ([]byte, error) {
 		return readLiteralInventoryFile(baseDir)
 	}
 
-	// Production case - use a hardcoded approach to read only inventory files
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
+	// Production case - use platform-specific config directory
+	configDir := platformService.GetConfigPath()
+	if configDir == "" {
+		return nil, fmt.Errorf("failed to get config directory")
 	}
 
 	// Reconstruct the expected path with literals
-	expectedPath := filepath.Join(userConfigDir, appName, "inventory.json")
+	expectedPath := filepath.Join(configDir, "inventory.json")
 	if filePath != expectedPath {
 		return nil, fmt.Errorf("unexpected inventory file path")
 	}
 
 	// Read the literal expected config file
-	return readLiteralInventoryFile(userConfigDir)
+	return readLiteralInventoryFile(filepath.Dir(configDir))
 }
 
 // readLiteralInventoryFile reads the inventory file using literal path construction
@@ -406,17 +344,16 @@ func readSecureFile(filePath string) ([]byte, error) {
 }
 
 // validateConfigPath validates that the config path is within expected bounds
-func validateConfigPath(configPath string) error {
+func validateConfigPath(configPath string, platformService platform.PlatformService) error {
 	// Get the expected config directory
-	expectedConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return fmt.Errorf("failed to get user config directory: %w", err)
+	expectedConfigDir := platformService.GetConfigPath()
+	if expectedConfigDir == "" {
+		return fmt.Errorf("failed to get platform config directory")
 	}
 
 	// Check if the config path is within the expected directory
-	expectedPath := filepath.Join(expectedConfigDir, appName)
 	cleanPath := filepath.Clean(configPath)
-	cleanExpectedPath := filepath.Clean(expectedPath)
+	cleanExpectedPath := filepath.Clean(expectedConfigDir)
 
 	// Ensure the config path starts with the expected directory
 	if !strings.HasPrefix(cleanPath, cleanExpectedPath) {
@@ -427,29 +364,27 @@ func validateConfigPath(configPath string) error {
 }
 
 // loadInventoryWithBase allows overriding the base directory for testing
-func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
-	configPath, err := getConfigPathWithBase(baseDir)
+func loadInventoryWithBase(baseDir string, platformService platform.PlatformService) ([]types.MCPItem, error) {
+	configPath, err := getConfigPathWithBase(baseDir, platformService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get config path: %w", err)
 	}
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// log.Printf("Config file does not exist: %s, will start with empty inventory", configPath)
 		return []types.MCPItem{}, nil
 	}
 
 	// Validate config path to prevent path traversal attacks (skip for testing with baseDir)
 	if baseDir == "" {
-		if err := validateConfigPath(configPath); err != nil {
+		if err := validateConfigPath(configPath, platformService); err != nil {
 			return nil, fmt.Errorf("invalid config path: %w", err)
 		}
 	}
 
 	// Read config file with security considerations
-	jsonData, err := safeReadFile(configPath, baseDir)
+	jsonData, err := safeReadFile(configPath, baseDir, platformService)
 	if err != nil {
-		// log.Printf("Failed to read config file %s: %v, falling back to empty inventory", configPath, err)
 		return []types.MCPItem{}, nil
 	}
 
@@ -480,6 +415,6 @@ func loadInventoryWithBase(baseDir string) ([]types.MCPItem, error) {
 }
 
 // SaveModelInventory saves the inventory from a model
-func SaveModelInventory(model types.Model) error {
-	return SaveInventory(model.MCPItems)
+func SaveModelInventory(model types.Model, platformService platform.PlatformService) error {
+	return SaveInventory(model.MCPItems, platformService)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/testutil"
 	"mcp-hub/internal/ui"
 	"mcp-hub/internal/ui/services"
@@ -124,7 +125,8 @@ func TestCompleteUserWorkflow_MCPToggleAndPersistence(t *testing.T) {
 		// Save initial data using the correct unexported function name pattern
 		// Note: We'll use the model-based approach since the WithBase functions are internal
 		testModel := testutil.NewTestModel().WithMCPs(initialMCPs).Build()
-		err := services.SaveModelInventory(testModel)
+		mockPlatform := platform.GetMockPlatformService()
+		err := services.SaveModelInventory(testModel, mockPlatform)
 		if err != nil {
 			// If save fails, we'll continue with in-memory testing
 			t.Logf("Storage save failed (expected in test): %v", err)

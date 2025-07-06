@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
@@ -13,7 +14,7 @@ const (
 )
 
 func TestOverlayModal(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.ActiveModal = types.AddCommandForm
 	width, height := 120, 40
 
@@ -69,7 +70,7 @@ func TestOverlayModalDifferentTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model := types.NewModel()
+			model := types.NewModel(platform.GetMockPlatformService())
 			model.ActiveModal = tt.modalType
 
 			// For edit/delete modals, ensure we have an MCP to work with
@@ -90,7 +91,7 @@ func TestOverlayModalDifferentTypes(t *testing.T) {
 }
 
 func TestOverlayModalSizeConstraints(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.ActiveModal = types.AddCommandForm
 
 	// Test with very small dimensions
@@ -108,7 +109,7 @@ func TestOverlayModalSizeConstraints(t *testing.T) {
 }
 
 func TestRenderTypeSelectionContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.ActiveField = 1 // Select first option
 
 	result := renderTypeSelectionContent(model)
@@ -143,7 +144,7 @@ func TestRenderTypeSelectionContentHighlight(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			model := types.NewModel()
+			model := types.NewModel(platform.GetMockPlatformService())
 			model.FormData.ActiveField = tt.activeField
 
 			result := renderTypeSelectionContent(model)
@@ -158,7 +159,7 @@ func TestRenderTypeSelectionContentHighlight(t *testing.T) {
 }
 
 func TestRenderCommandFormContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.Name = "test-mcp"
 	model.FormData.Command = "test-command"
 	model.FormData.Args = "arg1 arg2"
@@ -196,7 +197,7 @@ func TestRenderCommandFormContent(t *testing.T) {
 }
 
 func TestRenderCommandFormContentWithErrors(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormErrors = map[string]string{
 		"name":    "Name is required",
 		"command": "Command is required",
@@ -214,7 +215,7 @@ func TestRenderCommandFormContentWithErrors(t *testing.T) {
 }
 
 func TestRenderSSEFormContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.Name = "sse-mcp"
 	model.FormData.URL = "http://example.com"
 	model.FormData.Environment = "API_KEY=secret"
@@ -253,7 +254,7 @@ func TestRenderSSEFormContent(t *testing.T) {
 }
 
 func TestRenderSSEFormContentWithErrors(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormErrors = map[string]string{
 		"url": "Invalid URL format",
 	}
@@ -267,7 +268,7 @@ func TestRenderSSEFormContentWithErrors(t *testing.T) {
 }
 
 func TestRenderJSONFormContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.Name = "json-mcp"
 	model.FormData.JSONConfig = `{"key": "value"}`
 	model.FormData.Environment = "ENV=test"
@@ -301,7 +302,7 @@ func TestRenderJSONFormContent(t *testing.T) {
 }
 
 func TestRenderJSONFormContentWithValidJSON(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.JSONConfig = `{"valid": true}`
 
 	result := renderJSONFormContent(model)
@@ -313,7 +314,7 @@ func TestRenderJSONFormContentWithValidJSON(t *testing.T) {
 }
 
 func TestRenderJSONFormContentWithErrors(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormErrors = map[string]string{
 		"json": "Invalid JSON syntax",
 	}
@@ -327,7 +328,7 @@ func TestRenderJSONFormContentWithErrors(t *testing.T) {
 }
 
 func TestRenderJSONFormContentMultilineJSON(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.FormData.JSONConfig = "{\n  \"key\": \"value\",\n  \"number\": 42\n}"
 
 	result := renderJSONFormContent(model)
@@ -339,7 +340,7 @@ func TestRenderJSONFormContentMultilineJSON(t *testing.T) {
 }
 
 func TestRenderEditModalContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "test-mcp", Type: "CMD", Command: "test-cmd", Active: true},
 	}
@@ -373,7 +374,7 @@ func TestRenderEditModalContent(t *testing.T) {
 }
 
 func TestRenderEditModalContentInactiveMCP(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "inactive-mcp", Type: "SSE", URL: "http://test.com", Active: false},
 	}
@@ -391,7 +392,7 @@ func TestRenderEditModalContentInactiveMCP(t *testing.T) {
 }
 
 func TestRenderEditModalContentNoSelection(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{}
 	model.SelectedItem = 0
 
@@ -403,7 +404,7 @@ func TestRenderEditModalContentNoSelection(t *testing.T) {
 }
 
 func TestRenderEditModalContentWithSearch(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "test-mcp", Type: "CMD", Command: "test-cmd", Active: true},
 		{Name: "other-mcp", Type: "SSE", URL: "http://test.com", Active: false},
@@ -420,7 +421,7 @@ func TestRenderEditModalContentWithSearch(t *testing.T) {
 }
 
 func TestRenderDeleteModalContent(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "delete-me", Type: "CMD", Command: "delete-cmd", Active: false},
 	}
@@ -454,7 +455,7 @@ func TestRenderDeleteModalContent(t *testing.T) {
 }
 
 func TestRenderDeleteModalContentNoSelection(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{}
 	model.SelectedItem = 0
 
@@ -466,7 +467,7 @@ func TestRenderDeleteModalContentNoSelection(t *testing.T) {
 }
 
 func TestRenderDeleteModalContentWithSearch(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.MCPItems = []types.MCPItem{
 		{Name: "keep-me", Type: "CMD", Command: "keep-cmd", Active: true},
 		{Name: "delete-me", Type: "SSE", URL: "http://test.com", Active: false},
@@ -526,7 +527,7 @@ func setupModalFieldFocusTest(tt struct {
 	fieldValue   string
 	expectCursor bool
 }) types.Model {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.ActiveModal = tt.modalType
 	model.FormData.ActiveField = tt.activeField
 
@@ -613,7 +614,7 @@ func assertModalFieldFocus(t *testing.T, result string, tt struct {
 }
 
 func TestOverlayModalUnknownType(t *testing.T) {
-	model := types.NewModel()
+	model := types.NewModel(platform.GetMockPlatformService())
 	model.ActiveModal = types.ModalType(999) // Unknown modal type
 
 	result := OverlayModal(model, 120, 40, "background")

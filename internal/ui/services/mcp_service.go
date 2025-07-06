@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/types"
 )
 
@@ -26,7 +27,7 @@ func GetFilteredMCPs(model types.Model) []types.MCPItem {
 }
 
 // ToggleMCPStatus toggles the active status of the currently selected MCP with enhanced error handling
-func ToggleMCPStatus(model types.Model) types.Model {
+func ToggleMCPStatus(model types.Model, platformService platform.PlatformService) types.Model {
 	selectedMCP := GetSelectedMCP(model)
 	if selectedMCP == nil {
 		return model
@@ -61,7 +62,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 	}
 
 	// Create Claude service and perform toggle
-	claudeService := NewClaudeService()
+	claudeService := NewClaudeService(model.PlatformService)
 	ctx := context.Background()
 
 	result, err := claudeService.ToggleMCPStatus(ctx, mcpName, activate, mcpConfig)
@@ -83,7 +84,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 		}
 
 		// Save to storage
-		if err := SaveInventory(model.MCPItems); err != nil {
+		if err := SaveInventory(model.MCPItems, model.PlatformService); err != nil {
 			model.ToggleState = types.ToggleError
 			model.ToggleError = "MCP toggled but failed to save to storage"
 		} else {
@@ -107,7 +108,7 @@ func EnhancedToggleMCPStatus(model types.Model, mcpName string, activate bool) t
 }
 
 // LegacyToggleMCPStatus provides backward compatibility for MCP toggle operations
-func LegacyToggleMCPStatus(model types.Model) types.Model {
+func LegacyToggleMCPStatus(model types.Model, platformService platform.PlatformService) types.Model {
 	filteredMCPs := GetFilteredMCPs(model)
 
 	// Use appropriate index based on search state
@@ -124,7 +125,7 @@ func LegacyToggleMCPStatus(model types.Model) types.Model {
 				model.MCPItems[i].Active = !model.MCPItems[i].Active
 
 				// Save to storage immediately after change
-				if err := SaveInventory(model.MCPItems); err != nil {
+				if err := SaveInventory(model.MCPItems, platformService); err != nil {
 					// Log error but don't fail the operation
 					// Error is already logged in SaveInventory
 					// Intentionally empty - MCP status change should succeed even if save fails

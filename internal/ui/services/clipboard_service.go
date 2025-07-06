@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"mcp-hub/internal/platform"
 
 	atottoclipboard "github.com/atotto/clipboard"
 	designclipboard "golang.design/x/clipboard"
 )
 
-// ClipboardService provides clipboard operations with enhanced macOS support
+// ClipboardService provides clipboard operations with platform abstraction
 type ClipboardService struct {
 	isAvailable        *bool
 	lastCheck          time.Time
@@ -21,16 +22,18 @@ type ClipboardService struct {
 	mutex              sync.RWMutex
 	useDesignClipboard bool
 	initialized        bool
+	platformService    platform.PlatformService
 }
 
-// NewClipboardService creates a new clipboard service with enhanced macOS support
-func NewClipboardService() *ClipboardService {
+// NewClipboardService creates a new clipboard service with platform abstraction
+func NewClipboardService(platformService platform.PlatformService) *ClipboardService {
 	cs := &ClipboardService{
-		checkDuration: 30 * time.Second, // Cache availability for 30 seconds
+		checkDuration:   30 * time.Second, // Cache availability for 30 seconds
+		platformService: platformService,
 	}
 
 	// Try to initialize golang.design/x/clipboard for better macOS support
-	if runtime.GOOS == PlatformDarwin {
+	if platformService.GetPlatform() == platform.PlatformDarwin {
 		if err := designclipboard.Init(); err == nil {
 			cs.useDesignClipboard = true
 			cs.initialized = true
@@ -40,10 +43,10 @@ func NewClipboardService() *ClipboardService {
 	return cs
 }
 
-// Copy copies text to the system clipboard with macOS fallbacks
+// Copy copies text to the system clipboard with platform abstraction
 func (cs *ClipboardService) Copy(text string) error {
 	// Try golang.design/x/clipboard first on macOS
-	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
+	if cs.useDesignClipboard && cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		designclipboard.Write(designclipboard.FmtText, []byte(text))
 		return nil
 	}
@@ -55,17 +58,17 @@ func (cs *ClipboardService) Copy(text string) error {
 	}
 
 	// macOS fallback using pbcopy
-	if runtime.GOOS == PlatformDarwin {
+	if cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		return cs.copyWithPbcopy(text)
 	}
 
 	return err
 }
 
-// Paste gets text from the system clipboard with macOS fallbacks
+// Paste gets text from the system clipboard with platform abstraction
 func (cs *ClipboardService) Paste() (string, error) {
 	// Try golang.design/x/clipboard first on macOS
-	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
+	if cs.useDesignClipboard && cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		data := designclipboard.Read(designclipboard.FmtText)
 		if len(data) > 0 {
 			return string(data), nil
@@ -79,7 +82,7 @@ func (cs *ClipboardService) Paste() (string, error) {
 	}
 
 	// macOS fallback using pbpaste
-	if runtime.GOOS == PlatformDarwin {
+	if cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		return cs.pasteWithPbpaste()
 	}
 
@@ -112,7 +115,7 @@ func (cs *ClipboardService) IsAvailable() bool {
 	available := false
 
 	// Test golang.design/x/clipboard if available
-	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
+	if cs.useDesignClipboard && cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		// Try reading to ensure clipboard is functional, but even empty clipboard is considered available
 		_ = designclipboard.Read(designclipboard.FmtText)
 		available = true
@@ -125,7 +128,7 @@ func (cs *ClipboardService) IsAvailable() bool {
 	}
 
 	// Test macOS pbpaste fallback
-	if !available && runtime.GOOS == PlatformDarwin {
+	if !available && cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		cmd2 := exec.CommandContext(ctx, "pbpaste")
@@ -159,13 +162,13 @@ func (cs *ClipboardService) pasteWithPbpaste() (string, error) {
 // GetDiagnosticInfo returns diagnostic information about clipboard service
 func (cs *ClipboardService) GetDiagnosticInfo() map[string]interface{} {
 	info := make(map[string]interface{})
-	info["os"] = runtime.GOOS
+	info["os"] = cs.platformService.GetPlatformName()
 	info["useDesignClipboard"] = cs.useDesignClipboard
 	info["initialized"] = cs.initialized
 	info["isAvailable"] = cs.IsAvailable()
 
 	// Test clipboard access methods
-	if runtime.GOOS == PlatformDarwin {
+	if cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		// Test pbpaste availability
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
@@ -189,7 +192,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 
 	// Method 1: Try golang.design/x/clipboard on macOS
 	var designErr error
-	if cs.useDesignClipboard && runtime.GOOS == PlatformDarwin {
+	if cs.useDesignClipboard && cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		data := designclipboard.Read(designclipboard.FmtText)
 		if len(data) > 0 {
 			return string(data), nil
@@ -215,7 +218,7 @@ func (cs *ClipboardService) EnhancedPaste() (string, error) {
 	}
 
 	// Method 3: macOS fallback using pbpaste
-	if runtime.GOOS == PlatformDarwin {
+	if cs.platformService.GetPlatform() == platform.PlatformDarwin {
 		content, err := cs.pasteWithPbpaste()
 		if err == nil && content != "" {
 			return content, nil

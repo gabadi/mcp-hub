@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"mcp-hub/internal/platform"
 	"mcp-hub/internal/ui/services"
 	"mcp-hub/internal/ui/types"
 
@@ -87,7 +88,7 @@ func handleEnhancedToggleMCP(model types.Model) (types.Model, tea.Cmd, bool) {
 	}
 
 	// Set immediate loading state for visual feedback
-	updatedModel := services.ToggleMCPStatus(model)
+	updatedModel := services.ToggleMCPStatus(model, model.PlatformService)
 
 	// If already in error state due to Claude unavailability, don't proceed
 	if updatedModel.ToggleState == types.ToggleError {
@@ -342,7 +343,7 @@ func NavigateRight(model types.Model) types.Model {
 
 // pasteToSearchQuery pastes clipboard content to the search query
 func pasteToSearchQuery(model types.Model) types.Model {
-	clipboardService := services.NewClipboardService()
+	clipboardService := services.NewClipboardService(model.PlatformService)
 
 	// Use enhanced paste for better error diagnostics
 	content, err := clipboardService.EnhancedPaste()
@@ -446,7 +447,8 @@ type ToggleResultMsg struct {
 // RefreshClaudeStatusCmd creates a command to refresh Claude status (Epic 2 Story 1)
 func RefreshClaudeStatusCmd() tea.Cmd {
 	return func() tea.Msg {
-		claudeService := services.NewClaudeService()
+		platformService := platform.NewPlatformServiceFactoryDefault().CreatePlatformService()
+		claudeService := services.NewClaudeService(platformService)
 		ctx := context.Background()
 		status := claudeService.RefreshClaudeStatus(ctx)
 		return ClaudeStatusMsg{Status: status}
@@ -456,7 +458,8 @@ func RefreshClaudeStatusCmd() tea.Cmd {
 // EnhancedToggleMCPCmd creates a command to perform enhanced MCP toggle (Epic 2 Story 2)
 func EnhancedToggleMCPCmd(mcpName string, activate bool, mcpConfig *types.MCPItem) tea.Cmd {
 	return func() tea.Msg {
-		claudeService := services.NewClaudeService()
+		platformService := platform.NewPlatformServiceFactoryDefault().CreatePlatformService()
+		claudeService := services.NewClaudeService(platformService)
 		ctx := context.Background()
 
 		// Pass the MCP configuration for add operations
