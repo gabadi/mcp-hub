@@ -1,0 +1,98 @@
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: mcp-hub
+    main: ./main.go
+    binary: mcp-hub
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: binaries
+    builds:
+      - mcp-hub
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+nfpms:
+  - id: packages
+    package_name: mcp-hub
+    vendor: MCP Hub
+    homepage: https://github.com/gabadi/cc-mcp-manager
+    maintainer: Gabriel Adomnicai <gabadi@users.noreply.github.com>
+    description: TUI for managing Claude MCP configurations
+    license: MIT
+    formats:
+      - deb
+      - rpm
+
+release:
+  github:
+    owner: gabadi
+    name: cc-mcp-manager
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}}-v{{.Version}}"
+
+# NPM package configuration
+npm:
+  - ids:
+      - mcp-hub
+    package_name: mcp-hub-tui
+    registry: https://registry.npmjs.org/
+    folder: npm-package
+    package_template: |
+      {
+        "name": "mcp-hub-tui",
+        "version": "{{ .Version }}",
+        "description": "TUI for managing Claude MCP configurations",
+        "bin": {
+          "mcp-hub-tui": "./index.js"
+        },
+        "files": [
+          "bin/",
+          "index.js",
+          "README.md"
+        ],
+        "engines": {
+          "node": ">=14.0.0"
+        },
+        "keywords": ["claude", "mcp", "terminal", "tui", "cli"],
+        "repository": {
+          "type": "git",
+          "url": "git+https://github.com/gabadi/cc-mcp-manager.git"
+        },
+        "license": "MIT",
+        "homepage": "https://github.com/gabadi/cc-mcp-manager#readme"
+      }
+    extra_files:
+      - glob: index.js
+        name_template: index.js
+      - glob: package.json
+        name_template: package.json
+      - glob: README.md
+        name_template: README.md
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
