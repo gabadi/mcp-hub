@@ -22,8 +22,8 @@
   "keywords": ["claude", "mcp", "terminal", "tui", "cli"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gabadi/cc-mcp-manager.git"
+    "url": "git+https://github.com/gabadi/mcp-hub.git"
   },
   "license": "MIT",
-  "homepage": "https://github.com/gabadi/cc-mcp-manager#readme"
+  "homepage": "https://github.com/gabadi/mcp-hub#readme"
 }
