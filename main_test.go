@@ -66,7 +66,7 @@ func TestRunApp(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to create log file: %v", err)
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		
 		// Test writing to log file
 		originalOutput := log.Writer()
@@ -162,7 +162,7 @@ func TestErrorHandling(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to create log file with permissions: %v", err)
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		
 		// Check file permissions
 		info, err := file.Stat()
@@ -538,7 +538,7 @@ func TestLogFileManagement(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to open log file in append mode: %v", err)
 		}
-		defer logFile.Close()
+		defer func() { _ = logFile.Close() }()
 		
 		// Write additional content
 		_, err = logFile.WriteString("Appended content\n")

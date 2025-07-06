@@ -74,6 +74,8 @@ func (pt PlatformType) String() string {
 		return "windows"
 	case PlatformLinux:
 		return "linux"
+	case PlatformUnknown:
+		return "unknown"
 	default:
 		return "unknown"
 	}
@@ -90,6 +92,8 @@ func (cm ClipboardMethod) String() string {
 		return "xclip"
 	case ClipboardPowershell:
 		return "powershell"
+	case ClipboardUnsupported:
+		return "unsupported"
 	default:
 		return "unsupported"
 	}

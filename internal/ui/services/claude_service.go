@@ -288,6 +288,8 @@ func (cs *ClaudeService) getInstallationGuide() string {
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Add to your system PATH\n• Restart your terminal after installation"
 	case platform.PlatformLinux:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Make executable: chmod +x claude\n• Add to PATH: sudo mv claude /usr/local/bin/\n• Or use package manager if available"
+	case platform.PlatformUnknown:
+		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Follow platform-specific installation instructions\n• Ensure it's available in your system PATH"
 	default:
 		return "Install Claude CLI:\n• Download from: https://claude.ai/cli\n• Follow platform-specific installation instructions\n• Ensure it's available in your system PATH"
 	}
