@@ -55,3 +55,4 @@ go.work.sum
 .claude/commands/ux-expert.md
 expansion-packs
 .idea
+cmd/debug/key_debug.log
