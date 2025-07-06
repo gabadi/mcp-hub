@@ -14,8 +14,8 @@ import (
 const (
 	// Button/instruction text
 	EscCancelText       = "ESC=Cancel"
-	EditInstructionText = "[Tab] Next Field • [Enter] Update • ESC Cancel"
-	AddInstructionText  = "[Tab] Next Field • [Enter] Add • ESC Cancel"
+	EditInstructionText = "[Tab] Next Field • [Ctrl+V] Paste • [Enter] Update • ESC Cancel"
+	AddInstructionText  = "[Tab] Next Field • [Ctrl+V] Paste • [Enter] Add • ESC Cancel"
 
 	// Form field labels
 	NameRequiredLabel        = "Name: (required)"
