@@ -1,6 +1,6 @@
 {
   "name": "mcp-hub-tui",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TUI for managing Claude MCP configurations",
   "bin": {
     "mcp-hub-tui": "./index.js"
