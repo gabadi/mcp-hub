@@ -60,6 +60,7 @@ func migrateLegacyConfig(baseDir string) error {
 			}
 			
 			// Copy old config to new location
+			// #nosec G304 - This is a safe file read for config migration; oldConfigPath is constructed from safe functions
 			oldData, err := os.ReadFile(oldConfigPath)
 			if err != nil {
 				return fmt.Errorf("failed to read old config: %w", err)

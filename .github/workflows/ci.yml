@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, stabilization ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, stabilization ]
 
 jobs:
   ci:
@@ -47,7 +47,7 @@ jobs:
     - name: Run linting
       uses: golangci/golangci-lint-action@v7
       with:
-        version: v2.2.1
+        version: latest
         args: --timeout=5m
 
     - name: Build binary
