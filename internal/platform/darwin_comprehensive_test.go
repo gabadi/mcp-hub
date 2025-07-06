@@ -3,6 +3,7 @@ package platform
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -26,6 +27,10 @@ func TestDarwinPlatformService_GetLogPath_ErrorScenarios(t *testing.T) {
 }
 
 func TestDarwinPlatformService_GetConfigPath_ErrorScenarios(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("Skipping Darwin-specific test on non-Darwin platform")
+	}
+	
 	service := NewDarwinPlatformService(nil)
 	
 	// Test with modified environment to trigger fallback
